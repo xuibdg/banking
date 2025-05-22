@@ -3,6 +3,8 @@ package com.core.banking.entity;
 import com.core.banking.enums.CustomerStatus;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -41,9 +43,9 @@ public class Customer {
     private CustomerStatus customerStatus = CustomerStatus.ACTIVE;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private Timestamp createdAt;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private Timestamp updatedAt;
 
 }
