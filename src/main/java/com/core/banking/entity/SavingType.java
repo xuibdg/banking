@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.sql.Timestamp;
-import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "saving_types")
