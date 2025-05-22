@@ -25,5 +25,5 @@ public class DepositAccountDetail {
     @JoinColumn(name = "deposit_account_id")
     private DepositAccount depositAccount;
 
-    // ...getter & setter...
+    
 }

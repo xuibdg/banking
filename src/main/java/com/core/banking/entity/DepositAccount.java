@@ -25,5 +25,5 @@ public class DepositAccount {
     @OneToMany(mappedBy = "depositAccount", cascade = CascadeType.ALL)
     private List<DepositAccountDetail> details;
 
-    // ...getter & setter...
+    
 }
