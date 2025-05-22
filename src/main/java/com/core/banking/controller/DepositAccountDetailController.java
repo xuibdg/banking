@@ -1,7 +1,7 @@
 package com.core.banking.controller;
 
 import com.core.banking.entity.DepositoAccountDetail;
-import com.core.banking.service.DepositoAccountDetailService;
+import com.core.banking.service.DepositAccountDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,10 +12,10 @@ import java.util.List;
 @RequestMapping("/api/deposito-account-details")
 public class DepositoAccountDetailController {
     @Autowired
-    private DepositoAccountDetailService depositoAccountDetailService;
+    private DepositAccountDetailService depositoAccountDetailService;
 
     @GetMapping
-    public List<DepositoAccountDetail> getAll() {
+    public List<DepositAccountDetail> getAll() {
         return depositoAccountDetailService.findAll();
     }
 }
