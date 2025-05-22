@@ -1,14 +1,13 @@
 package com.core.banking.entity;
 
-
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "deposit_profit_sharing")
 public class DepositProfitSharing {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     private Double profitAmount;
 

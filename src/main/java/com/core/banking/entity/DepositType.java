@@ -6,8 +6,8 @@ import jakarta.persistence.*;
 @Table(name = "deposit_types")
 public class DepositType {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     private String typeName;
 
