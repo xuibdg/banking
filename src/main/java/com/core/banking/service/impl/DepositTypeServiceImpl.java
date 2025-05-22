@@ -1,19 +1,19 @@
 package com.core.banking.service.impl;
 
-import com.core.banking.entity.DepositoType;
-import com.core.banking.repository.DepositoTypeRepository;
-import com.core.banking.service.DepositoTypeService;
+import com.core.banking.entity.DepositType;
+import com.core.banking.repository.DepositTypeRepository;
+import com.core.banking.service.DepositTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class DepositoTypeServiceImpl implements DepositoTypeService {
+public class DepositTypeServiceImpl implements DepositTypeService {
     @Autowired
-    private DepositoTypeRepository depositoTypeRepository;
+    private DepositTypeRepository depositTypeRepository;
 
     @Override
-    public List<DepositoType> findAll() {
-        return depositoTypeRepository.findAll();
+    public List<DepositType> findAll() {
+        return depositTypeRepository.findAll();
     }
 }

@@ -1,7 +1,8 @@
 package com.core.banking.repository;
 
-import com.core.banking.entity.DepositoProfitSharing;
+
+import com.core.banking.entity.DepositProfitSharing;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface DepositoProfitSharingRepository extends JpaRepository<DepositoProfitSharing, Long> {
+public interface DepositProfitSharingRepository extends JpaRepository<DepositProfitSharing, Long> {
 }

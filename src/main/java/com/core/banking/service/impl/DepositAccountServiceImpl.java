@@ -1,19 +1,19 @@
 package com.core.banking.service.impl;
 
-import com.core.banking.entity.DepositoAccount;
-import com.core.banking.repository.DepositoAccountRepository;
-import com.core.banking.service.DepositoAccountService;
+import com.core.banking.entity.DepositAccount;
+import com.core.banking.repository.DepositAccountRepository;
+import com.core.banking.service.DepositAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class DepositoAccountServiceImpl implements DepositoAccountService {
+public class DepositAccountServiceImpl implements DepositAccountService {
     @Autowired
-    private DepositoAccountRepository depositoAccountRepository;
+    private DepositAccountRepository depositAccountRepository;
 
     @Override
-    public List<DepositoAccount> findAll() {
-        return depositoAccountRepository.findAll();
+    public List<DepositAccount> findAll() {
+        return depositAccountRepository.findAll();
     }
 }

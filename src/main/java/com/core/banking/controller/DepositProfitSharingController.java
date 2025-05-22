@@ -1,7 +1,7 @@
 package com.core.banking.controller;
 
-import com.core.banking.entity.DepositoProfitSharing;
-import com.core.banking.service.DepositoProfitSharingService;
+import com.core.banking.entity.DepositProfitSharing;
+import com.core.banking.service.DepositProfitSharingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/deposito-profit-sharings")
-public class DepositoProfitSharingController {
+@RequestMapping("/api/deposit-profit-sharings")
+public class DepositProfitSharingController {
     @Autowired
-    private DepositoProfitSharingService depositoProfitSharingService;
+    private DepositProfitSharingService depositProfitSharingService;
 
     @GetMapping
-    public List<DepositoProfitSharing> getAll() {
-        return depositoProfitSharingService.findAll();
+    public List<DepositProfitSharing> getAll() {
+        return depositProfitSharingService.findAll();
     }
 }

@@ -1,8 +1,8 @@
 package com.core.banking.service;
 
-import com.core.banking.entity.DepositoType;
+import com.core.banking.entity.DepositType;
 import java.util.List;
 
-public interface DepositoTypeService {
-    List<DepositoType> findAll();
+public interface DepositTypeService {
+    List<DepositType> findAll();
 }

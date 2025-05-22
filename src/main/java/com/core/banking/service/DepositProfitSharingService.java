@@ -1,8 +1,8 @@
 package com.core.banking.service;
 
-import com.core.banking.entity.DepositoProfitSharing;
+import com.core.banking.entity.DepositProfitSharing;
 import java.util.List;
 
-public interface DepositoProfitSharingService {
-    List<DepositoProfitSharing> findAll();
+public interface DepositProfitSharingService {
+    List<DepositProfitSharing> findAll();
 }

@@ -1,8 +1,8 @@
 package com.core.banking.service;
 
-import com.core.banking.entity.DepositoAccountDetail;
+import com.core.banking.entity.DepositAccountDetail;
 import java.util.List;
 
-public interface DepositoAccountDetailService {
-    List<DepositoAccountDetail> findAll();
+public interface DepositAccountDetailService {
+    List<DepositAccountDetail> findAll();
 }

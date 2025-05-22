@@ -1,7 +1,7 @@
 package com.core.banking.repository;
 
-import com.core.banking.entity.DepositoType;
+import com.core.banking.entity.DepositType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface DepositoTypeRepository extends JpaRepository<DepositoType, Long> {
+public interface DepositTypeRepository extends JpaRepository<DepositType, Long> {
 }
