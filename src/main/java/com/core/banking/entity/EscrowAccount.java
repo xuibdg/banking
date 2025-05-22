@@ -15,9 +15,9 @@ import java.time.OffsetDateTime;
 @Builder
 public class EscrowAccount {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "escrow_account_id")
-    private Long escrowAccountId;
+    private String id;
 
     @Column(name = "account_number", nullable = false, unique = true, length = 20)
     private String accountNumber;
@@ -25,24 +25,22 @@ public class EscrowAccount {
     @Column(name = "purpose")
     private String purpose;
 
-    @Column(name = "current_balance", nullable = false)
-    private BigDecimal currentBalance;
+    @Column(name = "current_balance", nullable = false, precision = 15, scale = 2)
+    private BigDecimal currentBalance = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "account_status", nullable = false)
     private EscrowAccountStatus accountStatus = EscrowAccountStatus.PENDING_FUNDING;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payer_customer_id")
-    private Customer payerCustomer;
+    @Column(name = "payer_customer_id")
+    private String payerCustomerId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "beneficiary_customer_id")
-    private Customer beneficiaryCustomer;
+    @Column(name = "beneficiary_customer_id")
+    private String beneficiaryCustomerId;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private OffsetDateTime createdAt = OffsetDateTime.now();
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private OffsetDateTime updatedAt = OffsetDateTime.now();
 }

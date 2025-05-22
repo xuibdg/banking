@@ -16,9 +16,9 @@ import java.time.OffsetDateTime;
 @Builder
 public class EscrowAccountDetail {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "escrow_account_detail_id")
-    private Long escrowAccountDetailId;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "escrow_account_id", nullable = false)
@@ -32,13 +32,13 @@ public class EscrowAccountDetail {
     @Column(name = "mutation_type", nullable = false)
     private MutationType mutationType;
 
-    @Column(name = "nominal_transaction", nullable = false)
+    @Column(name = "nominal_transaction", precision = 15, scale = 2, nullable = false)
     private BigDecimal nominalTransaction;
 
-    @Column(name = "begin_balance", nullable = false)
+    @Column(name = "begin_balance", precision = 15, scale = 2, nullable = false)
     private BigDecimal beginBalance;
 
-    @Column(name = "end_balance", nullable = false)
+    @Column(name = "end_balance", precision = 15, scale = 2, nullable = false)
     private BigDecimal endBalance;
 
     @Column(name = "description")
@@ -48,10 +48,10 @@ public class EscrowAccountDetail {
     private String transactionReference;
 
     @Column(name = "transaction_at")
-    private OffsetDateTime transactionAt;
+    private OffsetDateTime transactionAt = OffsetDateTime.now();
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private OffsetDateTime createdAt = OffsetDateTime.now();
 
     public enum MutationType {
         CREDIT, DEBIT
