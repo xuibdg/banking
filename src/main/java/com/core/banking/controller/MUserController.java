@@ -22,31 +22,27 @@ public class MUserController {
     @Autowired
     private MUserService mUserService;
 
-
     @PostMapping
     BaseResponse<String> createUser(@RequestBody MUserRequest request,
                                     @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(mUserService.createUser(request, userMetaData));
     }
 
-
     @GetMapping("/get-all")
-    List<MUserResponse> getAll(@RequestParam(required = false, defaultValue = "") String name){
+    List<MUserResponse> getAll(@RequestParam(required = false, defaultValue = "") String name,
+                               @CurrentUser UserMetaData userMetaData){
         return mUserService.getAll(name);
     }
 
-
     @PutMapping("/{id}")
-    String updateUser(@PathVariable String id, @RequestBody MUserRequest request){
+    String updateUser(@PathVariable String id, @RequestBody MUserRequest request,
+                      @CurrentUser UserMetaData userMetaData){
         return mUserService.updateUser(id, request);
     }
 
-
     @DeleteMapping("/{id}")
-    String deletedUser(@PathVariable String id){
+    String deletedUser(@PathVariable String id,
+                       @CurrentUser UserMetaData userMetaData){
         return mUserService.deletedUser(id);
     }
-
-
-
 }

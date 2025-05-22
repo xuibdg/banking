@@ -1,55 +1,47 @@
 package com.core.banking.config;
 
 import com.core.banking.dto.UserMetaData;
-import io.jsonwebtoken.JwtException;
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 
-public class FilterInterceptor implements Filter {
+public class FilterInterceptor implements WebFilter {
 
     private static final String SECRET_KEY = "mysecretkey12345678901234567890123456789012";
 
     private Key getKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException, ServletException {
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+        ServerHttpResponse response = exchange.getResponse();
+        String path = request.getPath().value();
 
-        HttpServletRequest request = (HttpServletRequest) req;
-        HttpServletResponse response = (HttpServletResponse) res;
-
-        String path = request.getRequestURI();
-
-        // Allow anonymous paths
-        if (path.equals("/login") || path.startsWith("/public/") || path.startsWith("/actuator")) {
-            chain.doFilter(request, response);
-            return;
+        if (isExcludedPath(path)) {
+            return chain.filter(exchange);
         }
 
-        String header = request.getHeader("Authorization-key");
+        String header = request.getHeaders().getFirst("Authorization-key");
         if (header == null || header.isBlank()) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Missing or invalid Authorization-key header");
-            return;
+            response.setStatusCode(HttpStatus.UNAUTHORIZED);
+            byte[] bytes = "Missing or invalid Authorization-key header".getBytes(StandardCharsets.UTF_8);
+            return response.writeWith(Mono.just(response.bufferFactory().wrap(bytes)));
         }
 
-        String token = header.trim(); // langsung pakai token
-
+        String token = header.trim();
         try {
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(getKey())
@@ -66,15 +58,15 @@ public class FilterInterceptor implements Filter {
                     .sessionId(claims.get("sessionId", String.class))
                     .build();
 
-            request.setAttribute("userMetaData", userMetaData);
-            chain.doFilter(request, response);
-
+            // Set userMetaData ke attribute exchange agar bisa diakses downstream
+            exchange.getAttributes().put("userMetaData", userMetaData);
+            return chain.filter(exchange);
         } catch (JwtException e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Invalid token: " + e.getMessage());
+            response.setStatusCode(HttpStatus.UNAUTHORIZED);
+            byte[] bytes = ("Invalid token: " + e.getMessage()).getBytes(StandardCharsets.UTF_8);
+            return response.writeWith(Mono.just(response.bufferFactory().wrap(bytes)));
         }
     }
-
 
     private boolean isExcludedPath(String path) {
         return path.equals("/login")
@@ -82,6 +74,4 @@ public class FilterInterceptor implements Filter {
                 || path.startsWith("/actuator")
                 || path.equals("/error");
     }
-
-
 }
