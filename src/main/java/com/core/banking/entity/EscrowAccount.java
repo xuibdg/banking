@@ -4,7 +4,7 @@ import com.core.banking.enums.EscrowAccountStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.sql.Timestamp;
 
 @Entity
 @Table(name = "escrow_accounts")
@@ -39,8 +39,8 @@ public class EscrowAccount {
     private String beneficiaryCustomerId;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt = OffsetDateTime.now();
+    private Timestamp updatedAt = new Timestamp(System.currentTimeMillis());
 }

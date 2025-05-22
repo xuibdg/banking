@@ -5,6 +5,7 @@ import com.core.banking.entity.EscrowAccount;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -48,10 +49,10 @@ public class EscrowAccountDetail {
     private String transactionReference;
 
     @Column(name = "transaction_at")
-    private OffsetDateTime transactionAt = OffsetDateTime.now();
+    private Timestamp transactionAt = new Timestamp(System.currentTimeMillis());
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
 
     public enum MutationType {
         CREDIT, DEBIT
