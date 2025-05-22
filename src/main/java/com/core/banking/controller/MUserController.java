@@ -5,11 +5,14 @@ import com.core.banking.dto.MUserRequest;
 import com.core.banking.dto.MUserResponse;
 import com.core.banking.dto.UserMetaData;
 import com.core.banking.service.MUserService;
+import com.core.banking.utils.exception.BaseResponse;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static com.core.banking.controller.BaseCRUDController.buildSuccessResponse;
 
 @RestController
 @RequestMapping("/api/user")
@@ -21,9 +24,9 @@ public class MUserController {
 
 
     @PostMapping
-    String createUser(@RequestBody MUserRequest request,
-                      @CurrentUser UserMetaData userMetaData) {
-        return mUserService.createUser(request, userMetaData);
+    BaseResponse<String> createUser(@RequestBody MUserRequest request,
+                                    @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(mUserService.createUser(request, userMetaData));
     }
 
 
