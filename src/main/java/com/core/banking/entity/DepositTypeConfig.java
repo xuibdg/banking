@@ -25,5 +25,4 @@ public class DepositTypeConfig {
     @JoinColumn(name = "deposit_type_id")
     private DepositType depositType;
 
-    
 }

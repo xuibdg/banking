@@ -21,5 +21,4 @@ public class DepositType {
 
     private String description;
 
-    
 }

@@ -25,5 +25,4 @@ public class DepositProfitSharing {
     @JoinColumn(name = "deposit_account_id")
     private DepositAccount depositAccount;
 
-    
 }
