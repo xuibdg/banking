@@ -4,6 +4,7 @@ import com.core.banking.enums.LoanRepaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
@@ -16,9 +17,9 @@ import java.time.OffsetDateTime;
 @Builder
 public class LoanRepaymentSchedule {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "loan_repayment_schedule_id")
-    private Long loanRepaymentScheduleId;
+    private String loanRepaymentScheduleId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loan_account_id", nullable = false)
@@ -49,15 +50,15 @@ public class LoanRepaymentSchedule {
     private BigDecimal amountPaid;
 
     @Column(name = "payment_date")
-    private OffsetDateTime paymentDate;
+    private Timestamp paymentDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false)
     private LoanRepaymentStatus paymentStatus = LoanRepaymentStatus.PENDING;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private Timestamp createdAt;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private Timestamp updatedAt;
 }

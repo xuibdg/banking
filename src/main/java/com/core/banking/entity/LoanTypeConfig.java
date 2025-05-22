@@ -5,6 +5,7 @@ import com.core.banking.enums.Frequency;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -16,9 +17,9 @@ import java.time.OffsetDateTime;
 @Builder
 public class LoanTypeConfig {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "loan_type_config_id")
-    private Long loanTypeConfigId;
+    private String loanTypeConfigId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loan_type_id", nullable = false)
@@ -54,8 +55,8 @@ public class LoanTypeConfig {
     private Boolean isActive;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private Timestamp createdAt;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private Timestamp updatedAt;
 }

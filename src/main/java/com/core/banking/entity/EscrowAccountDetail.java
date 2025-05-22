@@ -1,12 +1,12 @@
 package com.core.banking.entity;
 
 import com.core.banking.enums.EscrowTransactionType;
-import com.core.banking.entity.EscrowAccount;
+import com.core.banking.enums.MutationType;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "escrow_account_details")
@@ -54,7 +54,4 @@ public class EscrowAccountDetail {
     @Column(name = "created_at")
     private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
 
-    public enum MutationType {
-        CREDIT, DEBIT
-    }
 }

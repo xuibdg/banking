@@ -1,9 +1,10 @@
 package com.core.banking.entity;
 
+import com.core.banking.enums.SavingAccountStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.sql.Timestamp;
 
 @Entity
 @Table(name = "saving_accounts")
@@ -14,9 +15,9 @@ import java.time.OffsetDateTime;
 @Builder
 public class SavingAccount {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "saving_account_id")
-    private Long savingAccountId;
+    private String savingAccountId;
 
     @Column(name = "account_number", nullable = false, unique = true, length = 20)
     private String accountNumber;
@@ -40,21 +41,18 @@ public class SavingAccount {
     private SavingAccountStatus accountStatus = SavingAccountStatus.ACTIVE;
 
     @Column(name = "opened_at")
-    private OffsetDateTime openedAt;
+    private Timestamp openedAt;
 
     @Column(name = "closed_at")
-    private OffsetDateTime closedAt;
+    private Timestamp closedAt;
 
     @Column(name = "last_transaction_at")
-    private OffsetDateTime lastTransactionAt;
+    private Timestamp lastTransactionAt;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private Timestamp createdAt;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private Timestamp updatedAt;
 
-    public enum SavingAccountStatus {
-        ACTIVE, DORMANT, BLOCKED, CLOSED
-    }
 }

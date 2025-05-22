@@ -4,6 +4,7 @@ import com.core.banking.enums.LoanAccountStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -15,9 +16,9 @@ import java.time.OffsetDateTime;
 @Builder
 public class LoanAccount {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "loan_account_id")
-    private Long loanAccountId;
+    private String loanAccountId;
 
     @Column(name = "account_number", nullable = false, unique = true, length = 20)
     private String accountNumber;
@@ -59,14 +60,14 @@ public class LoanAccount {
     private LoanAccountStatus accountStatus = LoanAccountStatus.PENDING_APPROVAL;
 
     @Column(name = "application_date")
-    private OffsetDateTime applicationDate;
+    private Timestamp applicationDate;
 
     @Column(name = "closed_at")
-    private OffsetDateTime closedAt;
+    private Timestamp closedAt;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private Timestamp createdAt;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private Timestamp updatedAt;
 }

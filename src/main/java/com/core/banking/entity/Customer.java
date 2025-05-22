@@ -1,5 +1,6 @@
 package com.core.banking.entity;
 
+import com.core.banking.enums.CustomerStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.OffsetDateTime;
@@ -45,7 +46,4 @@ public class Customer {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
-    public enum CustomerStatus {
-        PENDING_VERIFICATION, ACTIVE, INACTIVE, DORMANT, CLOSED
-    }
 }

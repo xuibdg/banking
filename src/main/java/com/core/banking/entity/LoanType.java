@@ -2,6 +2,8 @@ package com.core.banking.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -13,9 +15,9 @@ import java.time.OffsetDateTime;
 @Builder
 public class LoanType {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "loan_type_id")
-    private Long loanTypeId;
+    private String loanTypeId;
 
     @Column(name = "type_name", nullable = false, unique = true, length = 50)
     private String typeName;
@@ -24,8 +26,8 @@ public class LoanType {
     private String description;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private Timestamp createdAt;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private Timestamp updatedAt;
 }

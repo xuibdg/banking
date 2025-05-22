@@ -4,6 +4,7 @@ import com.core.banking.enums.LoanTransactionType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -15,9 +16,9 @@ import java.time.OffsetDateTime;
 @Builder
 public class LoanTransaction {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "loan_transaction_id")
-    private Long loanTransactionId;
+    private String loanTransactionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loan_account_id", nullable = false)
@@ -44,7 +45,7 @@ public class LoanTransaction {
     private BigDecimal feeComponent;
 
     @Column(name = "transaction_date")
-    private OffsetDateTime transactionDate;
+    private Timestamp transactionDate;
 
     @Column(name = "description")
     private String description;
@@ -53,5 +54,5 @@ public class LoanTransaction {
     private String referenceNumber;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private Timestamp createdAt;
 }
