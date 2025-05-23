@@ -54,4 +54,7 @@ public class Customer {
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;
 
+    @Column(name = "is_special_administrative")
+    private Boolean isSpecialAdministrative = false;
+
 }

@@ -16,4 +16,5 @@ public class CustomerRequest {
     private String phoneNumber;
     private String email;
     private LocalDate dateOfBirth;
+    private Boolean isSpecialAdministrative;
 }

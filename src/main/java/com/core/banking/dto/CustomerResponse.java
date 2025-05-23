@@ -14,7 +14,7 @@ import java.time.ZonedDateTime;
 @NoArgsConstructor
 @Builder
 public class CustomerResponse {
-    private Long customerId;
+    private String customerId;
     private String nik;
     private String fullName;
     private String address;

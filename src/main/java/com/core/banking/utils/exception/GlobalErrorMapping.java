@@ -15,7 +15,10 @@ public enum GlobalErrorMapping {
     DATA_USER_NOT_FOUND("IEG-0020", "Data USER tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     INVALID_CREDENTIAL("IEG-0021", "Username atau password salah."),
     UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
-    CUSTOMER_ALREADY_EXIST("IEG-0023", "Customer ditemukan. Pastikan nik anda masukan belum terdaftar"),
+    DATA_ALREADY_EXIST("IEG-0023", "Data ditemukan. Pastikan data yang anda masukan belum terdaftar"),
+    INSUFFICIENT_AGE("IEG-0024", "Umur harus lebih dari 17 tahun"),
+    CUSTOMER_INACTIVE("IEG-0025", "Tidak bisa memperbaharui data customer, silakan melakukan update status terlebih dahulu"),
+    ACCOUNT_CLOSE_RESTRICTED("IEG-0025", "Rekening tidak dapat ditutup karena masih terdapat data tabungan atau pinjaman yang aktif"),
     ;
 
 
