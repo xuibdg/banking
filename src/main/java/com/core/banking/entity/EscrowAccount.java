@@ -32,15 +32,20 @@ public class EscrowAccount {
     @Column(name = "account_status", nullable = false)
     private EscrowAccountStatus accountStatus = EscrowAccountStatus.PENDING_FUNDING;
 
-    @Column(name = "payer_customer_id")
-    private String payerCustomerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payer_customer_id", nullable = false)
+    private Customer payerCustomerId;
 
-    @Column(name = "beneficiary_customer_id")
-    private String beneficiaryCustomerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "beneficiary_customer_id", nullable = false)
+    private Customer beneficiaryCustomerId;
 
     @Column(name = "created_at")
     private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
 
     @Column(name = "updated_at")
     private Timestamp updatedAt = new Timestamp(System.currentTimeMillis());
+
+    @Column(name = "is_deleted")
+    private boolean isDeleted = false;
 }
