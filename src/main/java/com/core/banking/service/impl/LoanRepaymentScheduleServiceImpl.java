@@ -95,7 +95,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         LoanRepaymentSchedule schedule = loanRepaymentScheduleRepository.findById(loanRepaymentScheduleId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 
-//        schedule.setIsDeleted(true);
+        schedule.setIsDeleted(true);
         loanRepaymentScheduleRepository.save(schedule);
         return "";
     }

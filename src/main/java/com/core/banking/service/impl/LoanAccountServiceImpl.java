@@ -9,6 +9,7 @@ import com.core.banking.repository.*;
 import com.core.banking.service.LoanAccountService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+
+import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 @Service
 @RequiredArgsConstructor
@@ -112,12 +115,40 @@ public class LoanAccountServiceImpl implements LoanAccountService {
     }
 
     @Override
-    public String ApproveAndDisburseLoan(String loanAccountId) {
-        return "";
-        }
+    @Transactional
+    public String updateLoanAccount(String loanAccountId, LoanAccountRequest request) {
+        LoanAccount loanAccount = loanAccountRepository.findById(loanAccountId)
+                .orElseThrow(() -> new EntityNotFoundException("LoanAccount not found"));
+
+        Customer customer = customerRepository.findById(request.getCustomerId())
+                .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
+
+        LoanTypeConfig config = loanTypeConfigRepository.findById(request.getLoanTypeConfigId())
+                .orElseThrow(() -> new EntityNotFoundException("LoanTypeConfig not found"));
+
+        loanAccount.setCustomerId(customer);
+        loanAccount.setLoanTypeConfig(config);
+        loanAccount.setAccountNumber(request.getAccountNumber());
+        loanAccount.setPrincipalAmount(request.getPrincipalAmount());
+        loanAccount.setInterestRateApplied(request.getInterestRateApplied());
+        loanAccount.setDurationMonths(request.getDurationMonths());
+        loanAccount.setOutstandingPrincipal(request.getOutstandingPrincipal());
+        loanAccount.setInstallmentAmount(request.getInstallmentAmount());
+        loanAccount.setDisbursementDate(request.getDisbursementDate());
+        loanAccount.setFirstRepaymentDate(request.getFirstRepaymentDate());
+        loanAccount.setLastRepaymentDate(request.getLastRepaymentDate());
+
+        loanAccountRepository.save(loanAccount);
+
+        return "Berhasil update Loan Account dengan ID: " + loanAccountId;
+    }
 
     @Override
-    public String LoanPayment(Long loanAccountId, LoanPaymentRequest request) {
-        return "";
+    public String deleteLoanAccount(String loanAccountId) {
+        LoanAccount loanAccount = loanAccountRepository.findById(loanAccountId)
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+
+        loanAccount.setIsDeleted(true);
+        return "SUCCES DELETE ACCOUNT";
     }
 }

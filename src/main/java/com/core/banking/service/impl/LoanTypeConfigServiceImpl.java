@@ -88,7 +88,7 @@ public class LoanTypeConfigServiceImpl implements LoanTypeConfigService {
         LoanTypeConfig typeConfig = loanTypeConfigRepository.findById(String.valueOf(loanTypeConfigId))
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 
-//        typeConfig.setIsDeleted(true);
+        typeConfig.setIsDeleted(true);
         loanTypeConfigRepository.save(typeConfig);
         return "";
     }

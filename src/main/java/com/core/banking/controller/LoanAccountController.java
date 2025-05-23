@@ -22,14 +22,17 @@ public class LoanAccountController {
 
     @PostMapping("/create")
     public String createLoanAccount(@RequestBody LoanAccountRequest request) {
-        loanAccountService.createLoanAccount(request);
-        return "Loan account created successfully.";
+        return loanAccountService.createLoanAccount(request);
     }
 
-    @PostMapping("/{loanAccountId}/approve-disburse")
-    public String approveAndDisburseLoan(@PathVariable String loanAccountId) {
-        loanAccountService.ApproveAndDisburseLoan(loanAccountId);
-        return "Loan berhasil di-approve dan didisburse.";
+    @PutMapping("/{loanAccountId}")
+    public String updateLoanAccount (@PathVariable String loanAccountId,@RequestBody LoanAccountRequest request) {
+        return loanAccountService.updateLoanAccount(loanAccountId,request);
+    }
+
+    @DeleteMapping("/{loanAccountId}")
+    public String deleteLoanAccount (@PathVariable String loanAccountId) {
+        return loanAccountService.deleteLoanAccount(loanAccountId);
     }
 
 }

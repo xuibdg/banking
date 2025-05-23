@@ -2,6 +2,8 @@ package com.core.banking.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -27,4 +29,7 @@ public class LoanType {
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
 }

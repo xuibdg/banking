@@ -59,8 +59,8 @@ public class LoanTypeServiceImpl implements LoanTypeService {
         LoanType type = loanTypeRepository.findById(loanTypeId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 
-//        type.setIsDeleted(true);
+        type.setIsDeleted(true);
         loanTypeRepository.save(type);
-        return "";
+        return "SUCCES DELETE LOAN TYPE";
     }
 }

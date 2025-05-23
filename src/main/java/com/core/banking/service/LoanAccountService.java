@@ -14,7 +14,7 @@ public interface LoanAccountService {
 
     String createLoanAccount(LoanAccountRequest request);
 
-    String ApproveAndDisburseLoan (String loanAccountId);
+    String updateLoanAccount (String loanAccountId, LoanAccountRequest request);
 
-    String LoanPayment (Long loanAccountId, LoanPaymentRequest request);
+    String deleteLoanAccount (String loanAccountId);
 }

@@ -60,4 +60,7 @@ public class LoanRepaymentSchedule {
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted;
 }

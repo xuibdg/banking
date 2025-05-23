@@ -100,7 +100,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         LoanTransaction transaction = loanTransactionRepository.findById(loanTransactionId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 
-//        transaction.setIsDeleted(true);
+        transaction.setIsDeleted(true);
         return "";
     }
 }

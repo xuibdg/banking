@@ -57,4 +57,7 @@ public class LoanTransaction {
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted;
 }
