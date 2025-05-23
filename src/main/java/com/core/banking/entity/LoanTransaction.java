@@ -17,7 +17,7 @@ public class LoanTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "loan_transaction_id")
-    private Long loanTransactionId;
+    private String loanTransactionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loan_account_id", nullable = false)
@@ -54,4 +54,7 @@ public class LoanTransaction {
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 }

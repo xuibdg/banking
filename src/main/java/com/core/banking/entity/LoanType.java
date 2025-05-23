@@ -13,9 +13,8 @@ import java.time.OffsetDateTime;
 @Builder
 public class LoanType {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "loan_type_id")
-    private Long loanTypeId;
+    @Column(name = "loan_type_id" , nullable = false)
+    private String loanTypeId;
 
     @Column(name = "type_name", nullable = false, unique = true, length = 50)
     private String typeName;

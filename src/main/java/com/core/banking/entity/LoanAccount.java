@@ -15,16 +15,15 @@ import java.time.OffsetDateTime;
 @Builder
 public class LoanAccount {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "loan_account_id")
-    private Long loanAccountId;
+    private String loanAccountId;
 
     @Column(name = "account_number", nullable = false, unique = true, length = 20)
     private String accountNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
-    private Customer customer;
+    private Customer customerId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loan_type_config_id", nullable = false)

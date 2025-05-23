@@ -16,9 +16,8 @@ import java.time.OffsetDateTime;
 @Builder
 public class LoanTypeConfig {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "loan_type_config_id")
-    private Long loanTypeConfigId;
+    @Column(name = "loan_type_config_id", nullable = false)
+    private String loanTypeConfigId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loan_type_id", nullable = false)
