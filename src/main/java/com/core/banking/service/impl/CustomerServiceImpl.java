@@ -23,7 +23,6 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
-import java.util.Objects;
 import java.util.Optional;
 
 @NoArgsConstructor
@@ -41,12 +40,19 @@ public class CustomerServiceImpl implements CustomerService {
 
     public String registerNewCustomer (CustomerRequest request, UserMetaData userMetaData){
         String nik = validateNik(request.getNik());
+
         if(!validateAge(request.getDateOfBirth())){
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INSUFFICIENT_AGE);}
 
         String email = validateEmail(request.getEmail());
+        if(customerRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.EMAIL_ALREADY_EXIST);
+            }
 
         String phoneNumber = validatePhoneNumber(request.getPhoneNumber());
+        if(customerRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.PHONE_ALREADY_EXIST);
+        }
 
         Customer customer = Customer.builder()
                 .nik(nik)
@@ -85,11 +91,11 @@ public class CustomerServiceImpl implements CustomerService {
                 .address(customer.getAddress())
                 .phoneNumber(customer.getPhoneNumber())
                 .email(customer.getEmail())
+                .dateOfBirth(customer.getDateOfBirth())
                 .customerStatus(customer.getCustomerStatus())
                 .createdAt(Timestamp.valueOf(customer.getCreatedAt()
                         .toLocalDateTime()))
                 .build();
-
     }
 
     public String updateCustomerInformation(String id, String nik, CustomerRequest request) {
@@ -101,7 +107,7 @@ public class CustomerServiceImpl implements CustomerService {
         } else if (nik != null && !nik.trim().isEmpty()) {
             customerOpt = customerRepository.findByNik(nik);
         } else {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM);
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
         }
         Customer customer = customerOpt
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_USER_NOT_FOUND));
@@ -110,21 +116,36 @@ public class CustomerServiceImpl implements CustomerService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_INACTIVE);
         }
 
-        if(customerRepository.existsByEmailAndIdNot(request.getEmail(),id)) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_ALREADY_EXIST);
+        if(request.getNik() != null && !request.getNik().trim().isEmpty() &&
+                !request.getNik().trim().equalsIgnoreCase(customer.getNik())){
+            if(customerRepository.existsByNikAndIdNot(request.getNik(),id)) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_ALREADY_EXIST);
+            }
         }
-        if(customerRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(),id)) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_ALREADY_EXIST);
+
+        if(request.getEmail() != null && !request.getEmail().trim().isEmpty() &&
+                !request.getEmail().trim().equalsIgnoreCase(customer.getEmail())){
+            if(customerRepository.existsByEmailAndIdNot(request.getEmail(),customer.getId())) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.EMAIL_ALREADY_EXIST);
+            }
         }
 
-        String email = validateEmail(request.getEmail());
+        if(request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty() &&
+                !request.getPhoneNumber().trim().equalsIgnoreCase(customer.getPhoneNumber())){
+            if(customerRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(),customer.getId())) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.PHONE_ALREADY_EXIST);
+            }
+        }
 
-        String phoneNumber = validatePhoneNumber(request.getPhoneNumber());
+        String newNik = validateNikForUpdate(request.getNik());
+        String newEmail = validateEmail(request.getEmail());
+        String newPhoneNumber = validatePhoneNumber(request.getPhoneNumber());
 
-            customer.setNik(request.getNik());
+
+            customer.setNik(newNik);
             customer.setAddress(request.getAddress());
-            customer.setPhoneNumber(phoneNumber);
-            customer.setEmail(email);
+            customer.setPhoneNumber(newPhoneNumber);
+            customer.setEmail(newEmail);
             customer.setUpdatedAt(Timestamp.valueOf(customer.getCreatedAt()
                     .toLocalDateTime()));
             customerRepository.save(customer);
@@ -158,14 +179,26 @@ public class CustomerServiceImpl implements CustomerService {
     public String validateNik(String nik) {
 
         if (nik == null || !nik.matches("^\\d{16}$")) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM);
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
         }
 
         Customer nikNew = customerRepository.findByNik(nik).orElse(null);
 
-        if (Objects.nonNull(nikNew)){
+        if (nikNew != null){
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_ALREADY_EXIST);
         } return nik;
+    }
+
+
+
+
+
+
+    public String validateNikForUpdate(String nik){
+        if (nik == null || !nik.matches("^\\d{16}$")) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+        }
+        return nik;
     }
 
     public Boolean validateAge (LocalDate dateOfBirth) {
@@ -185,7 +218,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     public String validatePhoneNumber(String phoneNumber) {
-        if (phoneNumber == null || !phoneNumber.matches("^\\+628\\d{8,11}$")) {
+        if (phoneNumber == null || !phoneNumber.matches("^\\+\\d{11,15}$")) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
         } return phoneNumber;
     }

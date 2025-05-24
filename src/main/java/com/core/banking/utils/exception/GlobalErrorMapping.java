@@ -19,6 +19,8 @@ public enum GlobalErrorMapping {
     INSUFFICIENT_AGE("IEG-0024", "Umur harus lebih dari 17 tahun"),
     CUSTOMER_INACTIVE("IEG-0025", "Tidak bisa memperbaharui data customer, silakan melakukan update status terlebih dahulu"),
     ACCOUNT_CLOSE_RESTRICTED("IEG-0025", "Rekening tidak dapat ditutup karena masih terdapat data tabungan atau pinjaman yang aktif"),
+    EMAIL_ALREADY_EXIST("IEG-0026", "Email ditemukan. Pastikan email yang anda masukan belum terdaftar"),
+    PHONE_ALREADY_EXIST("IEG-0027", "Nomor Telepon ditemukan. Pastikan nomor yang anda masukan belum terdaftar"),
     ;
 
 
