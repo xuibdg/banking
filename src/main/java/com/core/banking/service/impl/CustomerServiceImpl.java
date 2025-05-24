@@ -167,9 +167,9 @@ public class CustomerServiceImpl implements CustomerService {
                         throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ACCOUNT_CLOSE_RESTRICTED);
                     }
                 }
-            } else {
-                customer.setCustomerStatus(newStatus);
             }
+                customer.setCustomerStatus(newStatus);
+
                 return customerRepository.save(customer);
         }).orElseThrow(()-> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_USER_NOT_FOUND));
         return "CUSTOMER STATUS CHANGED";
