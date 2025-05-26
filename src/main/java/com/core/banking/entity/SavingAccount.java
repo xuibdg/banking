@@ -54,5 +54,4 @@ public class SavingAccount {
 
     @Column(name = "updated_at")
     private Timestamp updatedAt;
-
 }

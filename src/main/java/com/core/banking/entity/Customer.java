@@ -45,5 +45,4 @@ public class Customer {
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
-
 }
