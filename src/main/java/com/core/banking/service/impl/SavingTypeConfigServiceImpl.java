@@ -1,18 +1,23 @@
 package com.core.banking.service.impl;
 
 
-import com.core.banking.dto.SavingTypeRequest;
-import com.core.banking.dto.SavingTypeResponse;
+import com.core.banking.dto.SavingTypeConfRequest;
+import com.core.banking.entity.SavingType;
 import com.core.banking.entity.SavingTypeConfig;
-import com.core.banking.repository.SavingConfigurationRepository;
 import com.core.banking.repository.SavingTypeConfigRepository;
+import com.core.banking.repository.SavingTypeRepository;
 import com.core.banking.service.SavingTypeConfigService;
+import com.core.banking.utils.exception.GlobalErrorMapping;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,73 +25,118 @@ public class SavingTypeConfigServiceImpl implements SavingTypeConfigService {
 
     @Autowired
     private SavingTypeConfigRepository savingTypeConfigRepository;
+    @Autowired
+    private SavingTypeRepository savingTypeRepository;
+
+    @Transactional
+    public SavingTypeConfig createSavingTypeConfig(SavingTypeConfRequest config) {
+        validateConfig(config);
+
+        SavingType savingType = savingTypeRepository.findById(config.getSavingTypeId())
+                .orElseThrow(() -> new IllegalArgumentException(GlobalErrorMapping.DATA_NOT_FOUND+""));
+
+        config.setSavingTypeId(savingType.getSavingTypeId());
+        config.setCreatedAt(Timestamp.from(Instant.now()));
+        config.setUpdatedAt(Timestamp.from(Instant.now()));
+
+        return savingTypeConfigRepository.save(SavingTypeConfig.builder()
+                        .savingType(savingType)
+                        .minInitialDeposit(config.getMinInitialDeposit())
+                        .minBalanceLimit(config.getMinBalanceLimit())
+                        .maxBalanceLimit(config.getMaxBalanceLimit())
+                        .dailyTransactionLimit(config.getDailyTransactionLimit())
+                        .dailyTransactionCountLimit(config.getDailyTransactionCountLimit())
+                        .interestRatePa(config.getInterestRatePa())
+                        .interestCalculationFrequency(config.getInterestCalculationFrequency())
+                        .interestPayoutFrequency(config.getInterestPayoutFrequency())
+                        .monthlyMaintenanceFee(config.getMonthlyMaintenanceFee())
+                        .isActive(config.getIsActive())
+                        .createdAt(config.getCreatedAt())
+                        .updatedAt(config.getUpdatedAt())
+                        .build());
+    }
 
     @Override
-    public List<SavingTypeConfig> findAll() {
+    public List<SavingTypeConfig> getAllConfigs() {
         return savingTypeConfigRepository.findAll();
     }
 
-    private final SavingConfigurationRepository repository;
-
+    @Override
+    public Optional<SavingTypeConfig> getConfigById(String savingTypeConfigId) {
+        return savingTypeConfigRepository.findByIdConfig(savingTypeConfigId);
+    }
 
     @Override
-    public SavingTypeResponse createOrUpdateConfiguration(SavingTypeRequest request) {
+    public List<SavingTypeConfig> getConfigsBySavingTypeId(String savingTypeId) {
+        return savingTypeConfigRepository.findBySavingTypeSavingTypeId(savingTypeId);
+    }
 
-        Optional<SavingTypeConfig> existingConfig = this.savingTypeConfigRepository.findBySavingType(request.getSavingType());
-        SavingTypeConfig config;
-        if (existingConfig.isPresent()) {
-            config = (SavingTypeConfig)existingConfig.get();
-            config.setSavingType(request.getSavingType());
-            config.setMinBalanceLimit(request.getMinBalanceLimit());
-            config.setMaxBalanceLimit(request.getMaxBalanceLimit());
-            config.setDailyTransactionLimit(request.getDailyTransactionLimit());
-            config.setDailyTransactionCountLimit(request.getDailyTransactionCountLimit());
-            config.setInterestRatePa(request.getInterestRatePa());
-            config.setInterestCalculationFrequency(request.getInterestCalculationFrequency());
-            config.setInterestPayoutFrequency(request.getInterestPayoutFrequency());
-            config.setMonthlyMaintenanceFee(request.getMonthlyMaintenanceFee());
-            config.setIsActive(request.getIsActive());
-        } else {
-            config = SavingTypeConfig.builder().savingType(request.getSavingType()).minInitialDeposit(request.getMinInitialDeposit()).minBalanceLimit(request.getMinBalanceLimit()).maxBalanceLimit(request.getMaxBalanceLimit()).dailyTransactionLimit(request.getDailyTransactionLimit()).dailyTransactionCountLimit(request.getDailyTransactionCountLimit()).interestRatePa(request.getInterestRatePa()).interestCalculationFrequency(request.getInterestCalculationFrequency()).interestPayoutFrequency(request.getInterestPayoutFrequency()).monthlyMaintenanceFee(request.getMonthlyMaintenanceFee()).isActive(request.getIsActive()).build();
+    @Override
+    public List<SavingTypeConfig> getActiveConfigs() {
+        return savingTypeConfigRepository.findByIsActive(true);
+    }
+
+    @Override
+    public SavingTypeConfig updateSavingTypeConfig(String id, SavingTypeConfRequest updatedConfig) {
+        SavingTypeConfig existing = savingTypeConfigRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Saving type config not found with id: " + id));
+
+        SavingType savingType = existing.getSavingType();
+        existing.setMinInitialDeposit(updatedConfig.getMinInitialDeposit());
+        existing.setMinBalanceLimit(updatedConfig.getMinBalanceLimit());
+        existing.setMaxBalanceLimit(updatedConfig.getMaxBalanceLimit());
+        existing.setDailyTransactionLimit(updatedConfig.getDailyTransactionLimit());
+        existing.setDailyTransactionCountLimit(updatedConfig.getDailyTransactionCountLimit());
+        existing.setInterestRatePa(updatedConfig.getInterestRatePa());
+        existing.setInterestCalculationFrequency(updatedConfig.getInterestCalculationFrequency());
+        existing.setInterestPayoutFrequency(updatedConfig.getInterestPayoutFrequency());
+        existing.setMonthlyMaintenanceFee(updatedConfig.getMonthlyMaintenanceFee());
+        existing.setIsActive(updatedConfig.getIsActive());
+        existing.setUpdatedAt(Timestamp.from(Instant.now()));
+
+        return savingTypeConfigRepository.save(existing);
+
+    }
+
+    private void validateConfig(SavingTypeConfRequest config) {
+        if (config.getMinInitialDeposit().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Min initial deposit cannot be negative");
         }
 
-        SavingTypeConfig savedConfig = (SavingTypeConfig)this.savingTypeConfigRepository.save(config);
-        return this.mapToResponse(savedConfig);
-    }
+        if (config.getMinBalanceLimit().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Min balance limit cannot be negative");
+        }
 
-    public SavingTypeResponse mapToResponse(SavingTypeConfig config) {
-        return SavingTypeResponse.builder().savingType(config.getSavingType()).minInitialDeposit(config.getMinInitialDeposit()).minBalanceLimit(config.getMinBalanceLimit()).maxBalanceLimit(config.getMaxBalanceLimit()).dailyTransactionLimit(config.getDailyTransactionLimit()).dailyTransactionCountLimit(config.getDailyTransactionCountLimit()).interestRatePa(config.getInterestRatePa()).interestCalculationFrequency(config.getInterestCalculationFrequency()).interestPayoutFrequency(config.getInterestPayoutFrequency()).monthlyMaintenanceFee(config.getMonthlyMaintenanceFee()).isActive(config.getIsActive()).createdAt(config.getCreatedAt()).updateAt(config.getUpdatedAt()).build();
-    }
+        if (config.getMaxBalanceLimit() != null &&
+                config.getMaxBalanceLimit().compareTo(config.getMinBalanceLimit()) < 0) {
+            throw new IllegalArgumentException("Max balance limit cannot be less than min balance limit");
+        }
 
+        if (config.getDailyTransactionLimit().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Daily transaction limit cannot be negative");
+        }
+
+        if (config.getDailyTransactionCountLimit() != null &&
+                config.getDailyTransactionCountLimit() < 0) {
+            throw new IllegalArgumentException("Daily transaction count limit cannot be negative");
+        }
+
+        if (config.getInterestRatePa().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Interest rate cannot be negative");
+        }
+
+        if (config.getMonthlyMaintenanceFee().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Monthly maintenance fee cannot be negative");
+        }
+    }
     @Override
-    public List<SavingTypeResponse> getAllConfigurations() {
-        return (List)this.savingTypeConfigRepository.findAll()
-                .stream()
-                .map(this::mapToResponse).collect(Collectors.toList());
-    }
-
-    @Override
-    public SavingTypeResponse getConfigurationById(Long id) {
-        SavingTypeConfig config = (SavingTypeConfig)this.savingTypeConfigRepository.findById(id.toString()).orElseThrow(() -> new RuntimeException("Configuration not found with id: " + id));
-        return this.mapToResponse(config);
-    }
-
-    @Override
-    public SavingTypeResponse updateConfiguration(Long id, SavingTypeRequest request) {
-        SavingTypeConfig existingConfig = (SavingTypeConfig)this.savingTypeConfigRepository.findById(id.toString()).orElseThrow(() -> new RuntimeException("Configuration not found with id: " + id));
-        existingConfig.setSavingType(request.getSavingType());
-        existingConfig.setMinInitialDeposit(request.getMinInitialDeposit());
-        existingConfig.setMinBalanceLimit(request.getMinBalanceLimit());
-        existingConfig.setMaxBalanceLimit(request.getMaxBalanceLimit());
-        existingConfig.setDailyTransactionLimit(request.getDailyTransactionLimit());
-        existingConfig.setDailyTransactionCountLimit(request.getDailyTransactionCountLimit());
-        existingConfig.setInterestRatePa(request.getInterestRatePa());
-        existingConfig.setInterestCalculationFrequency(request.getInterestCalculationFrequency());
-        existingConfig.setInterestPayoutFrequency(request.getInterestPayoutFrequency());
-        existingConfig.setMonthlyMaintenanceFee(request.getMonthlyMaintenanceFee());
-        existingConfig.setIsActive(request.getIsActive());
-        SavingTypeConfig updatedConfig = (SavingTypeConfig)this.savingTypeConfigRepository.save(existingConfig);
-        return this.mapToResponse(updatedConfig);
+    public String deleteSavingType(String id) {
+        savingTypeConfigRepository.findById(id).map(data -> {
+            data.setIsDeleted(Boolean.TRUE);
+            savingTypeConfigRepository.save(data);
+            return data;
+        });
+        return "SUCCESS DELETED";
     }
 
 

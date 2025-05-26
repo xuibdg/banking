@@ -1,15 +1,21 @@
 package com.core.banking.service;
 
-import com.core.banking.dto.SavingTypeRequest;
-import com.core.banking.dto.SavingTypeResponse;
+import com.core.banking.dto.SavingConfResponse;
+import com.core.banking.dto.SavingTypeConfRequest;
 import com.core.banking.entity.SavingTypeConfig;
+import org.springframework.data.jpa.repository.Query;
+
 import java.util.List;
+import java.util.Optional;
 
 public interface SavingTypeConfigService {
 
-    List<SavingTypeConfig> findAll();
-    SavingTypeResponse createOrUpdateConfiguration(SavingTypeRequest request);
-    List<SavingTypeResponse> getAllConfigurations();
-    SavingTypeResponse getConfigurationById(Long id);
-    SavingTypeResponse updateConfiguration(Long id, SavingTypeRequest request);
+    SavingTypeConfig createSavingTypeConfig(SavingTypeConfRequest config);
+    List<SavingTypeConfig> getAllConfigs();
+    Optional<SavingTypeConfig> getConfigById(String id);
+    List<SavingTypeConfig> getConfigsBySavingTypeId(String savingTypeId);
+    List<SavingTypeConfig> getActiveConfigs();
+    SavingTypeConfig updateSavingTypeConfig(String id, SavingTypeConfRequest updatedConfig);
+    String deleteSavingType(String id);
+
 }

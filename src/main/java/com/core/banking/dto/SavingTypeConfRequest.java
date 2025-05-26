@@ -1,8 +1,6 @@
 package com.core.banking.dto;
 
-import com.core.banking.entity.SavingTypeConfig;
 import com.core.banking.enums.Frequency;
-import com.core.banking.enums.SavingTypeStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,10 +13,9 @@ import java.sql.Timestamp;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SavingConfResponse {
+public class SavingTypeConfRequest {
 
-    private String savingTypeConfigId;
-    //private String savingTypeId;
+    private String savingTypeId;
     private BigDecimal minInitialDeposit;
     private BigDecimal minBalanceLimit;
     private BigDecimal maxBalanceLimit;
