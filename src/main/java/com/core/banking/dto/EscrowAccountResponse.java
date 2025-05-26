@@ -1,6 +1,7 @@
 package com.core.banking.dto;
 
 import com.core.banking.enums.EscrowAccountStatus;
+import com.core.banking.enums.TransactionTypeStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -16,10 +17,15 @@ public class EscrowAccountResponse {
     private String purpose;
     private BigDecimal currentBalance;
     private EscrowAccountStatus accountStatus;
-    private String payerCustomerId;
+    private String payerCustomer;
     private String payerCustomerName;
-    private String beneficiaryCustomerId;
+    private String beneficiaryCustomer;
     private String beneficiaryCustomerName;
+    private String savingAccount;
+    private String loanAccount;
+    private String depositAccount;
+    private TransactionTypeStatus transactionType;
+
 
 
 

@@ -1,6 +1,7 @@
 package com.core.banking.entity;
 
 import com.core.banking.enums.EscrowAccountStatus;
+import com.core.banking.enums.TransactionTypeStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -34,11 +35,27 @@ public class EscrowAccount {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payer_customer_id", nullable = false)
-    private Customer payerCustomerId;
+    private Customer payerCustomer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "beneficiary_customer_id", nullable = false)
-    private Customer beneficiaryCustomerId;
+    private Customer beneficiaryCustomer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "saving_account_id")
+    private SavingAccount savingAccount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loan_account_id")
+    private LoanAccount loanAccount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deposit_account_id")
+    private DepositAccount depositAccount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_account_status", nullable = false)
+    private TransactionTypeStatus transactionTypeStatus;
 
     @Column(name = "created_at")
     private Timestamp createdAt = new Timestamp(System.currentTimeMillis());

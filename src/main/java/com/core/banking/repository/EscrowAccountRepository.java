@@ -12,7 +12,7 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
 
     long countByAccountNumberStartingWith(String prefix);
 
-    @EntityGraph(attributePaths = {"payerCustomerId", "beneficiaryCustomerId"})
+    @EntityGraph(attributePaths = {"payerCustomer", "beneficiaryCustomer"})
     List<EscrowAccount> findAll();
 
 

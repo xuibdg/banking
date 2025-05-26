@@ -3,11 +3,10 @@ package com.core.banking.service.impl;
 import com.core.banking.dto.EscrowAccountRequest;
 import com.core.banking.dto.EscrowAccountResponse;
 import com.core.banking.dto.UserMetaData;
-import com.core.banking.entity.Customer;
-import com.core.banking.entity.EscrowAccount;
+import com.core.banking.entity.*;
 import com.core.banking.enums.EscrowAccountStatus;
-import com.core.banking.repository.CustomerRepository;
-import com.core.banking.repository.EscrowAccountRepository;
+import com.core.banking.enums.TransactionTypeStatus;
+import com.core.banking.repository.*;
 import com.core.banking.service.EscrowAccountService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -21,6 +20,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -34,17 +34,60 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
     @Autowired
     private CustomerRepository customerRepository;
 
+    @Autowired
+    private SavingAccountRepository savingAccountRepository;
+
+    @Autowired
+    private LoanAccountRepository loanAccountRepository;
+
+    @Autowired
+    private DepositAccountRepository depositAccountRepository;
+
     @Override
     public String createEscrowAccount(EscrowAccountRequest request, UserMetaData userMetaData) {
-        Customer payerId = customerRepository.findById(request.getPayerCustomerId())
+        Customer payerId = customerRepository.findById(request.getPayerCustomer())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
-        Customer beneficiaryId = customerRepository.findById(request.getBeneficiaryCustomerId())
+        Customer beneficiaryId = customerRepository.findById(request.getBeneficiaryCustomer())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+
+        SavingAccount savingAccount = null;
+        LoanAccount loanAccount = null;
+        DepositAccount depositAccount = null;
+
+        TransactionTypeStatus transactionType = request.getTransactionTypeStatus();
+        if (transactionType == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+        }
+        if (transactionType == TransactionTypeStatus.SAVING_PAYMENT) {
+            if (request.getSavingAccount() == null) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM);
+            }
+            savingAccount = savingAccountRepository.findById(request.getSavingAccount())
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+        } else if (transactionType == TransactionTypeStatus.LOAN_PAYMENT) {
+            if (request.getLoanAccount() == null) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM);
+            }
+            loanAccount = loanAccountRepository.findById(request.getLoanAccount())
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+        } else if (transactionType == TransactionTypeStatus.DEPOSIT_PAYMENT) {
+            if (request.getDepositAccount() == null) {
+                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM);
+                }
+                depositAccount = depositAccountRepository.findById(request.getDepositAccount())
+                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+        } else {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+        }
         EscrowAccount escrowAccount = EscrowAccount.builder()
                 .accountNumber(generateAccountNumber())
                 .purpose(request.getPurpose())
-                .payerCustomerId(payerId)
-                .beneficiaryCustomerId(beneficiaryId)
+                .payerCustomer(payerId)
+                .beneficiaryCustomer(beneficiaryId)
+                .savingAccount(savingAccount)
+                .loanAccount(loanAccount)
+                .depositAccount(depositAccount)
+                .transactionTypeStatus(transactionType)
                 .accountStatus(EscrowAccountStatus.PENDING_FUNDING)
                 .currentBalance(BigDecimal.ZERO)
                 .isDeleted(false)
@@ -63,10 +106,23 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                     .purpose(data.getPurpose())
                     .currentBalance(data.getCurrentBalance())
                     .accountStatus(data.getAccountStatus())
-                    .payerCustomerId(data.getPayerCustomerId().getId())
-                    .payerCustomerName(data.getPayerCustomerId().getFullName())
-                    .beneficiaryCustomerId(data.getBeneficiaryCustomerId().getId())
-                    .beneficiaryCustomerName(data.getBeneficiaryCustomerId().getFullName())
+                    .payerCustomer(data.getPayerCustomer().getId())
+                    .payerCustomerName(data.getPayerCustomer().getFullName())
+                    .beneficiaryCustomer(data.getBeneficiaryCustomer().getId())
+                    .beneficiaryCustomerName(data.getBeneficiaryCustomer().getFullName())
+                    .savingAccount(Optional.ofNullable(data.getSavingAccount())
+                            .map(SavingAccount::getSavingAccountId)
+                            .map(Object::toString)
+                            .orElse("NOT USED"))
+                    .loanAccount(Optional.ofNullable(data.getLoanAccount())
+                            .map(LoanAccount::getLoanAccountId)
+                            .map(Object::toString)
+                            .orElse("NOT USED"))
+                    .depositAccount(Optional.ofNullable(data.getDepositAccount())
+                            .map(DepositAccount::getId)
+                            .map(Object::toString)
+                            .orElse("NOT USED"))
+                    .transactionType(data.getTransactionTypeStatus())
                     .build();
         }).collect(Collectors.toList());
         return list;
@@ -75,13 +131,46 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
     @Override
     public String updateEscrowAccount(String id, EscrowAccountRequest request) {
         escrowAccountRepository.findById(id).map(data -> {
-            Customer payerId = customerRepository.findById(request.getPayerCustomerId())
+            Customer payerId = customerRepository.findById(request.getPayerCustomer())
                     .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
-            Customer beneficiaryId = customerRepository.findById(request.getBeneficiaryCustomerId())
+            Customer beneficiaryId = customerRepository.findById(request.getBeneficiaryCustomer())
                     .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+            SavingAccount savingAccount = null;
+            LoanAccount loanAccount = null;
+            DepositAccount depositAccount = null;
+
+            TransactionTypeStatus transactionType = request.getTransactionTypeStatus();
+            if (transactionType == null) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+            }
+            if (transactionType == TransactionTypeStatus.SAVING_PAYMENT) {
+                if (request.getSavingAccount() == null) {
+                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM);
+                }
+                savingAccount = savingAccountRepository.findById(request.getSavingAccount())
+                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+            } else if (transactionType == TransactionTypeStatus.LOAN_PAYMENT) {
+                if (request.getLoanAccount() == null) {
+                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM);
+                }
+                loanAccount = loanAccountRepository.findById(request.getLoanAccount())
+                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+            } else if (transactionType == TransactionTypeStatus.DEPOSIT_PAYMENT) {
+                if (request.getDepositAccount() == null) {
+                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM);
+                }
+                depositAccount = depositAccountRepository.findById(request.getDepositAccount())
+                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+            } else {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+            }
             data.setPurpose(request.getPurpose());
-            data.setPayerCustomerId(payerId);
-            data.setBeneficiaryCustomerId(beneficiaryId);
+            data.setPayerCustomer(payerId);
+            data.setBeneficiaryCustomer(beneficiaryId);
+            data.setTransactionTypeStatus(transactionType);
+            data.setSavingAccount(savingAccount);
+            data.setLoanAccount(loanAccount);
+            data.setDepositAccount(depositAccount);
             data.setUpdatedAt(Timestamp.from(Instant.now()));
             escrowAccountRepository.save(data);
             return data;

@@ -48,10 +48,16 @@ public class EscrowAccountDetail {
     @Column(name = "transaction_reference", unique = true, length = 100)
     private String transactionReference;
 
+    @Column(name = "release_account_number")
+    private String releaseAccountNumber;
+
     @Column(name = "transaction_at")
     private Timestamp transactionAt = new Timestamp(System.currentTimeMillis());
 
     @Column(name = "created_at")
     private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
 
 }
