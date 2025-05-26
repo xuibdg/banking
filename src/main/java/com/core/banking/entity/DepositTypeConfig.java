@@ -25,7 +25,7 @@ public class DepositTypeConfig {
     @Column(name = "deposito_type_config_id")
     private Long depositoTypeConfigId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "deposito_type_id", nullable = false)
     private DepositType depositType;
 

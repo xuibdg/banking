@@ -118,6 +118,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public DepositAccountResponse getDepositAccountById(Long depositAccountId) {
         DepositAccount depositAccount = depositAccountRepository.findById(depositAccountId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
