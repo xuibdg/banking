@@ -27,5 +27,6 @@ public class DepositAccountRequest {
     private BigDecimal nominalDeposit;
 
     // Possible values: PRINCIPAL_ONLY, PRINCIPAL_AND_PROFIT, NO_ROLLOVER
+    @NotNull(message = "Rollover option is required")
     private String rolloverOption;
 }

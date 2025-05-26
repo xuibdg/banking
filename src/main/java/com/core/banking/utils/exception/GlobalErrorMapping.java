@@ -15,13 +15,13 @@ public enum GlobalErrorMapping {
     DATA_USER_NOT_FOUND("IEG-0020", "Data USER tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     INVALID_CREDENTIAL("IEG-0021", "Username atau password salah."),
     UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
-    ACC_NUMBER_REQ("IEG-0023", "Account number diperlukan. Hint: Pastikan account number ada"),
-    ACC_NUMBER_EXIST("IEG-0024", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),
-    CUSTOMER_NOT_FOUND("DEP-0001", "Data Customer tidak ditemukan"),
-    CUSTOMER_NOT_ACTIVE("DEP-0002", "Customer tidak dalam status aktif"),
+    ACC_NUMBER_REQ("IEG-0028", "Account number diperlukan. Hint: Pastikan account number ada"),
+    ACC_NUMBER_EXIST("IEG-0029", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),
+    CUSTOMER_NOT_FOUND("DEP-0001", "Data Customer tidak ditemukan. Hint: Cek teliti Customer ID."),
+    CUSTOMER_NOT_ACTIVE("DEP-0002", "Customer status tidak aktif. Hint: Pastikan Customer dengan ID tersebut, statusnya aktif."),
     DEPOSIT_TYPE_CONFIG_NOT_FOUND("DEP-0003", "Konfigurasi jenis deposito tidak ditemukan. Hint: Cek teliti deposit type config id."),
-    DEPOSIT_TYPE_CONFIG_NOT_ACTIVE("DEP-0004", "Konfigurasi jenis deposito tidak aktif"),
-    DEPOSIT_AMOUNT_BELOW_MINIMUM("DEP-0005", "Jumlah setoran tidak memenuhi minimum deposit"),
+    DEPOSIT_TYPE_CONFIG_NOT_ACTIVE("DEP-0004", "Konfigurasi jenis deposito tersebut tidak aktif. Hint: Pastikan konfigurasi jenis deposito tersebut berstatus aktif."),
+    DEPOSIT_AMOUNT_BELOW_MINIMUM("DEP-0005", "Jumlah setoran/nominal deposit tidak memenuhi nominal dari minimum deposit (Tidak boleh minus). Hint: Pastikan jumlah setoran/nominal deposit lebih dari minimum deposit."),
     DEPOSIT_ACCOUNT_NOT_FOUND("DEP-0006", "Rekening deposito tidak ditemukan");
 
 

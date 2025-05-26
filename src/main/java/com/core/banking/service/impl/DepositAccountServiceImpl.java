@@ -6,10 +6,7 @@ import com.core.banking.entity.Customer;
 import com.core.banking.entity.DepositAccount;
 import com.core.banking.entity.DepositAccountDetail;
 import com.core.banking.entity.DepositTypeConfig;
-import com.core.banking.enums.CustomerStatus;
-import com.core.banking.enums.DepositAccountStatus;
-import com.core.banking.enums.DepositoTransactionType;
-import com.core.banking.enums.MutationType;
+import com.core.banking.enums.*;
 import com.core.banking.repository.CustomerRepository;
 import com.core.banking.repository.DepositAccountDetailRepository;
 import com.core.banking.repository.DepositAccountRepository;
@@ -22,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -53,7 +51,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
 
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED)
     public DepositAccountResponse openDepositAccount(DepositAccountRequest request) {
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
@@ -72,6 +70,10 @@ public class DepositAccountServiceImpl implements DepositAccountService {
         if (request.getNominalDeposit().compareTo(depositTypeConfig.getMinDepositAmount()) < 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_AMOUNT_BELOW_MINIMUM);
         }
+
+//        RolloverOption rolloverOption =
+//
+//        if (request.getRolloverOption().compareTo())
 
         LocalDate maturityDate = LocalDate.now().plusMonths(depositTypeConfig.getTermInMonths());
 
