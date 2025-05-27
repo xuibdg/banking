@@ -6,6 +6,7 @@ public enum GlobalErrorMapping {
     ERROR("1", "ERROR"),
     PRODUCT_NOT_FOUND("IEG-0014", "Product tidak ditemukan atau product tidak aktif."),
     DATA_NOT_FOUND_CUSTOM("IEG-0012", "Data ${1} tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
+    DATA_NOT_FOUND("IEG-0012", "Data tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     RULE_NOT_FOUND("IEG-0013", "Data RULE tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     STOCK_NOT_FOUND("IEG-0015", "Stock tidak ditemukan."),
     CASHIER_NOT_FOUND("IEG-0016", "Data Cashier ID tidak ditemukan. Pastikan cashier id yang anda masukan sesuai dengan kondisi di database."),
@@ -21,6 +22,7 @@ public enum GlobalErrorMapping {
     ACCOUNT_CLOSE_RESTRICTED("IEG-0025", "Rekening tidak dapat ditutup karena masih terdapat data tabungan atau pinjaman yang aktif"),
     EMAIL_ALREADY_EXIST("IEG-0026", "Email ditemukan. Pastikan email yang anda masukan belum terdaftar"),
     PHONE_ALREADY_EXIST("IEG-0027", "Nomor Telepon ditemukan. Pastikan nomor yang anda masukan belum terdaftar"),
+    NOT_FOUND_ID("IEG-0028", "Data ID Tidak Ditemukan")
     ;
 
 
