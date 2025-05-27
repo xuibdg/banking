@@ -71,10 +71,6 @@ public class DepositAccountServiceImpl implements DepositAccountService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_AMOUNT_BELOW_MINIMUM);
         }
 
-//        RolloverOption rolloverOption =
-//
-//        if (request.getRolloverOption().compareTo())
-
         LocalDate maturityDate = LocalDate.now().plusMonths(depositTypeConfig.getTermInMonths());
 
         String accountNumber = depositAccountNumberGenerator.generateDepositAccountNumber();

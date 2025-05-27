@@ -21,8 +21,11 @@ public enum GlobalErrorMapping {
     CUSTOMER_NOT_ACTIVE("DEP-0002", "Customer status tidak aktif. Hint: Pastikan Customer dengan ID tersebut, statusnya aktif."),
     DEPOSIT_TYPE_CONFIG_NOT_FOUND("DEP-0003", "Konfigurasi jenis deposito tidak ditemukan. Hint: Cek teliti deposit type config id."),
     DEPOSIT_TYPE_CONFIG_NOT_ACTIVE("DEP-0004", "Konfigurasi jenis deposito tersebut tidak aktif. Hint: Pastikan konfigurasi jenis deposito tersebut berstatus aktif."),
-    DEPOSIT_AMOUNT_BELOW_MINIMUM("DEP-0005", "Jumlah setoran/nominal deposit tidak memenuhi nominal dari minimum deposit (Tidak boleh minus). Hint: Pastikan jumlah setoran/nominal deposit lebih dari minimum deposit."),
-    DEPOSIT_ACCOUNT_NOT_FOUND("DEP-0006", "Rekening deposito tidak ditemukan");
+    DEPOSIT_AMOUNT_BELOW_MINIMUM("DEP-0005", "Jumlah setoran/nominal deposit tidak memenuhi nominal dari minimum deposit, juga tidak boleh minus. Hint: Pastikan jumlah setoran/nominal deposit lebih dari minimum deposit."),
+    DEPOSIT_ACCOUNT_NOT_FOUND("DEP-0006", "Rekening deposito tidak ditemukan"),
+    DEPOSIT_ACCOUNT_NOT_ACTIVE("DEP-007", "Akun deposito tersebut tidak aktif. Hint: Pastikan akun deposito tersebut berstatus aktif"),
+    DEPOSIT_MATURITY_DATE_NOT_REACHED("DEP-008", "Akun deposito tersebut, tanggal jatuh temponya belum memenuhi. Hint: Cek teliti tanggal jatuh tempo vs tanggal saat ini"),
+    INVALID_ROLLOVER_OPTION("DEP-009", "Opsi perpanjangan tidak valid. Hint: Cek teliti opsi perpanjangan yang tersedia.");
 
 
     public final String code;
