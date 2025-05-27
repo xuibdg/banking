@@ -1,6 +1,6 @@
 package com.core.banking.enums;
 
-public enum SavingType {
+public enum SavingTypeStatus {
     SILVER,
     GOLD,
     PLATINUM,

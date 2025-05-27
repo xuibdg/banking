@@ -1,8 +1,12 @@
 package com.core.banking.entity;
 
 import com.core.banking.enums.CustomerStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -18,7 +22,7 @@ public class Customer {
     @Column(name = "customer_id")
     private String id;
 
-    @Column(name = "nik", nullable = false, unique = true, length = 20)
+    @Column(name = "nik", nullable = false, unique = true, length = 16)
     private String nik;
 
     @Column(name = "full_name", nullable = false, length = 255)
@@ -34,15 +38,23 @@ public class Customer {
     private String email;
 
     @Column(name = "date_of_birth")
-    private java.time.LocalDate dateOfBirth;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate dateOfBirth;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "customer_status", nullable = false)
     private CustomerStatus customerStatus = CustomerStatus.ACTIVE;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private Timestamp createdAt;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private Timestamp updatedAt;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+
+    @Column(name = "is_special_administrative")
+    private Boolean isSpecialAdministrative = false;
+
 }
