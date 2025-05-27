@@ -30,5 +30,6 @@ public class SavingAccountResponse {
     private String savingTypeName;
     private BigDecimal balance;
     private SavingAccountStatus status;
+    private Boolean isDeleted;
 
 }

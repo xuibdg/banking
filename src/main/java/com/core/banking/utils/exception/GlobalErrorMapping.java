@@ -15,8 +15,14 @@ public enum GlobalErrorMapping {
     DATA_USER_NOT_FOUND("IEG-0020", "Data USER tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     INVALID_CREDENTIAL("IEG-0021", "Username atau password salah."),
     UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
-    CUSTOMER_NOT_FOUND("IEG-0025", "Customer does not exist."),
-    DATA_NOT_FOUND("IEG-0026", "Data not found or does not exist."),
+    CLOSED_ACCOUNT_FAILED("IEG-0023", "Cannot close account with non-zero balance."),
+    DORMANT_ACCOUNT_FAILED("IEG-0024", "Cannot mark a CLOSED account as DORMANT."),
+    BLOCK_ACCOUNT_FAILED("IEG-0025", "Cannot BLOCK a CLOSED account."),
+    CUSTOMER_NOT_FOUND("IEG-0026", "Customer does not exist."),
+    DATA_NOT_FOUND("IEG-0027", "Data not found or does not exist."),
+    NEGATIVE_INITIAL_DEPOSIT("IEG-0028", "Initial deposit cannot be negative."),
+    MINIMUM_INITIAL_DEPOSIT("IEG-0029", "Initial deposit less than minimum."),
+    MAXIMUM_INITIAL_DEPOSIT("IEG-0030", "Initial deposit more than maximum."),
     ;
 
 

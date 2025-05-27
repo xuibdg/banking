@@ -17,6 +17,7 @@ import com.core.banking.utils.exception.GlobalErrorMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -53,15 +54,15 @@ public class SavingAccountServiceImpl implements SavingAccountService {
         BigDecimal deposit = request.getInitialDeposit() != null ? request.getInitialDeposit() : BigDecimal.ZERO;
 
         if (deposit.compareTo(BigDecimal.ZERO) < 0) {
-            throw new RuntimeException("Initial deposit cannot be negative");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NEGATIVE_INITIAL_DEPOSIT);
         }
 
         if (config.getMinBalanceLimit() != null && deposit.compareTo(config.getMinBalanceLimit()) < 0) {
-            throw new RuntimeException("Initial deposit less than minimum");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.MINIMUM_INITIAL_DEPOSIT);
         }
 
         if (config.getMaxBalanceLimit() != null && deposit.compareTo(config.getMaxBalanceLimit()) > 0) {
-            throw new RuntimeException("Initial deposit more than maximum");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.MAXIMUM_INITIAL_DEPOSIT);
         }
 
         String accountNumber = generateUniqueAccountNumber();
@@ -74,25 +75,14 @@ public class SavingAccountServiceImpl implements SavingAccountService {
                 .currentBalance(deposit)
                 .accountStatus(SavingAccountStatus.ACTIVE)
                 .createdAt(now)
+                .createBy(userMetaData.getUserId())
                 .openedAt(now)
                 .build();
 
         savingAccountRepository.save(account);
-
         return "SUCCESS CREATE SAVING ACCOUNT";
     }
-    private SavingAccountResponse toResponse(SavingAccount savingAccount) {
-        return SavingAccountResponse.builder()
-                .id(savingAccount.getSavingAccountId())
-                .accountNumber(savingAccount.getAccountNumber())
-                .customerId(savingAccount.getCustomer().getId())
-                .customerName(savingAccount.getCustomer().getFullName())
-                .savingTypeConfig(savingAccount.getSavingTypeConfig().getSavingTypeConfigId())
-                .savingTypeName(savingAccount.getSavingTypeConfig().getSavingType().getTypeName())
-                .balance(savingAccount.getCurrentBalance())
-                .status(savingAccount.getAccountStatus())
-                .build();
-    }
+
     @Override
     public List<SavingAccountResponse> getAll() {
         List<SavingAccountResponse> list = savingAccountRepository.findAll().stream().map(data -> {
@@ -105,6 +95,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
                     .savingTypeName(data.getSavingTypeConfig().getSavingType().getTypeName())
                     .balance(data.getCurrentBalance())
                     .status(data.getAccountStatus())
+                    .isDeleted(data.getIsDeleted())
                     .build();
         }).collect(Collectors.toList());
         return list;
@@ -117,29 +108,57 @@ public class SavingAccountServiceImpl implements SavingAccountService {
         return toResponse(savingAccount);
     }
     @Override
-    public SavingAccountResponse updateStatus(String id, SavingAccountStatus status) {
+    public SavingAccountResponse updateStatus(String id, SavingAccountStatus status, UserMetaData userMetaData) {
 
         SavingAccount savingAccount = savingAccountRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND));
 
-        if (status == SavingAccountStatus.CLOSED && savingAccount.getCurrentBalance().compareTo(BigDecimal.ZERO) > 0){
-            throw new BusinessException(HttpStatus.BAD_REQUEST,
-                    "Cannot close account with non-zero balance. Please withdraw remaining balance first.");
+        if (status == SavingAccountStatus.CLOSED && savingAccount.getCurrentBalance().compareTo(BigDecimal.ZERO) > 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CLOSED_ACCOUNT_FAILED);
+        }
+        if (status == SavingAccountStatus.DORMANT && savingAccount.getAccountStatus() == SavingAccountStatus.CLOSED) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DORMANT_ACCOUNT_FAILED);
+        }
+        if (status == SavingAccountStatus.BLOCKED && savingAccount.getAccountStatus() == SavingAccountStatus.CLOSED) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.BLOCK_ACCOUNT_FAILED);
         }
         savingAccount.setAccountStatus(status);
         savingAccount.setUpdatedAt(Timestamp.from(Instant.now()));
-//        savingAccount.setClosedAt(Timestamp.from(Instant.now()));
-        savingAccountRepository.save(savingAccount);
+        savingAccount.setUpdateBy(userMetaData.getUserId());
+//        savingAccount.setClosedAt(Timestamp.from(Instant.now())); ---> Khusus utk CLOSED!
 
+        savingAccountRepository.save(savingAccount);
         return toResponse(savingAccount);
     }
 
+    @Transactional
+    public String deleted(String accountNumber, UserMetaData userMetaData) {
+        SavingAccount account = savingAccountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.DATA_NOT_FOUND));
+        account.setIsDeleted(true);
+        account.setUpdatedAt(Timestamp.from(Instant.now()));
+        account.setUpdateBy(userMetaData.getUserId());
+        savingAccountRepository.save(account);
+        return "SUCCESS IS DELETED";
+    }
     private String generateUniqueAccountNumber() {
         String number;
         do {
             number = "3232" + String.format("%06d", new Random().nextInt(10));
         } while (savingAccountRepository.existsByAccountNumber(number));
         return number;
+    }
+    private SavingAccountResponse toResponse(SavingAccount savingAccount) {
+        return SavingAccountResponse.builder()
+                .id(savingAccount.getSavingAccountId())
+                .accountNumber(savingAccount.getAccountNumber())
+                .customerId(savingAccount.getCustomer().getId())
+                .customerName(savingAccount.getCustomer().getFullName())
+                .savingTypeConfig(savingAccount.getSavingTypeConfig().getSavingTypeConfigId())
+                .savingTypeName(savingAccount.getSavingTypeConfig().getSavingType().getTypeName())
+                .balance(savingAccount.getCurrentBalance())
+                .status(savingAccount.getAccountStatus())
+                .build();
     }
 }
 

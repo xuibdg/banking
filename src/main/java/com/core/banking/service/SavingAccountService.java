@@ -9,9 +9,10 @@ import com.core.banking.enums.SavingAccountStatus;
 import java.util.List;
 
 public interface SavingAccountService {
-    List<SavingAccount> findAll();
     String create(SavingAccountRequest request, UserMetaData userMetaData);
     SavingAccountResponse getByAccountNumber(String accountNumber);
-    SavingAccountResponse updateStatus(String id, SavingAccountStatus status);
+    List<SavingAccount> findAll();
     List<SavingAccountResponse> getAll();
+    SavingAccountResponse updateStatus(String id, SavingAccountStatus status, UserMetaData userMetaData);
+    String deleted(String accountNumber, UserMetaData userMetaData);
 }

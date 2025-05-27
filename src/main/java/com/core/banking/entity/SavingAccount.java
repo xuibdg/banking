@@ -54,4 +54,13 @@ public class SavingAccount {
 
     @Column(name = "updated_at")
     private Timestamp updatedAt;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+
+    @Column(name = "create_by")
+    private String createBy;
+
+    @Column(name = "update_by")
+    private String updateBy;
 }

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SavingAccountRepository extends JpaRepository<SavingAccount, String> {
-    Optional<SavingAccount> getByAccountNumber(String accountNumber);
     boolean existsByAccountNumber(String number);
 
     @EntityGraph(attributePaths = {"savingTypeConfig", "customer", "savingTypeConfig.savingType"})

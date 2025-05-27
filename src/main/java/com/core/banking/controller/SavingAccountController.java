@@ -3,9 +3,7 @@ package com.core.banking.controller;
 import com.core.banking.config.CurrentUser;
 import com.core.banking.dto.SavingAccountRequest;
 import com.core.banking.dto.SavingAccountResponse;
-import com.core.banking.dto.UpdateSavingAccountStatusRequest;
 import com.core.banking.dto.UserMetaData;
-import com.core.banking.entity.SavingAccount;
 import com.core.banking.enums.SavingAccountStatus;
 import com.core.banking.service.MUserService;
 import com.core.banking.service.SavingAccountService;
@@ -30,25 +28,31 @@ public class SavingAccountController {
     private MUserService mUserService;
 
     @PostMapping("/create")
-    BaseResponse <ResponseEntity<SavingAccountResponse>> create(@RequestBody @Validated SavingAccountRequest request,
+    BaseResponse <SavingAccountResponse> create(@RequestBody @Validated SavingAccountRequest request,
                                                                 @CurrentUser UserMetaData userMetaData){
-        return buildSuccessResponse(ResponseEntity.ok(savingAccountService.create(request, userMetaData)));
+        return buildSuccessResponse(savingAccountService.create(request, userMetaData));
     }
 
     @GetMapping("/all")
-    public List<SavingAccountResponse> getAll() {
-        return savingAccountService.getAll();
+    BaseResponse <List<SavingAccountResponse>> getAll() {
+        return buildSuccessResponse(savingAccountService.getAll());
     }
 
     @GetMapping("/number/{accountNumber}")
-    public ResponseEntity<SavingAccountResponse> getByAccountNumber(@PathVariable String accountNumber) {
-        return ResponseEntity.ok(savingAccountService.getByAccountNumber(accountNumber));
+    BaseResponse <SavingAccountResponse> getByAccountNumber(@PathVariable String accountNumber) {
+        return buildSuccessResponse(savingAccountService.getByAccountNumber(accountNumber));
     }
 
     @PutMapping("/status/{id}")
-    public ResponseEntity<SavingAccountResponse> updateStatus(
-            @PathVariable String id,
-            @RequestParam SavingAccountStatus status) {
-        return ResponseEntity.ok(savingAccountService.updateStatus(id, status));
+    BaseResponse <SavingAccountResponse> updateStatus(
+            @PathVariable @Validated String id,
+            @RequestParam SavingAccountStatus status, @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(savingAccountService.updateStatus(id, status, userMetaData));
+    }
+
+    @DeleteMapping("/{accountNumber}")
+    BaseResponse <String> deleteAccount(@PathVariable @Validated String accountNumber,
+                                                        @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(savingAccountService.deleted(accountNumber, userMetaData));
     }
 }
