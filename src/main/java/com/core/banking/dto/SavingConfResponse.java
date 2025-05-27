@@ -18,7 +18,6 @@ import java.sql.Timestamp;
 public class SavingConfResponse {
 
     private String savingTypeConfigId;
-    //private String savingTypeId;
     private BigDecimal minInitialDeposit;
     private BigDecimal minBalanceLimit;
     private BigDecimal maxBalanceLimit;

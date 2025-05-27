@@ -7,6 +7,7 @@ import com.core.banking.entity.SavingTypeConfig;
 import com.core.banking.repository.SavingTypeConfigRepository;
 import com.core.banking.repository.SavingTypeRepository;
 import com.core.banking.service.SavingTypeConfigService;
+import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ public class SavingTypeConfigServiceImpl implements SavingTypeConfigService {
         validateConfig(config);
 
         SavingType savingType = savingTypeRepository.findById(config.getSavingTypeId())
-                .orElseThrow(() -> new IllegalArgumentException(GlobalErrorMapping.DATA_NOT_FOUND+""));
+                .orElseThrow(() -> new BusinessException(GlobalErrorMapping.DATA_NOT_FOUND+""));
 
         config.setSavingTypeId(savingType.getSavingTypeId());
         config.setCreatedAt(Timestamp.from(Instant.now()));
@@ -62,8 +63,8 @@ public class SavingTypeConfigServiceImpl implements SavingTypeConfigService {
     }
 
     @Override
-    public Optional<SavingTypeConfig> getConfigById(String savingTypeConfigId) {
-        return savingTypeConfigRepository.findByIdConfig(savingTypeConfigId);
+    public Optional<SavingTypeConfig> getConfigById(String id) {
+        return savingTypeConfigRepository.findById(id);
     }
 
     @Override
@@ -79,9 +80,8 @@ public class SavingTypeConfigServiceImpl implements SavingTypeConfigService {
     @Override
     public SavingTypeConfig updateSavingTypeConfig(String id, SavingTypeConfRequest updatedConfig) {
         SavingTypeConfig existing = savingTypeConfigRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Saving type config not found with id: " + id));
+                .orElseThrow(() -> new BusinessException(GlobalErrorMapping.NOT_FOUND_ID +" ( "+ id+" ) "));
 
-        SavingType savingType = existing.getSavingType();
         existing.setMinInitialDeposit(updatedConfig.getMinInitialDeposit());
         existing.setMinBalanceLimit(updatedConfig.getMinBalanceLimit());
         existing.setMaxBalanceLimit(updatedConfig.getMaxBalanceLimit());
@@ -100,33 +100,33 @@ public class SavingTypeConfigServiceImpl implements SavingTypeConfigService {
 
     private void validateConfig(SavingTypeConfRequest config) {
         if (config.getMinInitialDeposit().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Min initial deposit cannot be negative");
+            throw new BusinessException("Min initial deposit cannot be negative");
         }
 
         if (config.getMinBalanceLimit().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Min balance limit cannot be negative");
+            throw new BusinessException("Min balance limit cannot be negative");
         }
 
         if (config.getMaxBalanceLimit() != null &&
                 config.getMaxBalanceLimit().compareTo(config.getMinBalanceLimit()) < 0) {
-            throw new IllegalArgumentException("Max balance limit cannot be less than min balance limit");
+            throw new BusinessException("Max balance limit cannot be less than min balance limit");
         }
 
         if (config.getDailyTransactionLimit().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Daily transaction limit cannot be negative");
+            throw new BusinessException("Daily transaction limit cannot be negative");
         }
 
         if (config.getDailyTransactionCountLimit() != null &&
                 config.getDailyTransactionCountLimit() < 0) {
-            throw new IllegalArgumentException("Daily transaction count limit cannot be negative");
+            throw new BusinessException("Daily transaction count limit cannot be negative");
         }
 
         if (config.getInterestRatePa().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Interest rate cannot be negative");
+            throw new BusinessException("Interest rate cannot be negative");
         }
 
         if (config.getMonthlyMaintenanceFee().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Monthly maintenance fee cannot be negative");
+            throw new BusinessException("Monthly maintenance fee cannot be negative");
         }
     }
     @Override

@@ -1,6 +1,5 @@
 package com.core.banking.controller;
 
-import com.core.banking.dto.SavingConfResponse;
 import com.core.banking.dto.SavingTypeConfRequest;
 import com.core.banking.entity.SavingTypeConfig;
 import com.core.banking.service.impl.SavingTypeConfigServiceImpl;
@@ -65,6 +64,6 @@ public class SavingTypeConfigController {
     @DeleteMapping("/{id}")
     public BaseResponse<Void> deleteSavingTypeConfig(@PathVariable String id) {
         service.deleteSavingType(id);
-        return buildSuccessResponse("Success Deleted");
+        return buildSuccessResponse("SUCCESSFULLY DELETED");
     }
 }

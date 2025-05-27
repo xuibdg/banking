@@ -4,6 +4,7 @@ import com.core.banking.dto.SavingTypeRequest;
 import com.core.banking.entity.SavingType;
 import com.core.banking.repository.SavingTypeRepository;
 import com.core.banking.service.SavingTypeService;
+import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ public class SavingTypeServiceImpl implements SavingTypeService {
     @Override
     public SavingType createSavingType(SavingTypeRequest savingType) {
         if (savingTypeRepository.existsByTypeName(savingType.getTypeName())) {
-            throw new IllegalArgumentException(GlobalErrorMapping.DATA_ALREADY_EXIST+" ( "+savingType.getTypeName()+" ) ");
+            throw new BusinessException(GlobalErrorMapping.DATA_ALREADY_EXIST+" ( "+savingType.getTypeName()+" ) ");
         }
 
         savingType.setCreatedAt(Timestamp.from(Instant.now()));
@@ -55,7 +56,7 @@ public class SavingTypeServiceImpl implements SavingTypeService {
                 .map(existingSavingType -> {
                     if (!existingSavingType.getTypeName().equals(updatedSavingType.getTypeName()) &&
                             savingTypeRepository.existsByTypeName(updatedSavingType.getTypeName())) {
-                        throw new IllegalArgumentException(GlobalErrorMapping.DATA_ALREADY_EXIST +""+ updatedSavingType.getTypeName());
+                        throw new BusinessException(GlobalErrorMapping.DATA_ALREADY_EXIST +""+ updatedSavingType.getTypeName());
                     }
 
                     existingSavingType.setTypeName(updatedSavingType.getTypeName());
@@ -63,7 +64,7 @@ public class SavingTypeServiceImpl implements SavingTypeService {
                     existingSavingType.setUpdatedAt(Timestamp.from(Instant.now()));
                     return savingTypeRepository.save(existingSavingType);
                 })
-                .orElseThrow(() -> new IllegalArgumentException(GlobalErrorMapping.NOT_FOUND_ID+""+id));
+                .orElseThrow(() -> new BusinessException(GlobalErrorMapping.NOT_FOUND_ID+" ( "+id+" ) "));
     }
 
     @Override
