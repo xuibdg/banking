@@ -5,7 +5,9 @@ import com.core.banking.entity.EscrowAccount;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, String> {
@@ -14,6 +16,18 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
 
     @EntityGraph(attributePaths = {"payerCustomer", "beneficiaryCustomer"})
     List<EscrowAccount> findAll();
+
+    @EntityGraph(attributePaths = {"payerCustomer", "beneficiaryCustomer"})
+    @Query("SELECT e FROM EscrowAccount e WHERE " +
+            "(:id is NULL or e.id = :id) AND " +
+            "(:startDate is NULL OR e.createdAt >= :startDate) AND " +
+            "(:endDate is NULL or e.createdAt <= :endDate) AND " +
+            "e.isDeleted = false")
+    List<EscrowAccount> findByNeedData(
+            @Param("id") String id,
+            @Param("startDate") Timestamp startDate,
+            @Param("endDate") Timestamp endDate
+    );
 
 
 }

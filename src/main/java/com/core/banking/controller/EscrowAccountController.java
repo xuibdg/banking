@@ -7,8 +7,10 @@ import com.core.banking.dto.UserMetaData;
 import com.core.banking.service.EscrowAccountService;
 import com.core.banking.utils.exception.BaseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static com.core.banking.controller.BaseCRUDController.buildSuccessResponse;
@@ -27,19 +29,28 @@ public class EscrowAccountController {
     }
 
     @GetMapping("/get-all")
-    public List<EscrowAccountResponse> getAll(@CurrentUser UserMetaData userMetaData) {
+    public List<EscrowAccountResponse> getAll() {
         return escrowAccountService.getAll();
     }
 
+    @GetMapping("/filter")
+    public List<EscrowAccountResponse> findByNeedData(
+            @RequestParam(required = false) String id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+        List<EscrowAccountResponse> filter = escrowAccountService.filterData(id, start, end);
+        return filter;
+    }
+
     @PutMapping("/{id}")
-    String updateEscrowAccount (@PathVariable String id, @RequestBody EscrowAccountRequest request,
+    BaseResponse<String> updateEscrowAccount (@PathVariable String id, @RequestBody EscrowAccountRequest request,
                                 @CurrentUser UserMetaData userMetaData){
-        return escrowAccountService.updateEscrowAccount(id, request);
+        return buildSuccessResponse(escrowAccountService.updateEscrowAccount(id, request, userMetaData));
     }
 
     @DeleteMapping("/{id}")
-    String deleteEscrowAccount(@PathVariable String id,
+    BaseResponse<String> deleteEscrowAccount(@PathVariable String id,
                                @CurrentUser UserMetaData userMetaData){
-        return escrowAccountService.deleteEscrowAccount(id);
+        return buildSuccessResponse(escrowAccountService.deleteEscrowAccount(id, userMetaData));
     }
 }

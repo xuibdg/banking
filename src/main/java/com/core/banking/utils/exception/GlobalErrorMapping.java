@@ -4,9 +4,10 @@ public enum GlobalErrorMapping {
     SYSTEM_ERROR("-1", "Error silahkan kontak tim kami"),
     SUCCESS("0", "SUCCESS"),
     ERROR("1", "ERROR"),
-    DATA_NOT_FOUND_CUSTOM("IEG-0012", "Data ${1} tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
-    RULE_NOT_FOUND("IEG-0013", "Data RULE tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     PRODUCT_NOT_FOUND("IEG-0014", "Product tidak ditemukan atau product tidak aktif."),
+    DATA_NOT_FOUND_CUSTOM("IEG-0012", "Data ${1} tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
+    DATA_NOT_FOUND("IEG-0012", "Data tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
+    RULE_NOT_FOUND("IEG-0013", "Data RULE tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     STOCK_NOT_FOUND("IEG-0015", "Stock tidak ditemukan."),
     CASHIER_NOT_FOUND("IEG-0016", "Data Cashier ID tidak ditemukan. Pastikan cashier id yang anda masukan sesuai dengan kondisi di database."),
     PRODUCT_STOCK_NOT_ENOUGH("IEG-0017", "Stock product yang dipilih, saat ini stock product tersebut kurang dari quantity. Data Product Stock tidak dapat memenuhi permintaan pelanggan."),
@@ -14,8 +15,33 @@ public enum GlobalErrorMapping {
     NOMINAL_NOT_ENOUGH("IEG-0019", "Uang pelanggan kurang. Pelanggan tidak dapat membayar harga satuan produk, dikali quantity."),
     DATA_USER_NOT_FOUND("IEG-0020", "Data USER tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     INVALID_CREDENTIAL("IEG-0021", "Username atau password salah."),
-    UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini.")
+    UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
+    DATA_ALREADY_EXIST("IEG-0023", "Data ditemukan. Pastikan data yang anda masukan belum terdaftar"),
+    INSUFFICIENT_AGE("IEG-0024", "Umur harus lebih dari 17 tahun"),
+    CUSTOMER_INACTIVE("IEG-0025", "Tidak bisa memperbaharui data customer, silakan melakukan update status terlebih dahulu"),
+    ACCOUNT_CLOSE_RESTRICTED("IEG-0025", "Rekening tidak dapat ditutup karena masih terdapat data tabungan atau pinjaman yang aktif"),
+    EMAIL_ALREADY_EXIST("IEG-0026", "Email ditemukan. Pastikan email yang anda masukan belum terdaftar"),
+    PHONE_ALREADY_EXIST("IEG-0027", "Nomor Telepon ditemukan. Pastikan nomor yang anda masukan belum terdaftar"),
+    NOT_FOUND_ID("IEG-0028", "Data ID Tidak Ditemukan"),
+    PAYER_CUSTOMER_NOT_FOUND("IEG-0031", "Payer customer tidak ditemukan"),
+    BENEFICIARY_CUSTOMER_NOT_FOUND("IEG-0032", "Beneficiary customer tidak ditemukan"),
+    TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033","Transaction type tidak valid atau tidak tersedia"),
+    SAVING_ACCOUNT_NOT_FOUND("IEG-0034", "Saving account tidak ditemukan"),
+    LOAN_ACCOUNT_NOT_FOUND("IEG-0035", "Loan account tidak ditemukan"),
+    DEPOSIT_ACCOUNT_NOT_FOUND("IEG-0036", "Deposit account not found"),
+    ESCROW_ACCOUNT_NOT_FOUND("IEG-0037", "Escrow account tidak ditemukan"),
+    TRANSACTION_NOMINAL_INVALID("IEG-0038", "Nominal transaksi harus lebih dari nol"),
+    ESCROW_STATUS_NOT_PENDING_FUNDING("IEG-0039", "Status escrow harus PENDING_FUNDING"),
+    FUNDING_SHOULD_NOT_HAVE_RELEASE_ACCOUNT("IEG-0040", "Transaksi dalam status FUNDING tidak boleh memiliki release account number"),
+    RELEASE_ACCOUNT_NUMBER_REQUIRED("IEG-0041", "Release account number wajib diisi untuk melakukan transaksi, mengubah status menjadi RELEASE"),
+    ESCROW_STATUS_NOT_FUNDED("IEG-0042", "Status escrow account harus FUNDED untuk melakukan transaksi, mengubah status menjadi RELEASE atau RETURN"),
+    ESCROW_BALANCE_NOT_ENOUGH("IEG-0043", "Saldo escrow account tidak mencukupi untuk melakukan transaksi"),
+    ESCROW_TRANSACTION_TYPE_INVALID("IEG-0044", "Jenis transaksi escrow tidak valid atau tidak didukung"),
+    ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND("IEG-0037", "ID Escrow account detail tidak ditemukan")
     ;
+
+
+
 
 
     public final String code;

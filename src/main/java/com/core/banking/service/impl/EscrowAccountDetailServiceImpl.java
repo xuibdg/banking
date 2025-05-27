@@ -22,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,9 +43,9 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
     @Transactional
     public String createEscrowAccountDetail (EscrowAccountDetailRequest request, UserMetaData userMetaData) {
         EscrowAccount escrowAccount = escrowAccountRepository.findById(request.getEscrowAccount())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
         if (request.getNominalTransaction() == null || request.getNominalTransaction().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NOMINAL_NOT_ENOUGH);
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_NOMINAL_INVALID);
         }
         BigDecimal beginBalance = escrowAccount.getCurrentBalance();
         BigDecimal endBalance = beginBalance;
@@ -52,10 +55,10 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
 
         if (transactionType == EscrowTransactionType.FUNDING) {
             if (!escrowAccount.getAccountStatus().equals(EscrowAccountStatus.PENDING_FUNDING)) {
-                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_STATUS_NOT_PENDING_FUNDING);
             }
             if (request.getReleaseAccountNumber() != null) {
-                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.FUNDING_SHOULD_NOT_HAVE_RELEASE_ACCOUNT);
             }
 
             mutationType = MutationType.CREDIT;
@@ -67,15 +70,15 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 || transactionType == EscrowTransactionType.FEE_DEBIT) {
 
             if (request.getReleaseAccountNumber() == null) {
-                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RELEASE_ACCOUNT_NUMBER_REQUIRED);
             }
 
             if (!escrowAccount.getAccountStatus().equals(EscrowAccountStatus.FUNDED)) {
-                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_STATUS_NOT_FUNDED);
             }
 
             if (beginBalance.compareTo(request.getNominalTransaction()) < 0) {
-                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NOMINAL_NOT_ENOUGH);
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_BALANCE_NOT_ENOUGH);
             }
 
             mutationType = MutationType.DEBIT;
@@ -87,7 +90,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
             }
 
         } else {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_TRANSACTION_TYPE_INVALID);
         }
 
         EscrowAccountDetail escrowAccountDetail = EscrowAccountDetail.builder()
@@ -100,8 +103,9 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 .description(request.getDescription())
                 .transactionReference(request.getTransactionReference())
                 .releaseAccountNumber(request.getReleaseAccountNumber())
-                .createdAt(new Timestamp(System.currentTimeMillis()))
-                .transactionAt(new Timestamp(System.currentTimeMillis()))
+                .createdAt(Timestamp.from(Instant.now()))
+                .createBy(userMetaData.getUserId())
+                .transactionAt(Timestamp.from(Instant.now()))
                 .isDeleted(false)
                 .build();
         escrowAccountDetailRepository.save(escrowAccountDetail);
@@ -132,20 +136,23 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
 
     }
 
-    public String updateEscrowAccountDetail (String id, EscrowAccountDetailRequest request) {
+
+    public String updateEscrowAccountDetail (String id, EscrowAccountDetailRequest request, UserMetaData userMetaData) {
         EscrowAccountDetail escrowAccountDetail = escrowAccountDetailRepository.findById(id)
-                .orElseThrow(() -> new  BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+                .orElseThrow(() -> new  BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND));
         escrowAccountDetail.setDescription(request.getDescription());
         escrowAccountDetail.setTransactionReference(request.getTransactionReference());
         escrowAccountDetail.setReleaseAccountNumber(request.getReleaseAccountNumber());
+        escrowAccountDetail.setCreateBy(userMetaData.getUserId());
         return "SUCCESS UPDATE ESCROW ACCOUNT DETAIL";
 
     }
 
     @Override
-    public String deleteEscrowAccountDetail(String id) {
+    public String deleteEscrowAccountDetail(String id, UserMetaData userMetaData) {
         escrowAccountDetailRepository.findById(id).map(data -> {
             data.setIsDeleted(true);
+            data.setCreateBy(userMetaData.getUserId());
             escrowAccountDetailRepository.save(data);
             return data;
         });
