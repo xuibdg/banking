@@ -2,6 +2,7 @@ package com.core.banking.service.impl;
 
 import com.core.banking.dto.DepositAccountRequest;
 import com.core.banking.dto.DepositAccountResponse;
+import com.core.banking.dto.UserMetaData;
 import com.core.banking.entity.Customer;
 import com.core.banking.entity.DepositAccount;
 import com.core.banking.entity.DepositAccountDetail;
@@ -52,7 +53,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
-    public DepositAccountResponse openDepositAccount(DepositAccountRequest request) {
+    public DepositAccountResponse openDepositAccount(DepositAccountRequest request, UserMetaData userMetaData) {
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
 
@@ -83,6 +84,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                 .maturityDate(maturityDate)
                 .accountStatus(DepositAccountStatus.ACTIVE)
                 .rolloverOption(request.getRolloverOption())
+                .createdBy(userMetaData.getUserId())
                 .openedAt(LocalDateTime.now())
                 .build();
 

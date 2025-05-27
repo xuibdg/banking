@@ -2,6 +2,7 @@ package com.core.banking.controller;
 
 import com.core.banking.dto.DepositAccountRequest;
 import com.core.banking.dto.DepositAccountResponse;
+import com.core.banking.dto.UserMetaData;
 import com.core.banking.entity.DepositAccount;
 import com.core.banking.enums.DepositAccountStatus;
 import com.core.banking.service.DepositAccountService;
@@ -25,8 +26,8 @@ public class DepositAccountController {
     }
 
     @PostMapping
-    BaseResponse<DepositAccountResponse> openDepositAccount(@RequestBody DepositAccountRequest depositAccountRequest) {
-        return buildSuccessResponse(depositAccountService.openDepositAccount(depositAccountRequest));
+    BaseResponse<DepositAccountResponse> openDepositAccount(@RequestBody DepositAccountRequest depositAccountRequest, UserMetaData userMetaData) {
+        return buildSuccessResponse(depositAccountService.openDepositAccount(depositAccountRequest, userMetaData));
     }
 
     @GetMapping("/{id}")

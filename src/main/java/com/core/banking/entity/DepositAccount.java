@@ -55,6 +55,9 @@ public class DepositAccount {
     @Column(name = "rollover_option", length = 50)
     private String rolloverOption;
 
+    @Column(name = "created_by")
+    private String createdBy;
+
     @Column(name = "opened_at")
     private LocalDateTime openedAt = LocalDateTime.now();
 
