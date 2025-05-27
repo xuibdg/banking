@@ -38,6 +38,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Autowired
     private LoanAccountRepository loanAccountRepository;
 
+    @Override
     public String registerNewCustomer (CustomerRequest request, UserMetaData userMetaData){
         String nik = validateNik(request.getNik());
 
@@ -63,6 +64,7 @@ public class CustomerServiceImpl implements CustomerService {
                 .dateOfBirth(request.getDateOfBirth())
                 .customerStatus(CustomerStatus.ACTIVE)
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
+                .createdBy(userMetaData.getUserId())
                 .isSpecialAdministrative(false)
                 .build();
 
@@ -70,6 +72,7 @@ public class CustomerServiceImpl implements CustomerService {
         return "REGISTER NEW CUSTOMER SUCCESS";
     }
 
+    @Override
     public CustomerResponse viewCustomerDetails(String id, String nik) {
 
         Optional<Customer> optionalCustomer;
@@ -98,7 +101,8 @@ public class CustomerServiceImpl implements CustomerService {
                 .build();
     }
 
-    public String updateCustomerInformation(String id, String nik, CustomerRequest request) {
+    @Override
+    public String updateCustomerInformation(String id, String nik, CustomerRequest request, UserMetaData userMetaData) {
 
         Optional<Customer> customerOpt;
 
@@ -141,18 +145,20 @@ public class CustomerServiceImpl implements CustomerService {
         String newEmail = validateEmail(request.getEmail());
         String newPhoneNumber = validatePhoneNumber(request.getPhoneNumber());
 
-
             customer.setNik(newNik);
             customer.setAddress(request.getAddress());
             customer.setPhoneNumber(newPhoneNumber);
             customer.setEmail(newEmail);
             customer.setUpdatedAt(Timestamp.valueOf(customer.getCreatedAt()
                     .toLocalDateTime()));
+            customer.setUpdatedBy(userMetaData.getUserId());
             customerRepository.save(customer);
 
         return "CUSTOMER INFORMATION UPDATED";
     }
-    public String changeCustomerStatus(String id, CustomerStatus newStatus){
+
+    @Override
+    public String changeCustomerStatus(String id, CustomerStatus newStatus, UserMetaData userMetaData){
 
         customerRepository.findById(id).map(customer ->{
             if (customer.getIsSpecialAdministrative().equals(false)) {
@@ -169,6 +175,7 @@ public class CustomerServiceImpl implements CustomerService {
                 }
             }
                 customer.setCustomerStatus(newStatus);
+            customer.setUpdatedBy(userMetaData.getUserId());
 
                 return customerRepository.save(customer);
         }).orElseThrow(()-> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_USER_NOT_FOUND));
