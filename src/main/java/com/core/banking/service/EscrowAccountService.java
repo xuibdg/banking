@@ -3,7 +3,6 @@ package com.core.banking.service;
 import com.core.banking.dto.EscrowAccountRequest;
 import com.core.banking.dto.EscrowAccountResponse;
 import com.core.banking.dto.UserMetaData;
-import com.core.banking.entity.EscrowAccount;
 import com.core.banking.enums.EscrowAccountStatus;
 
 import java.time.LocalDate;

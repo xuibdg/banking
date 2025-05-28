@@ -1,6 +1,5 @@
 package com.core.banking.repository;
 
-import com.core.banking.dto.EscrowAccountResponse;
 import com.core.banking.entity.EscrowAccount;
 import com.core.banking.enums.EscrowAccountStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
