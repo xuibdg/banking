@@ -1,4 +1,4 @@
-package com.core.banking.controller; // Atau package controller Anda yang sesuai
+package com.core.banking.controller;
 
 import com.core.banking.dto.SavingAccountDetail.AccountStatementRequestDTO;
 import com.core.banking.dto.SavingAccountDetail.DepositRequestDTO;
