@@ -21,4 +21,6 @@ public interface SavingAccountRepository extends JpaRepository<SavingAccount, St
 
     @EntityGraph(attributePaths = {"customer", "savingTypeConfig", "savingTypeConfig.savingType"})
     Optional<SavingAccount> findById(String id);
+
+    SavingAccount findByCustomerId (String customer_id);
 }

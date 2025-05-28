@@ -29,7 +29,9 @@ public enum GlobalErrorMapping {
     CUSTOMER_NOT_FOUND("IEG-0032", "Customer does not exist."),
     NEGATIVE_INITIAL_DEPOSIT("IEG-0033", "Initial deposit cannot be negative."),
     MINIMUM_INITIAL_DEPOSIT("IEG-0034", "Initial deposit less than minimum."),
-    MAXIMUM_INITIAL_DEPOSIT("IEG-0035", "Initial deposit more than maximum."),
+    MINIMUM_BALANCE_DEPOSIT("IEG-0035", "balance deposit less than minimum."),
+    MAXIMUM_BALANCE_DEPOSIT("IEG-0036", "balance deposit less than maximum."),
+    ACCOUNT_NUMBER_NOT_FOUND("IEG-0037", "Account number not found. Make sure the value you entered is correct."),
     ;
 
 

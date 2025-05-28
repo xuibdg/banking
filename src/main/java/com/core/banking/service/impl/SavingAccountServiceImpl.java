@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -48,6 +49,11 @@ public class SavingAccountServiceImpl implements SavingAccountService {
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
 
+        SavingAccount savingAccount = savingAccountRepository.findByCustomerId(request.getCustomerId());
+        if (savingAccount != null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_ALREADY_EXIST);
+        }
+
         SavingTypeConfig config = savingTypeConfigRepository.findById(request.getSavingTypeConfig())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND));
 
@@ -56,13 +62,8 @@ public class SavingAccountServiceImpl implements SavingAccountService {
         if (deposit.compareTo(BigDecimal.ZERO) < 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NEGATIVE_INITIAL_DEPOSIT);
         }
-
-        if (config.getMinBalanceLimit() != null && deposit.compareTo(config.getMinBalanceLimit()) < 0) {
+        if (config.getMinInitialDeposit() != null && deposit.compareTo(config.getMinInitialDeposit()) < 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.MINIMUM_INITIAL_DEPOSIT);
-        }
-
-        if (config.getMaxBalanceLimit() != null && deposit.compareTo(config.getMaxBalanceLimit()) > 0) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.MAXIMUM_INITIAL_DEPOSIT);
         }
 
         String accountNumber = generateUniqueAccountNumber();
@@ -92,7 +93,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
                     .customerId(data.getCustomer().getId())
                     .customerName(data.getCustomer().getFullName())
                     .savingTypeConfig(data.getSavingTypeConfig().getSavingTypeConfigId())
-                    .savingTypeName(data.getSavingTypeConfig().getSavingType().getTypeName())
+                    .savingTypeName(String.valueOf(data.getSavingTypeConfig().getSavingType().getTypeName()))
                     .balance(data.getCurrentBalance())
                     .status(data.getAccountStatus())
                     .isDeleted(data.getIsDeleted())
@@ -103,7 +104,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
     @Override
     public SavingAccountResponse getByAccountNumber(String accountNumber) {
         SavingAccount savingAccount = savingAccountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ACCOUNT_NUMBER_NOT_FOUND));
 
         return toResponse(savingAccount);
     }
@@ -123,9 +124,9 @@ public class SavingAccountServiceImpl implements SavingAccountService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.BLOCK_ACCOUNT_FAILED);
         }
         savingAccount.setAccountStatus(status);
-        savingAccount.setUpdatedAt(Timestamp.from(Instant.now()));
+        savingAccount.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         savingAccount.setUpdateBy(userMetaData.getUserId());
-//        savingAccount.setClosedAt(Timestamp.from(Instant.now())); ---> Khusus utk CLOSED!
+//        savingAccount.setClosedAt(Timestamp.valueOf(LocalDateTime.now())); ---> Khusus utk CLOSED!
 
         savingAccountRepository.save(savingAccount);
         return toResponse(savingAccount);
@@ -144,7 +145,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
     private String generateUniqueAccountNumber() {
         String number;
         do {
-            number = "3232" + String.format("%06d", new Random().nextInt(10));
+            number = "3232" + String.format("%06d", new Random().nextInt(100000));
         } while (savingAccountRepository.existsByAccountNumber(number));
         return number;
     }
@@ -155,7 +156,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
                 .customerId(savingAccount.getCustomer().getId())
                 .customerName(savingAccount.getCustomer().getFullName())
                 .savingTypeConfig(savingAccount.getSavingTypeConfig().getSavingTypeConfigId())
-                .savingTypeName(savingAccount.getSavingTypeConfig().getSavingType().getTypeName())
+                .savingTypeName(String.valueOf(savingAccount.getSavingTypeConfig().getSavingType().getTypeName()))
                 .balance(savingAccount.getCurrentBalance())
                 .status(savingAccount.getAccountStatus())
                 .build();
