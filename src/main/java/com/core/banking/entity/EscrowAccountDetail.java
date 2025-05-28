@@ -1,11 +1,26 @@
 package com.core.banking.entity;
 
 import com.core.banking.enums.EscrowTransactionType;
-import com.core.banking.entity.EscrowAccount;
-import jakarta.persistence.*;
-import lombok.*;
+import com.core.banking.enums.MutationType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.sql.Timestamp;
 
 @Entity
 @Table(name = "escrow_account_details")
@@ -16,9 +31,9 @@ import java.time.OffsetDateTime;
 @Builder
 public class EscrowAccountDetail {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "escrow_account_detail_id")
-    private Long escrowAccountDetailId;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "escrow_account_id", nullable = false)
@@ -32,13 +47,13 @@ public class EscrowAccountDetail {
     @Column(name = "mutation_type", nullable = false)
     private MutationType mutationType;
 
-    @Column(name = "nominal_transaction", nullable = false)
+    @Column(name = "nominal_transaction", precision = 15, scale = 2, nullable = false)
     private BigDecimal nominalTransaction;
 
-    @Column(name = "begin_balance", nullable = false)
+    @Column(name = "begin_balance", precision = 15, scale = 2, nullable = false)
     private BigDecimal beginBalance;
 
-    @Column(name = "end_balance", nullable = false)
+    @Column(name = "end_balance", precision = 15, scale = 2, nullable = false)
     private BigDecimal endBalance;
 
     @Column(name = "description")
@@ -47,13 +62,19 @@ public class EscrowAccountDetail {
     @Column(name = "transaction_reference", unique = true, length = 100)
     private String transactionReference;
 
+    @Column(name = "release_account_number")
+    private String releaseAccountNumber;
+
     @Column(name = "transaction_at")
-    private OffsetDateTime transactionAt;
+    private Timestamp transactionAt = new Timestamp(System.currentTimeMillis());
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
 
-    public enum MutationType {
-        CREDIT, DEBIT
-    }
+    @Column(name = "createdBy")
+    private String createBy;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+
 }

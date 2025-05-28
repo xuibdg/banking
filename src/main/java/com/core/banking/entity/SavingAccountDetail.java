@@ -1,5 +1,7 @@
 package com.core.banking.entity;
 
+import com.core.banking.enums.MutationType;
+import com.core.banking.enums.SavingTransactionType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -14,9 +16,9 @@ import java.time.OffsetDateTime;
 @Builder
 public class SavingAccountDetail {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "saving_account_detail_id")
-    private Long savingAccountDetailId;
+    private String savingAccountDetailId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "saving_account_id", nullable = false)
@@ -54,11 +56,4 @@ public class SavingAccountDetail {
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
-    public enum SavingTransactionType {
-        DEPOSIT, WITHDRAWAL, TRANSFER_IN, TRANSFER_OUT, INTEREST_CREDIT, FEE_DEBIT, INITIAL_DEPOSIT
-    }
-
-    public enum MutationType {
-        CREDIT, DEBIT
-    }
 }
