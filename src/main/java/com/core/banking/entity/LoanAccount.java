@@ -37,7 +37,7 @@ public class LoanAccount {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
-    private Customer customerId;
+    private Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loan_type_config_id", nullable = false)

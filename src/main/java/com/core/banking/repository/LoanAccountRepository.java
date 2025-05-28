@@ -12,6 +12,6 @@ import java.util.Optional;
 
 public interface LoanAccountRepository extends JpaRepository<LoanAccount, String> {
     Optional<LoanAccount> findById(String loanAccountId);
-    boolean existsByCustomerIdAndAccountStatusIn(Customer customer, List<LoanAccountStatus> statuses);
+    boolean existsByCustomerId_IdAndAccountStatusIn(String customerId, List<LoanAccountStatus> statuses);
     boolean existsByCustomer_IdAndAccountStatus(String customerId, LoanAccountStatus accountStatus);
 }

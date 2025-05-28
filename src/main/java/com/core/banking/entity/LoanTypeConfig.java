@@ -32,7 +32,7 @@ public class LoanTypeConfig {
     @Column(name = "loan_type_config_id", nullable = false)
     private String loanTypeConfigId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "loan_type_id", nullable = false)
     private LoanType loanType;
 

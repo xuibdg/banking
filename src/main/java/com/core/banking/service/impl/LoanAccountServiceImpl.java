@@ -69,7 +69,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
                         account.getOutstandingPrincipal(),
                         account.getPrincipalAmount(),
                         account.getUpdatedAt(),
-                        account.getCustomerId().getCustomerId(),
+                        account.getCustomer().getId(),
                         account.getLoanTypeConfig().getLoanTypeConfigId(),
                         account.getIsDeleted()
                 ))
@@ -96,7 +96,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
                 LoanAccountStatus.REJECTED
         );
 
-        boolean existsActiveLoan = loanAccountRepository.existsByCustomerIdAndAccountStatusIn(customer, activeStatuses);
+        boolean existsActiveLoan = loanAccountRepository.existsByCustomerId_IdAndAccountStatusIn(customerId, activeStatuses);
         if (existsActiveLoan) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_BORROW);
         }
@@ -134,7 +134,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         loanAccount.setAccountNumber(accountNumber);
 
         loanAccount.setLoanAccountId(UUID.randomUUID().toString());
-        loanAccount.setCustomerId(customer);
+        loanAccount.setCustomer(customer);
         loanAccount.setLoanTypeConfig(config);
         loanAccount.setPrincipalAmount(nominal);
         loanAccount.setDurationMonths(duration);
@@ -177,7 +177,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         LoanTypeConfig config = loanTypeConfigRepository.findById(request.getLoanTypeConfigId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 
-        loanAccount.setCustomerId(customer);
+        loanAccount.setCustomer(customer);
         loanAccount.setLoanTypeConfig(config);
         loanAccount.setAccountNumber(request.getAccountNumber());
         loanAccount.setPrincipalAmount(request.getPrincipalAmount());
