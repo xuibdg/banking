@@ -15,7 +15,15 @@ public enum GlobalErrorMapping {
     DATA_USER_NOT_FOUND("IEG-0020", "Data USER tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     INVALID_CREDENTIAL("IEG-0021", "Username atau password salah."),
     UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
-    ID_NOT_FOUND("IEG-0023", "ID Tidak ditemukan. pastikan id yang dimasukkan sesuai!.")
+    ID_NOT_FOUND("IEG-0300", "ID Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
+    AMOUNT_NOT_ENOUGH("IEG-0301", "Amount tidak sesuai dengan yang telah ditentukan!."),
+    CUSTOMER_NOT_ACTIVE("IEG-0302", "Customer tersebut tidak active!."),
+    NOMINAL_NOT_ENOUGHT("IEG-0303", "Nominal tidak sesuai dengan yang telah ditentukan!."),
+    DURATION_NOT_ENOUGHT("IEG-0304", "Durasi tidak sesuai dengan yang telah ditentukan!."),
+    NOT_PENDING_APPROVAL("IEG-0305", "Status bukan PENDING_APPROVAL!."),
+    NOT_PENDING("IEG-0306", "Status pembayaran bukan PENDING!."),
+    NOT_ACTIVE("IEG-0307", "Status akun bukan tidak ACTIVE!."),
+    CUSTOMER_BORROW("IEG-0308", "Customer sudah memiliki pinjaman aktif!."),
 
     ;
 

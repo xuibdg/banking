@@ -1,28 +1,28 @@
 package com.core.banking.dto;
 
-import com.core.banking.enums.LoanFeeType;
-import com.core.banking.enums.Frequency;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Data
-@NoArgsConstructor
+@Getter
+@Setter
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
-public class LoanTypeConfigRequest {
-
-    private String loanTypeId;
+public class LoanTypeConfigResponse {
+    private String loanTypeConfigId;
+    private String loanTypeName;
     private BigDecimal minLoanAmount;
     private BigDecimal maxLoanAmount;
     private Integer minDurationMonths;
     private Integer maxDurationMonths;
     private BigDecimal interestRatePa;
-    private Frequency repaymentFrequency;
+    private String repaymentFrequency;
     private BigDecimal latePaymentFee;
-    private LoanFeeType latePaymentFeeType;
+    private String latePaymentFeeType;
     private Boolean isActive;
 }

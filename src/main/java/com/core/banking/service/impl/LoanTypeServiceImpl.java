@@ -1,5 +1,6 @@
 package com.core.banking.service.impl;
 
+import com.core.banking.dto.UserMetaData;
 import com.core.banking.dto.LoanTypeRequest;
 import com.core.banking.entity.LoanType;
 import com.core.banking.repository.LoanTypeRepository;
@@ -12,8 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,12 +25,12 @@ public class LoanTypeServiceImpl implements LoanTypeService {
     private LoanTypeRepository loanTypeRepository;
 
     @Override
-    public String createLoanType(LoanTypeRequest request) {
+    public String createLoanType(LoanTypeRequest request, UserMetaData userMetaData) {
         LoanType type = new LoanType();
         type.setLoanTypeId(UUID.randomUUID().toString());
         type.setTypeName(request.getTypeName());
         type.setDescription(request.getDescription());
-        type.setCreatedAt(OffsetDateTime.now());
+        type.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
         loanTypeRepository.save(type);
         return "type ID: " + type.getLoanTypeId() + ", type name : " + type.getTypeName() + ", description : " + type.getDescription();
@@ -42,20 +42,20 @@ public class LoanTypeServiceImpl implements LoanTypeService {
     }
 
     @Override
-    public String updateLoanType(String loanTypeId, LoanTypeRequest request) {
+    public String updateLoanType(String loanTypeId, LoanTypeRequest request, UserMetaData userMetaData) {
         LoanType type = loanTypeRepository.findById(loanTypeId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 
         type.setTypeName(request.getTypeName());
         type.setDescription(request.getDescription());
-        type.setUpdatedAt(OffsetDateTime.now());
+        type.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
         loanTypeRepository.save(type);
         return "Update type name : " + type.getTypeName() + ", description : " + type.getDescription();
     }
 
     @Override
-    public String deleteLoanType(String loanTypeId) {
+    public String deleteLoanType(String loanTypeId, UserMetaData userMetaData) {
         LoanType type = loanTypeRepository.findById(loanTypeId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 

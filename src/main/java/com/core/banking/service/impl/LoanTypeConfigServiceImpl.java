@@ -1,6 +1,8 @@
 package com.core.banking.service.impl;
 
+import com.core.banking.dto.UserMetaData;
 import com.core.banking.dto.LoanTypeConfigRequest;
+import com.core.banking.dto.LoanTypeConfigResponse;
 import com.core.banking.entity.LoanType;
 import com.core.banking.entity.LoanTypeConfig;
 import com.core.banking.repository.LoanTypeConfigRepository;
@@ -11,10 +13,13 @@ import com.core.banking.utils.exception.GlobalErrorMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class LoanTypeConfigServiceImpl implements LoanTypeConfigService {
@@ -26,16 +31,16 @@ public class LoanTypeConfigServiceImpl implements LoanTypeConfigService {
     private LoanTypeRepository loanTypeRepository;
 
     @Override
-    public String createLoanTypeConfig(LoanTypeConfigRequest request) {
+    public String createLoanTypeConfig(LoanTypeConfigRequest request, UserMetaData userMetaData) {
         LoanType loanType = loanTypeRepository.findById(request.getLoanTypeId())
-                .orElseThrow(() -> new RuntimeException("Loan type tidak tersedia"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 
         if (request.getMinLoanAmount().compareTo(request.getMaxLoanAmount()) > 0) {
-            throw new RuntimeException("Min loan amount tidak boleh lebih besar dari max loan amount");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.AMOUNT_NOT_ENOUGH);
         }
 
         LoanTypeConfig typeConfig = new LoanTypeConfig();
-        typeConfig.setLoanTypeConfigId(UUID.randomUUID().toString());  // Jangan lupa generate ID
+        typeConfig.setLoanTypeConfigId(UUID.randomUUID().toString());
         typeConfig.setLoanType(loanType);
         typeConfig.setMinLoanAmount(request.getMinLoanAmount());
         typeConfig.setMaxLoanAmount(request.getMaxLoanAmount());
@@ -46,7 +51,7 @@ public class LoanTypeConfigServiceImpl implements LoanTypeConfigService {
         typeConfig.setLatePaymentFee(request.getLatePaymentFee());
         typeConfig.setLatePaymentFeeType(request.getLatePaymentFeeType());
         typeConfig.setIsActive(true);
-        typeConfig.setCreatedAt(OffsetDateTime.now());
+        typeConfig.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
         loanTypeConfigRepository.save(typeConfig);
 
@@ -54,13 +59,29 @@ public class LoanTypeConfigServiceImpl implements LoanTypeConfigService {
     }
 
     @Override
-    public List<LoanTypeConfig> findAll() {
+    public List<LoanTypeConfigResponse> findAll() {
 
-        return loanTypeConfigRepository.findAll();
+        List<LoanTypeConfig> configs = loanTypeConfigRepository.findAll();
+
+        return configs.stream()
+                .map(config -> new LoanTypeConfigResponse(
+                        config.getLoanTypeConfigId(),
+                        config.getLoanType().getTypeName(),
+                        config.getMinLoanAmount(),
+                        config.getMaxLoanAmount(),
+                        config.getMinDurationMonths(),
+                        config.getMaxDurationMonths(),
+                        config.getInterestRatePa(),
+                        config.getRepaymentFrequency().name(),
+                        config.getLatePaymentFee(),
+                        config.getLatePaymentFeeType() != null ? config.getLatePaymentFeeType().name() : null,
+                        config.getIsActive()
+                ))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public String updateLoanTypeConfig(String loanTypeConfigId, LoanTypeConfigRequest request) {
+    public String updateLoanTypeConfig(String loanTypeConfigId, LoanTypeConfigRequest request, UserMetaData userMetaData) {
         LoanTypeConfig typeConfig = loanTypeConfigRepository.findById(String.valueOf(loanTypeConfigId))
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 
@@ -77,21 +98,19 @@ public class LoanTypeConfigServiceImpl implements LoanTypeConfigService {
         typeConfig.setLatePaymentFee(request.getLatePaymentFee());
         typeConfig.setLatePaymentFeeType(request.getLatePaymentFeeType());
         typeConfig.setIsActive(request.getIsActive());
-        typeConfig.setUpdatedAt(OffsetDateTime.now());
+        typeConfig.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
         loanTypeConfigRepository.save(typeConfig);
         return "update berhasil";
     }
 
     @Override
-    public String deleteLoanTypeConfig(String loanTypeConfigId) {
+    public String deleteLoanTypeConfig(String loanTypeConfigId, UserMetaData userMetaData) {
         LoanTypeConfig typeConfig = loanTypeConfigRepository.findById(String.valueOf(loanTypeConfigId))
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 
         typeConfig.setIsDeleted(true);
         loanTypeConfigRepository.save(typeConfig);
-        return "";
+        return "Sukses delete loan type";
     }
-
-
 }

@@ -1,8 +1,13 @@
 package com.core.banking.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Data
 @NoArgsConstructor
@@ -24,4 +29,7 @@ public class LoanAccountRequest {
     private LocalDate disbursementDate;
     private LocalDate firstRepaymentDate;
     private LocalDate lastRepaymentDate;
+    private OffsetDateTime applicationDate;
+    private Boolean isDeleted;
+
 }

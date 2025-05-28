@@ -1,10 +1,16 @@
 package com.core.banking.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.sql.Timestamp;
-import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "loan_types")
@@ -25,10 +31,10 @@ public class LoanType {
     private String description;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
+    private Timestamp createdAt;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    private Timestamp updatedAt;
 
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;
