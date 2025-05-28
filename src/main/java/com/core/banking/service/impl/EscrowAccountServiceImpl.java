@@ -132,11 +132,11 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
     }
 
     @Override
-    public List<EscrowAccountResponse> filterData(String id, LocalDate start, LocalDate end) {
+    public List<EscrowAccountResponse> filterData(String id, LocalDate start, LocalDate end, EscrowAccountStatus accountStatus) {
         Timestamp startTime = (start != null) ? Timestamp.valueOf(start.atStartOfDay()) : null;
         Timestamp endTime = (end != null) ? Timestamp.valueOf(end.atTime(LocalTime.MAX)) : null;
 
-        List<EscrowAccount> filter = escrowAccountRepository.findByNeedData(id, startTime, endTime);
+        List<EscrowAccount> filter = escrowAccountRepository.findByNeedData(id, startTime, endTime, accountStatus);
         return filter.stream().map(data -> EscrowAccountResponse.builder()
                 .id(data.getId())
                 .accountNumber(data.getAccountNumber())

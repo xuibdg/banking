@@ -4,6 +4,7 @@ import com.core.banking.config.CurrentUser;
 import com.core.banking.dto.EscrowAccountRequest;
 import com.core.banking.dto.EscrowAccountResponse;
 import com.core.banking.dto.UserMetaData;
+import com.core.banking.enums.EscrowAccountStatus;
 import com.core.banking.service.EscrowAccountService;
 import com.core.banking.utils.exception.BaseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +38,9 @@ public class EscrowAccountController {
     public List<EscrowAccountResponse> findByNeedData(
             @RequestParam(required = false) String id,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
-        List<EscrowAccountResponse> filter = escrowAccountService.filterData(id, start, end);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
+            @RequestParam(required = false)EscrowAccountStatus accountStatus) {
+        List<EscrowAccountResponse> filter = escrowAccountService.filterData(id, start, end, accountStatus);
         return filter;
     }
 

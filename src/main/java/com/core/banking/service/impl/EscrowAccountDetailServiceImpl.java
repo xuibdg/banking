@@ -101,7 +101,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 .beginBalance(beginBalance)
                 .endBalance(endBalance)
                 .description(request.getDescription())
-                .transactionReference(request.getTransactionReference())
+                .transactionReference(generateTrxCode())
                 .releaseAccountNumber(request.getReleaseAccountNumber())
                 .createdAt(Timestamp.from(Instant.now()))
                 .createBy(userMetaData.getUserId())
@@ -136,14 +136,35 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
 
     }
 
+    @Override
+    public List<EscrowAccountDetailResponse> filterData(String id, LocalDate startDate, LocalDate endDate, EscrowTransactionType transactionType) {
+        Timestamp startTime = (startDate != null) ? Timestamp.valueOf(startDate.atStartOfDay()) : null;
+        Timestamp endTime = (endDate != null) ? Timestamp.valueOf(endDate.atTime(LocalTime.MAX)) : null;
+
+        List<EscrowAccountDetail> filter = escrowAccountDetailRepository.findByNeedData(id, startTime, endTime, transactionType);
+        return filter.stream().map(data -> EscrowAccountDetailResponse.builder()
+                .id(data.getId())
+                .escrowAccount(data.getEscrowAccount().getAccountNumber())
+                .escrowAccountStatus(data.getEscrowAccount().getAccountStatus())
+                .transactionType(data.getTransactionType())
+                .mutationType(data.getMutationType())
+                .nominalTransaction(data.getNominalTransaction())
+                .beginBalance(data.getBeginBalance())
+                .endBalance(data.getEndBalance())
+                .description(data.getDescription())
+                .transactionReference(data.getTransactionReference())
+                .releaseAccountNumber(data.getReleaseAccountNumber())
+                .build()
+        ).collect(Collectors.toList());
+    }
+
+
 
     public String updateEscrowAccountDetail (String id, EscrowAccountDetailRequest request, UserMetaData userMetaData) {
         EscrowAccountDetail escrowAccountDetail = escrowAccountDetailRepository.findById(id)
                 .orElseThrow(() -> new  BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND));
         escrowAccountDetail.setDescription(request.getDescription());
-        escrowAccountDetail.setTransactionReference(request.getTransactionReference());
         escrowAccountDetail.setReleaseAccountNumber(request.getReleaseAccountNumber());
-        escrowAccountDetail.setCreateBy(userMetaData.getUserId());
         return "SUCCESS UPDATE ESCROW ACCOUNT DETAIL";
 
     }
@@ -157,6 +178,14 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
             return data;
         });
         return "SUCCESS DELETE ESCROW ACCOUNT DETAIL";
+    }
+
+    private String generateTrxCode() {
+        String prefix = "TRX-";
+        long count = escrowAccountRepository.countByAccountNumberStartingWith(prefix);
+        long nextCode =  count + 1;
+        String suffix = String.format("%03d", nextCode);
+        return prefix + suffix;
     }
 
 
