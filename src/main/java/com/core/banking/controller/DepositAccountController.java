@@ -1,5 +1,6 @@
 package com.core.banking.controller;
 
+import com.core.banking.config.CurrentUser;
 import com.core.banking.dto.DepositAccountRequest;
 import com.core.banking.dto.DepositAccountResponse;
 import com.core.banking.dto.UserMetaData;
@@ -43,5 +44,10 @@ public class DepositAccountController {
     @GetMapping("/status/{status}")
     BaseResponse<List<DepositAccountResponse>> getDepositAccountsByStatus(@PathVariable("status") DepositAccountStatus status) {
         return buildSuccessResponse(depositAccountService.getDepositAccountsByStatus(status));
+    }
+
+    @DeleteMapping("/{id}")
+    BaseResponse<String> deleteDepositAccount(@PathVariable("id") Long id){
+    return buildSuccessResponse(depositAccountService.deleteDepositAccount(id));
     }
 }

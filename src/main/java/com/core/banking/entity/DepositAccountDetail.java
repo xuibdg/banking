@@ -49,6 +49,9 @@ public class DepositAccountDetail {
     @Column(name = "end_balance", nullable = false, precision = 15, scale = 2)
     private BigDecimal endBalance;
 
+    @Column(name = "created_by")
+    private String createdBy;
+
     @Column(name = "description")
     private String description;
 

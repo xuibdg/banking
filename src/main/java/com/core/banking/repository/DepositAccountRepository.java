@@ -5,6 +5,7 @@ import com.core.banking.enums.DepositAccountStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +18,8 @@ public interface DepositAccountRepository extends JpaRepository<DepositAccount, 
     List<DepositAccount> findByCustomerId(String customerId);
 
     List<DepositAccount> findByAccountStatus(DepositAccountStatus accountStatus);
+
+    Optional<DepositAccount> findByDepositoAccountId(Long depositoAccountId);
+
+    List<DepositAccount> findByAccountStatusAndMaturityDateLessThanEqual(DepositAccountStatus depositAccountStatus, LocalDate maturityDate);
 }

@@ -18,4 +18,6 @@ public interface DepositAccountService {
     List<DepositAccountResponse> getDepositAccountsByCustomerId(String customerId);
 
     List<DepositAccountResponse> getDepositAccountsByStatus(DepositAccountStatus status);
+
+    String deleteDepositAccount(Long depositoAccountId);
 }

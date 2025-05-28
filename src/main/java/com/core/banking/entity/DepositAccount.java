@@ -58,6 +58,9 @@ public class DepositAccount {
     @Column(name = "created_by")
     private String createdBy;
 
+    @Column(name = "is_deleted")
+    private boolean isDeleted = false;
+
     @Column(name = "opened_at")
     private LocalDateTime openedAt = LocalDateTime.now();
 

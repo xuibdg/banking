@@ -97,6 +97,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                 .nominalTransaction(request.getNominalDeposit())
                 .beginBalance(BigDecimal.ZERO)
                 .endBalance(request.getNominalDeposit())
+                .createdBy(userMetaData.getUserId())
                 .description("Setoran awal deposito")
                 .transactionAt(LocalDateTime.now())
                 .build();
@@ -139,6 +140,22 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                 .map(DepositAccountResponse::new)
                 .collect(Collectors.toList());
         return list;
+    }
+
+    @Override
+    public String deleteDepositAccount(Long depositoAccountId) {
+        DepositAccount depositAccount = depositAccountRepository.findById(depositoAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR));
+
+        if (depositAccount.getAccountStatus() == DepositAccountStatus.ACTIVE) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR);
+        }
+
+        depositAccountRepository.findByDepositoAccountId(depositoAccountId).map(data -> {
+            data.setDeleted(true);
+            depositAccountRepository.save(data);
+            return data;
+        });
+        return "SUCCESS DELETE A DEPOSITO ACCOUNT";
     }
 }
 
