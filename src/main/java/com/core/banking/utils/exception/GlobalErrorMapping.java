@@ -36,7 +36,14 @@ public enum GlobalErrorMapping {
     ESCROW_STATUS_NOT_FUNDED("IEG-0042", "Status escrow account harus FUNDED untuk melakukan transaksi, mengubah status menjadi RELEASE atau RETURN"),
     ESCROW_BALANCE_NOT_ENOUGH("IEG-0043", "Saldo escrow account tidak mencukupi untuk melakukan transaksi"),
     ESCROW_TRANSACTION_TYPE_INVALID("IEG-0044", "Jenis transaksi escrow tidak valid atau tidak didukung"),
-    ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND("IEG-0037", "ID Escrow account detail tidak ditemukan")
+    ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND("IEG-0037", "ID Escrow account detail tidak ditemukan"),
+    CLOSED_ACCOUNT_FAILED("IEG-0045", "Cannot close account with non-zero balance."),
+    DORMANT_ACCOUNT_FAILED("IEG-0046", "Cannot mark a CLOSED account as DORMANT."),
+    BLOCK_ACCOUNT_FAILED("IEG-0047", "Cannot BLOCK a CLOSED account."),
+    CUSTOMER_NOT_FOUND("IEG-0048", "Customer does not exist."),
+    NEGATIVE_INITIAL_DEPOSIT("IEG-0049", "Initial deposit cannot be negative."),
+    MINIMUM_INITIAL_DEPOSIT("IEG-0050", "Initial deposit less than minimum."),
+    ACCOUNT_NUMBER_NOT_FOUND("IEG-0051", "Account number not found. Make sure the value you entered is correct."),
     ;
 
 
