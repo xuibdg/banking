@@ -111,7 +111,8 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
         escrowAccountDetailRepository.save(escrowAccountDetail);
         escrowAccount.setCurrentBalance(endBalance);
         escrowAccountRepository.save(escrowAccount);
-        return "SUCCESS CREATE NEW ESCROW ACCOUNT DETAIL : TRANSACTION SUCCESS";
+        return "SUCCESS CREATE NEW ESCROW ACCOUNT DETAIL : TRANSACTION SUCCESS " +
+                "| ID : " + escrowAccountDetail + " |";
 
     }
 
@@ -165,19 +166,20 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 .orElseThrow(() -> new  BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND));
         escrowAccountDetail.setDescription(request.getDescription());
         escrowAccountDetail.setReleaseAccountNumber(request.getReleaseAccountNumber());
-        return "SUCCESS UPDATE ESCROW ACCOUNT DETAIL";
+        return "SUCCESS UPDATE ESCROW ACCOUNT DETAIL " +
+                "| ID : " + escrowAccountDetail.getId() + " |";
 
     }
 
     @Override
     public String deleteEscrowAccountDetail(String id, UserMetaData userMetaData) {
-        escrowAccountDetailRepository.findById(id).map(data -> {
+        EscrowAccountDetail deleteEscrowAccountDetail = escrowAccountDetailRepository.findById(id).map(data -> {
             data.setIsDeleted(true);
             data.setCreateBy(userMetaData.getUserId());
-            escrowAccountDetailRepository.save(data);
-            return data;
-        });
-        return "SUCCESS DELETE ESCROW ACCOUNT DETAIL";
+            return escrowAccountDetailRepository.save(data);
+        }).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND));
+        return "SUCCESS DELETE ESCROW ACCOUNT DETAIL " +
+                " ID : " + deleteEscrowAccountDetail.getId() + " |";
     }
 
     private String generateTrxCode() {
