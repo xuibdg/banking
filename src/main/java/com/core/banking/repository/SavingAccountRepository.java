@@ -4,6 +4,8 @@ import com.core.banking.entity.SavingAccount;
 import com.core.banking.enums.SavingAccountStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;

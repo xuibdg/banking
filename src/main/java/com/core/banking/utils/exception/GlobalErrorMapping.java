@@ -4,9 +4,9 @@ public enum GlobalErrorMapping {
     SYSTEM_ERROR("-1", "Error silahkan kontak tim kami"),
     SUCCESS("0", "SUCCESS"),
     ERROR("1", "ERROR"),
-    DATA_NOT_FOUND_CUSTOM("IEG-0011", "Data ${1} tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
-    DATA_NOT_FOUND("IEG-0012", "Data tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
+    DATA_NOT_FOUND_CUSTOM("IEG-0012", "Data ${1} tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     RULE_NOT_FOUND("IEG-0013", "Data RULE tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
+    PRODUCT_NOT_FOUND("IEG-0014", "Product tidak ditemukan atau product tidak aktif."),
     STOCK_NOT_FOUND("IEG-0015", "Stock tidak ditemukan."),
     CASHIER_NOT_FOUND("IEG-0016", "Data Cashier ID tidak ditemukan. Pastikan cashier id yang anda masukan sesuai dengan kondisi di database."),
     PRODUCT_STOCK_NOT_ENOUGH("IEG-0017", "Stock product yang dipilih, saat ini stock product tersebut kurang dari quantity. Data Product Stock tidak dapat memenuhi permintaan pelanggan."),
@@ -65,7 +65,27 @@ public enum GlobalErrorMapping {
     DATA_ACOUNT_NOT_FOUND("DEP-011", "Data tidak ditemukan. Hint:Harap Masukan Data Account Yang benar"),
     ID_DEPOSIT_SHARING_NOT_FOUND("DEP-012", "ID Deposit Profit Sharing Tidak Ditemukan"),
     NO_PRROFIT_SHARING_PROCESSED("DEP-013", "Tidak ada proses pembagian profit yang dilakukan pada akun deposito ini. Pastikan akun deposito sudah memenuhi syarat untuk pembagian profit."),
-    INVALID_PROFIT_PERIOD("DEP-014", "Periode profit tidak valid. Pastikan periode profit dimulai sebelum periode berakhir dan tidak ada tumpang tindih dengan periode sebelumnya.");
+    INVALID_PROFIT_PERIOD("DEP-014", "Periode profit tidak valid. Pastikan periode profit dimulai sebelum periode berakhir dan tidak ada tumpang tindih dengan periode sebelumnya."),
+    UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
+    SAVING_ACCOUNT_NOT_FOUND("IEG-0101", "Data Saving Account tidak ditemukan."),
+    INVALID_DEPOSIT_AMOUNT("IEG-0102", "Jumlah deposit tidak valid. Harus lebih besar dari nol."),
+    INVALID_WITHDRAWAL_AMOUNT("IEG-0103", "Jumlah penarikan tidak valid. Harus lebih besar dari nol."),
+    INSUFFICIENT_BALANCE("IEG-0104", "Saldo tabungan tidak cukup untuk melakukan penarikan."),
+    MAX_BALANCE_EXCEEDED("IEG-0105", "limit transaksi yang telah ditetapkan telah terlampaui"),
+    INVALID_DATE_RANGE("IEG-0106", "Tanggal mulai tidak boleh setelah tanggal akhir pernyataan"),
+    MISSING_ACCOUNT_ID("IEG-0107", "Saving account ID Diperlukan Untuk Laporan"),
+    DAILY_NOMINAL_LIMIT_EXCEEDED("IEG-0108", "melebihi batas nominal transaksi harian"),
+    DAILY_COUNT_LIMIT_EXCEEDED("IEG-0109", "melebihi batas pengambilan"),
+    ACCOUNT_NOT_ACTIVE("IEG-0110", "Akun tidak aktif"),
+    MIN_BALANCE_VIOLATED("IEG-0111", "Kurang dari Saldo Minimal"),
+    INVALID_PAGE_PARAM("IEG-0112", "Nomer Page tidak Boleh Negatif"),
+    INVALID_PAGE_SIZE_PARAM("IEG-0113","halaman harus 1-100 Halaman"),
+    SAVING_CONFIG_NOT_FOUND ("IEG-0114", "Saving Config tidak ditemukan"),
+    TRX_REF_GENERATION_FAILED ("IEG-0115", "gagal generate code"),
+    ESCROW_ACCOUNT_NOT_FUNDED ("IEG-0116", "Escrow account harus dalam status funded"),
+    ESCROW_INSUFFICIENT_BALANCE ("IEG-0117","Dana di escrow akun tidak memadai")
+
+    ;
 
 
     public final String code;
