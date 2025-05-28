@@ -1,4 +1,4 @@
-package com.core.banking.dto.SavingAccountDetail; // Package diubah
+package com.core.banking.dto.SavingAccountDetail;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
