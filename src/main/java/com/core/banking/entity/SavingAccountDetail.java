@@ -5,7 +5,7 @@ import com.core.banking.enums.SavingTransactionType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.sql.Timestamp;
 
 @Entity
 @Table(name = "saving_account_details")
@@ -51,9 +51,8 @@ public class SavingAccountDetail {
     private String channel;
 
     @Column(name = "transaction_at")
-    private OffsetDateTime transactionAt;
+    private Timestamp transactionAt;
 
     @Column(name = "created_at")
-    private OffsetDateTime createdAt;
-
+    private Timestamp createdAt;
 }

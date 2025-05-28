@@ -1,21 +1,54 @@
-package com.core.banking.controller;
+package com.core.banking.controller; // Atau package controller Anda yang sesuai
 
-import com.core.banking.entity.SavingAccountDetail;
+import com.core.banking.dto.SavingAccountDetail.AccountStatementRequestDTO;
+import com.core.banking.dto.SavingAccountDetail.DepositRequestDTO;
+import com.core.banking.dto.SavingAccountDetail.PaginatedResponseDTO;
+import com.core.banking.dto.SavingAccountDetail.SavingTransactionResponseDTO;
+import com.core.banking.dto.SavingAccountDetail.WithdrawalRequestDTO;
 import com.core.banking.service.SavingAccountDetailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 
 @RestController
-@RequestMapping("/api/saving-account-details")
+@RequestMapping("/api/saving-accounts/details")
 public class SavingAccountDetailController {
-    @Autowired
-    private SavingAccountDetailService savingAccountDetailService;
 
-    @GetMapping
-    public List<SavingAccountDetail> getAll() {
-        return savingAccountDetailService.findAll();
+    private static final Logger logger = LoggerFactory.getLogger(SavingAccountDetailController.class);
+
+    private final SavingAccountDetailService savingAccountDetailService;
+
+    @Autowired
+    public SavingAccountDetailController(SavingAccountDetailService savingAccountDetailService) {
+        this.savingAccountDetailService = savingAccountDetailService;
+    }
+
+
+    @PostMapping("/deposit")
+    public ResponseEntity<SavingTransactionResponseDTO> recordDeposit(
+
+            @RequestBody DepositRequestDTO depositRequestDTO) {
+        SavingTransactionResponseDTO response = savingAccountDetailService.recordDeposit(depositRequestDTO);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+
+    @PostMapping("/withdrawal")
+    public ResponseEntity<SavingTransactionResponseDTO> recordWithdrawal(
+            @RequestBody WithdrawalRequestDTO withdrawalRequestDTO) {
+        SavingTransactionResponseDTO response = savingAccountDetailService.recordWithdrawal(withdrawalRequestDTO);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+
+    @GetMapping("/statement")
+    public ResponseEntity<PaginatedResponseDTO<SavingTransactionResponseDTO>> getAccountStatement(
+            AccountStatementRequestDTO statementRequestDTO) {
+        PaginatedResponseDTO<SavingTransactionResponseDTO> response = savingAccountDetailService.getAccountStatement(statementRequestDTO);
+        return ResponseEntity.ok(response);
     }
 }
