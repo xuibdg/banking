@@ -105,7 +105,8 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                 .createdBy(userMetaData.getUserId())
                 .build();
         escrowAccountRepository.save(escrowAccount);
-        return "SUCCESS CREATE NEW ESCROW ACCOUNT";
+        return "SUCCESS CREATE NEW ESCROW ACCOUNT " +
+                "| ID : "  + escrowAccount.getId() + " |";
     }
 
     @Override
@@ -176,7 +177,7 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
 
     @Override
     public String updateEscrowAccount(String id, EscrowAccountRequest request, UserMetaData userMetaData) {
-        escrowAccountRepository.findById(id).map(data -> {
+        EscrowAccount updateEscrowAccount = escrowAccountRepository.findById(id).map(data -> {
             Customer payerId = customerRepository.findById(request.getPayerCustomer())
                     .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.PAYER_CUSTOMER_NOT_FOUND));
             Customer beneficiaryId = customerRepository.findById(request.getBeneficiaryCustomer())
@@ -219,21 +220,22 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
             data.setDepositAccount(depositAccount);
             data.setCreatedBy(userMetaData.getUserId());
             data.setUpdatedAt(Timestamp.from(Instant.now()));
-            escrowAccountRepository.save(data);
-            return data;
-        });
-        return "SUCCESS UPDATE ESCROW ACCOUNT";
+            return escrowAccountRepository.save(data);
+        }).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
+        return "SUCCESS UPDATE ESCROW ACCOUNT " +
+                "| ID : "  + updateEscrowAccount.getId() + " |";
     }
 
     @Override
     public String deleteEscrowAccount(String id, UserMetaData userMetaData) {
-        escrowAccountRepository.findById(id).map(data -> {
+        EscrowAccount deleteEscrowAccount = escrowAccountRepository.findById(id).map(data -> {
             data.setDeleted(true);
+            data.setUpdatedAt(Timestamp.from(Instant.now()));
             data.setCreatedBy(userMetaData.getUserId());
-            escrowAccountRepository.save(data);
-            return data;
-        });
-        return "SUCCESS DELETED ESCROW ACCOUNT";
+            return escrowAccountRepository.save(data);
+        }).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
+        return "SUCCESS DELETED ESCROW ACCOUNT " +
+                "| ID : " + deleteEscrowAccount.getId() + " |";
     }
 
     private String generateAccountNumber() {
