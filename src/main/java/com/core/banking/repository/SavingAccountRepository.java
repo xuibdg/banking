@@ -1,6 +1,5 @@
 package com.core.banking.repository;
 
-import com.core.banking.entity.Customer;
 import com.core.banking.entity.SavingAccount;
 import com.core.banking.enums.SavingAccountStatus;
 import org.springframework.data.jpa.repository.EntityGraph;

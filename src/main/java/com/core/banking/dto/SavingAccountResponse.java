@@ -1,16 +1,17 @@
 package com.core.banking.dto;
 
-import com.core.banking.entity.SavingType;
-import com.core.banking.entity.SavingTypeConfig;
 import com.core.banking.enums.SavingAccountStatus;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jdk.jshell.Snippet;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 
 @Getter
 @Setter

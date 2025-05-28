@@ -126,7 +126,6 @@ public class SavingAccountServiceImpl implements SavingAccountService {
         savingAccount.setAccountStatus(status);
         savingAccount.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         savingAccount.setUpdateBy(userMetaData.getUserId());
-//        savingAccount.setClosedAt(Timestamp.valueOf(LocalDateTime.now())); ---> Khusus utk CLOSED!
 
         savingAccountRepository.save(savingAccount);
         return toResponse(savingAccount);
