@@ -1,6 +1,10 @@
 package com.core.banking.service.impl;
 
-import com.core.banking.dto.SavingAccountDetail.*;
+import com.core.banking.dto.SavingAccountDetail.AccountStatementRequestDTO;
+import com.core.banking.dto.SavingAccountDetail.DepositRequestDTO;
+import com.core.banking.dto.SavingAccountDetail.PaginatedResponseDTO;
+import com.core.banking.dto.SavingAccountDetail.SavingTransactionResponseDTO;
+import com.core.banking.dto.SavingAccountDetail.WithdrawalRequestDTO;
 import com.core.banking.entity.EscrowAccount;
 import com.core.banking.entity.SavingAccount;
 import com.core.banking.entity.SavingAccountDetail;
