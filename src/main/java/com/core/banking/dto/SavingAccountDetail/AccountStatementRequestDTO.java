@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.sql.Timestamp;
+
 
 @Data
 @Builder
@@ -13,8 +15,8 @@ import lombok.NoArgsConstructor;
 public class AccountStatementRequestDTO {
 
     private String savingAccountNumber;
-    private String startDate;
-    private String endDate;
+    private Timestamp startDate;
+    private Timestamp endDate;
     private int page = 0;
     private int size = 10;
 }

@@ -9,10 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-
 import java.util.Optional;
 
 @Repository
@@ -29,10 +27,12 @@ public interface SavingAccountDetailRepository extends JpaRepository<SavingAccou
             @Param("endDate") Timestamp endDate,
             Pageable pageable
     );
+
     @Query("SELECT COALESCE(SUM(sad.nominalTransaction), 0) FROM SavingAccountDetail sad " +
             "WHERE sad.savingAccount = :savingAccount " +
             "AND sad.mutationType = :mutationType " +
-            "AND sad.transactionAt >= :startOfDay AND sad.transactionAt < :endOfDay")
+            "AND sad.transactionAt >= :startOfDay AND sad.transactionAt <= :endOfDay")
+
     BigDecimal sumTransactionsByAccountAndMutationTypeAndDate(
             @Param("savingAccount") SavingAccount savingAccount,
             @Param("mutationType") MutationType mutationType,
