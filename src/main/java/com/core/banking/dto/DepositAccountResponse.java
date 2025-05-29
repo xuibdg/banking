@@ -36,7 +36,7 @@ public class DepositAccountResponse {
         this.principalAmount = depositAccount.getPrincipalAmount();
         this.maturityDate = depositAccount.getMaturityDate();
         this.accountStatus = depositAccount.getAccountStatus().name();
-        this.rolloverOption = depositAccount.getRolloverOption();
+        this.rolloverOption = String.valueOf(depositAccount.getRolloverOption());
         this.openedAt = depositAccount.getOpenedAt();
         this.createdAt = depositAccount.getCreatedAt();
 

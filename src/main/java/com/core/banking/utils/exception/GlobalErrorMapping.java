@@ -25,7 +25,8 @@ public enum GlobalErrorMapping {
     DEPOSIT_ACCOUNT_NOT_FOUND("DEP-0006", "Rekening deposito tidak ditemukan"),
     DEPOSIT_ACCOUNT_NOT_ACTIVE("DEP-007", "Akun deposito tersebut tidak aktif. Hint: Pastikan akun deposito tersebut berstatus aktif"),
     DEPOSIT_MATURITY_DATE_NOT_REACHED("DEP-008", "Akun deposito tersebut, tanggal jatuh temponya belum memenuhi. Hint: Cek teliti tanggal jatuh tempo vs tanggal saat ini"),
-    INVALID_ROLLOVER_OPTION("DEP-009", "Opsi perpanjangan tidak valid. Hint: Cek teliti opsi perpanjangan yang tersedia.");
+    INVALID_ROLLOVER_OPTION("DEP-009", "Opsi perpanjangan tidak valid. Hint: Cek teliti opsi perpanjangan yang tersedia."),
+    MATURITY_DATE_NOT_REACHED("DEP-010", "Tanggal jatuh tempo belum tercapai. Hint: Periksa kembali tanggal pada opened at dan maturity date.");
 
 
     public final String code;

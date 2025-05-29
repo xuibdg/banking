@@ -1,6 +1,7 @@
 package com.core.banking.entity;
 
 import com.core.banking.enums.DepositAccountStatus;
+import com.core.banking.enums.RolloverOption;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,14 +53,15 @@ public class DepositAccount {
     @Column(name = "account_status", nullable = false)
     private DepositAccountStatus accountStatus = DepositAccountStatus.ACTIVE;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "rollover_option", length = 50)
-    private String rolloverOption;
+    private RolloverOption rolloverOption;
 
     @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "is_deleted")
-    private boolean isDeleted = false;
+//    @Column(name = "is_deleted")
+//    private boolean isDeleted = false;
 
     @Column(name = "opened_at")
     private LocalDateTime openedAt = LocalDateTime.now();

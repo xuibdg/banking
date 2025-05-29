@@ -46,8 +46,8 @@ public class DepositAccountController {
         return buildSuccessResponse(depositAccountService.getDepositAccountsByStatus(status));
     }
 
-    @DeleteMapping("/{id}")
-    BaseResponse<String> deleteDepositAccount(@PathVariable("id") Long id){
-    return buildSuccessResponse(depositAccountService.deleteDepositAccount(id));
-    }
+//    @DeleteMapping("/{id}")
+//    BaseResponse<String> deleteDepositAccount(@PathVariable("id") Long id){
+//    return buildSuccessResponse(depositAccountService.deleteDepositAccount(id));
+//    }
 }

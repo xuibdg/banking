@@ -1,5 +1,6 @@
 package com.core.banking.service.impl;
 
+import com.core.banking.config.CurrentUser;
 import com.core.banking.dto.DepositAccountRequest;
 import com.core.banking.dto.DepositAccountResponse;
 import com.core.banking.dto.UserMetaData;
@@ -53,7 +54,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
-    public DepositAccountResponse openDepositAccount(DepositAccountRequest request, UserMetaData userMetaData) {
+    public DepositAccountResponse openDepositAccount(DepositAccountRequest request, @CurrentUser UserMetaData userMetaData) {
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
 
@@ -83,7 +84,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                 .principalAmount(request.getNominalDeposit())
                 .maturityDate(maturityDate)
                 .accountStatus(DepositAccountStatus.ACTIVE)
-                .rolloverOption(request.getRolloverOption())
+                .rolloverOption(RolloverOption.valueOf(request.getRolloverOption()))
                 .createdBy(userMetaData.getUserId())
                 .openedAt(LocalDateTime.now())
                 .build();
@@ -142,20 +143,20 @@ public class DepositAccountServiceImpl implements DepositAccountService {
         return list;
     }
 
-    @Override
-    public String deleteDepositAccount(Long depositoAccountId) {
-        DepositAccount depositAccount = depositAccountRepository.findById(depositoAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR));
-
-        if (depositAccount.getAccountStatus() == DepositAccountStatus.ACTIVE) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR);
-        }
-
-        depositAccountRepository.findByDepositoAccountId(depositoAccountId).map(data -> {
-            data.setDeleted(true);
-            depositAccountRepository.save(data);
-            return data;
-        });
-        return "SUCCESS DELETE A DEPOSITO ACCOUNT";
-    }
+//    @Override
+//    public String deleteDepositAccount(Long depositoAccountId) {
+//        DepositAccount depositAccount = depositAccountRepository.findById(depositoAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR));
+//
+//        if (depositAccount.getAccountStatus() == DepositAccountStatus.ACTIVE) {
+//            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR);
+//        }
+//
+//        depositAccountRepository.findByDepositoAccountId(depositoAccountId).map(data -> {
+//            data.setDeleted(true);
+//            depositAccountRepository.save(data);
+//            return data;
+//        });
+//        return "SUCCESS DELETE A DEPOSITO ACCOUNT";
+//    }
 }
 
