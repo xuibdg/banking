@@ -35,7 +35,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -49,17 +48,14 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
 
     @Autowired
     private final SavingAccountRepository savingAccountRepository;
-
     @Autowired
     private final SavingAccountDetailRepository savingAccountDetailRepository;
-
     @Autowired
     private final EscrowAccountRepository escrowAccountRepository;
 
 
-    private static final DateTimeFormatter TRX_REF_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
+    private static final DateTimeFormatter TRX_REF_DATETIME_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyyHHmmss");
     private static final Random random = new Random();
-
 
     private String formatErrorMessage(GlobalErrorMapping mapping, String... params) {
         String message = mapping.message;
@@ -72,25 +68,23 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
     }
 
     private String generateTransactionReference(String type) {
-
         LocalDateTime ldt = LocalDateTime.now();
-        String timestampStr = ldt.format(TRX_REF_TIMESTAMP_FORMATTER);
+        String dateTimeStr = ldt.format(TRX_REF_DATETIME_FORMATTER);
 
         int sequence = random.nextInt(10000);
         String sequenceStr = String.format("%04d", sequence);
 
-        String ref = type + "-" + sequenceStr + "-" + timestampStr;
+        String ref = type + "-" + sequenceStr + "-" + dateTimeStr;
 
         int maxAttempts = 5;
         int attempt = 0;
         while(savingAccountDetailRepository.findByTransactionReference(ref).isPresent() && attempt < maxAttempts) {
             sequence = random.nextInt(10000);
             sequenceStr = String.format("%04d", sequence);
-            ref = type + "-" + sequenceStr + "-" + timestampStr;
+            ref = type + "-" + sequenceStr + "-" + dateTimeStr;
             attempt++;
         }
         if (attempt >= maxAttempts) {
-
             throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, TRX_REF_GENERATION_FAILED);
         }
         return ref;
@@ -129,11 +123,9 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         BigDecimal beginBalance = savingAccount.getCurrentBalance();
         BigDecimal endBalance = beginBalance.add(request.getAmount());
 
-
         if (config.getMaxBalanceLimit() != null && endBalance.compareTo(config.getMaxBalanceLimit()) > 0) {
             throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.MAX_BALANCE_EXCEEDED);
         }
-
 
         validateDailyTransactionLimit(savingAccount, request.getAmount(), MutationType.CREDIT, config.getDailyTransactionLimit());
 
@@ -200,13 +192,11 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         }
         BigDecimal endBalance = beginBalance.subtract(request.getAmount());
 
-
         if (config.getMinBalanceLimit() != null && endBalance.compareTo(config.getMinBalanceLimit()) < 0) {
             throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.MIN_BALANCE_VIOLATED);
         }
 
         validateDailyTransactionLimit(savingAccount, request.getAmount(), MutationType.DEBIT, config.getDailyTransactionLimit());
-
 
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
@@ -246,29 +236,8 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         SavingAccount savingAccount = savingAccountRepository.findByAccountNumber(request.getSavingAccountNumber())
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
 
-        Timestamp startDateTime = null;
-        Timestamp endDateTime = null;
-
-        if (request.getStartDate() != null && !request.getStartDate().isBlank()) {
-            try {
-                LocalDate startDate = LocalDate.parse(request.getStartDate());
-                startDateTime = Timestamp.valueOf(startDate.atStartOfDay());
-            } catch (DateTimeParseException e) {
-                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DATE_RANGE.code,
-                        "Invalid start date format. Use YYYY-MM-DD.",
-                        "Invalid start date format. Use YYYY-MM-DD.");
-            }
-        }
-        if (request.getEndDate() != null && !request.getEndDate().isBlank()) {
-            try {
-                LocalDate endDate = LocalDate.parse(request.getEndDate());
-                endDateTime = Timestamp.valueOf(endDate.atTime(LocalTime.MAX));
-            } catch (DateTimeParseException e) {
-                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DATE_RANGE.code,
-                        "Invalid end date format. Use YYYY-MM-DD.",
-                        "Invalid end date format. Use YYYY-MM-DD.");
-            }
-        }
+        Timestamp startDateTime = request.getStartDate();
+        Timestamp endDateTime = request.getEndDate();
 
         if (startDateTime != null && endDateTime != null && endDateTime.before(startDateTime)) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DATE_RANGE);
@@ -305,8 +274,9 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         BigDecimal sumToday = savingAccountDetailRepository.sumTransactionsByAccountAndMutationTypeAndDate(
                 account, mutationType, todayStart, todayEnd
         );
+        BigDecimal totalExistingToday = (sumToday == null) ? BigDecimal.ZERO : sumToday;
 
-        if (sumToday.add(currentTransactionAmount).compareTo(dailyLimitConfig) > 0) {
+        if (totalExistingToday.add(currentTransactionAmount).compareTo(dailyLimitConfig) > 0) {
             throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.DAILY_NOMINAL_LIMIT_EXCEEDED);
         }
     }
