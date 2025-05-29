@@ -25,7 +25,6 @@ public class LoanRepaymentScheduleResponse {
     private BigDecimal interestPaid;
     private String status;
     private String message;
-
     private Integer installmentNumber;
     private LocalDate dueDate;
     private BigDecimal principalDue;

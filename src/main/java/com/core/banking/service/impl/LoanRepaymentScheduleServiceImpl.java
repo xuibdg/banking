@@ -99,7 +99,6 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
                 .findByLoanAccount_LoanAccountIdAndInstallmentNumber(request.getLoanAccountId(), request.getInstallmentNumber())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
 
-
         if (repaymentSchedule.getPaymentStatus() != LoanRepaymentStatus.PENDING){
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NOT_PENDING);
         }
@@ -118,7 +117,6 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
 
         BigDecimal interestPaid = expectedInterest;
         BigDecimal principalPaid = expectedPrincipal;
-
 
         LoanTransaction payment = new LoanTransaction();
         payment.setLoanTransactionId(UUID.randomUUID().toString());

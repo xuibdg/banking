@@ -10,8 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class LoanTypeRequest {
-
     private String typeName;
     private String description;
-
 }

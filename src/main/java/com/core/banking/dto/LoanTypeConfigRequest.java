@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class LoanTypeConfigRequest {
-
     private String loanTypeId;
     private BigDecimal minLoanAmount;
     private BigDecimal maxLoanAmount;

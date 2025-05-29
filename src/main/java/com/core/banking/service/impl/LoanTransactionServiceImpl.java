@@ -98,7 +98,10 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
 
         BigDecimal totalPrincipal = loanAccount.getPrincipalAmount();
         int months = loanAccount.getDurationMonths();
-        BigDecimal monthlyPrincipal = totalPrincipal.divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP);
+
+        BigDecimal monthlyPrincipal = totalPrincipal
+                .divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP);
+
         BigDecimal monthlyInterest = loanAccount.getPrincipalAmount()
                 .multiply(loanAccount.getInterestRateApplied())
                 .divide(BigDecimal.valueOf(100 * 12), 2, RoundingMode.HALF_UP);
@@ -162,7 +165,6 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
                         .build())
                 .toList();
     }
-
 
     @Override
     public String updateLoanTransaction(String loanTransactionId, LoanTransactionRequest request, UserMetaData userMetaData) {

@@ -25,7 +25,6 @@ public class LoanTransactionResponse {
     private BigDecimal installmentAmount;
     private LocalDate firstRepaymentDate;
     private String message;
-
     private String loanTransactionId;
     private String loanRepaymentScheduleId;
     private LoanTransactionType transactionType;

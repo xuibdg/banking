@@ -155,8 +155,6 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         loanAccount.setOutstandingPrincipal(totalOutstanding);
         loanAccount.setInstallmentAmount(monthlyInstallment);
 
-
-
         loanAccount.setAccountStatus(LoanAccountStatus.PENDING_APPROVAL);
         loanAccount.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
