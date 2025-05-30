@@ -76,7 +76,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
             case NO_ROLLOVER:
                 depositPayout(depositAccount, profit);
                 depositMaturityResponse.setAfterStatus(DepositAccountStatus.MATURED_PAID);
-                depositMaturityResponse.setMessage("Akun Deposit telah sukses dibayar");
+                depositMaturityResponse.setMessage("Akun Deposito Mudharabah telah sukses dibayar");
                 break;
 
             case PRINCIPAL_ONLY:
@@ -84,7 +84,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                 depositMaturityResponse.setAfterStatus(DepositAccountStatus.ROLLED_OVER);
                 depositMaturityResponse.setNewDepositAccountId(newAccountPrincipalOnly.getDepositoAccountId());
                 depositMaturityResponse.setNewAccountNumber(newAccountPrincipalOnly.getAccountNumber());
-                depositMaturityResponse.setMessage("Akun deposit telah sukses diperpanjang (Hanya dana pokok)");
+                depositMaturityResponse.setMessage("Akun Deposito Mudharabah telah sukses diperpanjang (Hanya dana pokok)");
                 break;
 
             case PRINCIPAL_AND_PROFIT:
@@ -92,7 +92,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                 depositMaturityResponse.setAfterStatus(DepositAccountStatus.ROLLED_OVER);
                 depositMaturityResponse.setNewDepositAccountId(newAccountPrincipalAndProfit.getDepositoAccountId());
                 depositMaturityResponse.setNewAccountNumber(newAccountPrincipalAndProfit.getAccountNumber());
-                depositMaturityResponse.setMessage("Akun deposito telah sukses diperpanjang (Dana pokok dan keuntungan)");
+                depositMaturityResponse.setMessage("Akun Deposito Mudharabah telah sukses diperpanjang (Dana pokok dan keuntungan)");
                 break;
 
             default:
@@ -144,18 +144,29 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
     private BigDecimal calculateProfit(DepositAccount depositAccount) {
         DepositTypeConfig depositTypeConfig = depositAccount.getDepositTypeConfig();
         BigDecimal principal = depositAccount.getPrincipalAmount();
-        BigDecimal ratePerYear = depositTypeConfig.getProfitSharePercentagePa().divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP);
+
+        BigDecimal expectedProfit = calculateExpectedProfit(principal, depositAccount);
+        BigDecimal customerRatio = depositTypeConfig.getProfitSharingRatioCustomer().divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP);
+        BigDecimal profit = expectedProfit.multiply(customerRatio).setScale(2, RoundingMode.HALF_UP);
+
+        return profit;
+    }
+
+    private BigDecimal calculateExpectedProfit(BigDecimal principal, DepositAccount depositAccount) {
+        DepositTypeConfig depositTypeConfig = depositAccount.getDepositTypeConfig();
+
+        BigDecimal expectedRate = depositTypeConfig.getProfitSharePercentagePa().divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP);
 
         LocalDate openDate = depositAccount.getOpenedAt().toLocalDate();
         LocalDate maturityDate = depositAccount.getMaturityDate();
         long daysInTerm = ChronoUnit.DAYS.between(openDate, maturityDate);
 
         BigDecimal daysInYear = new BigDecimal(365);
-        BigDecimal dailyRate = ratePerYear.divide(daysInYear, 10, RoundingMode.HALF_UP);
-        BigDecimal profit = principal.multiply(dailyRate).multiply(new BigDecimal(daysInTerm)).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal expectedProfit = principal.multiply(expectedRate).multiply(new BigDecimal(daysInTerm).divide(daysInYear, 10, RoundingMode.HALF_UP)).setScale(2, RoundingMode.HALF_UP);
 
-        return profit;
+        return expectedProfit;
     }
+
     private void depositPayout(DepositAccount depositAccount, BigDecimal profit) {
         DepositAccountDetail profitDetail = DepositAccountDetail.builder()
                 .depositAccount(depositAccount)
@@ -164,7 +175,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                 .nominalTransaction(profit)
                 .beginBalance(depositAccount.getPrincipalAmount())
                 .endBalance(depositAccount.getPrincipalAmount())
-                .description("Pembayaran keuntungan pada saat jatuh tempo")
+                .description("Pembayaran bagi hasil Mudharabah pada saat jatuh tempo")
                 .transactionAt(LocalDateTime.now())
                 .build();
         depositAccountDetailRepository.save(profitDetail);
@@ -176,7 +187,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                 .nominalTransaction(depositAccount.getPrincipalAmount())
                 .beginBalance(depositAccount.getPrincipalAmount())
                 .endBalance(BigDecimal.ZERO)
-                .description("Penarikan dana pokok pada saat jatuh tempo")
+                .description("Penarikan dana pokok Mudharabah pada saat jatuh tempo")
                 .transactionAt(LocalDateTime.now())
                 .build();
         depositAccountDetailRepository.save(principalDetail);
@@ -194,7 +205,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                 .mutationType(MutationType.CREDIT)
                 .beginBalance(oldAccount.getPrincipalAmount())
                 .endBalance(oldAccount.getPrincipalAmount())
-                .description("Pembayaran keuntungan pada saat rollover/perpanjangan")
+                .description("Pembayaran bagi hasil Mudharabah pada saat rollover/perpanjangan")
                 .transactionAt(LocalDateTime.now())
                 .build();
         depositAccountDetailRepository.save(profitDetail);
@@ -260,7 +271,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                 .nominalTransaction(profit)
                 .beginBalance(oldAccount.getPrincipalAmount())
                 .endBalance(total)
-                .description("Profit accrual for rollover")
+                .description("Perhitungan bagi hasil Mudharabah untuk perpanjangan")
                 .transactionAt(LocalDateTime.now())
                 .build();
         depositAccountDetailRepository.save(profitDepositAccountDetail);

@@ -54,6 +54,15 @@ public class DepositTypeConfig {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "is_syariah")
+    private Boolean isSyariah = false;
+
+    @Column(name = "profit_sharing_ratio_bank")
+    private BigDecimal profitSharingRatioBank;
+
+    @Column(name = "profit_sharing_ratio_customer")
+    private BigDecimal profitSharingRatioCustomer;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
