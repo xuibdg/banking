@@ -17,20 +17,13 @@ public class DepositAccountNumberGenerator {
     private static final String PREFIX = "4519";
     private static final Random RANDOM = new Random();
 
-    /**
-     * Menghasilkan nomor rekening deposito yang unik dengan format:
-     * 4519 + YYYYMM + 6 digit random
-     *
-     * @return nomor rekening yang unik
-     */
     public String generateDepositAccountNumber() {
         String yearMonth = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
         String randomDigits = String.format("%06d", RANDOM.nextInt(1000000));
         String accountNumber = PREFIX + yearMonth + randomDigits;
 
-        // Cek apakah nomor rekening sudah ada di database
+
         if (depositAccountRepository.existsByAccountNumber(accountNumber)) {
-            // Jika sudah ada, generate ulang
             return generateDepositAccountNumber();
         }
 
