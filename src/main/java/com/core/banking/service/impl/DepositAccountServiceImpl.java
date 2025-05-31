@@ -83,9 +83,9 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                 .depositTypeConfig(depositTypeConfig)
                 .principalAmount(DepositAccountRequest.getNominalDeposit())
                 .maturityDate(maturityDate)
+                .createdBy(userMetaData.getUserId())
                 .accountStatus(DepositAccountStatus.ACTIVE)
                 .rolloverOption(RolloverOption.valueOf(DepositAccountRequest.getRolloverOption()))
-                .createdBy(userMetaData.getUserId())
                 .openedAt(LocalDateTime.now())
                 .build();
 
@@ -113,6 +113,15 @@ public class DepositAccountServiceImpl implements DepositAccountService {
         }
         depositAccountResponse.setProfitSharePercentage(depositTypeConfig.getProfitSharePercentagePa());
         depositAccountResponse.setTermInMonths(depositTypeConfig.getTermInMonths());
+        depositAccountResponse.setDepositoAccountId(savedAccount.getDepositoAccountId());
+        depositAccountResponse.setAccountNumber(savedAccount.getAccountNumber());
+        depositAccountResponse.setCustomerId(savedAccount.getCustomer().getId());
+        depositAccountResponse.setPrincipalAmount(savedAccount.getPrincipalAmount());
+        depositAccountResponse.setMaturityDate(savedAccount.getMaturityDate());
+        depositAccountResponse.setAccountStatus(savedAccount.getAccountStatus().name());
+        depositAccountResponse.setRolloverOption(String.valueOf(savedAccount.getRolloverOption()));
+        depositAccountResponse.setOpenedAt(savedAccount.getOpenedAt());
+        depositAccountResponse.setCreatedAt(savedAccount.getCreatedAt());
 
         return depositAccountResponse;
     }
