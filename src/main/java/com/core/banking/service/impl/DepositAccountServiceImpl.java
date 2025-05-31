@@ -54,22 +54,22 @@ public class DepositAccountServiceImpl implements DepositAccountService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
-    public DepositAccountResponse openDepositAccount(DepositAccountRequest request, @CurrentUser UserMetaData userMetaData) {
-        Customer customer = customerRepository.findById(request.getCustomerId())
+    public DepositAccountResponse openDepositAccount(DepositAccountRequest DepositAccountRequest, @CurrentUser UserMetaData userMetaData) {
+        Customer customer = customerRepository.findById(DepositAccountRequest.getCustomerId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
 
         if (customer.getCustomerStatus() != CustomerStatus.ACTIVE) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_ACTIVE);
         }
 
-        DepositTypeConfig depositTypeConfig = depositTypeConfigRepository.findById(request.getDepositTypeConfigId())
+        DepositTypeConfig depositTypeConfig = depositTypeConfigRepository.findById(DepositAccountRequest.getDepositTypeConfigId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_TYPE_CONFIG_NOT_FOUND));
 
         if (!depositTypeConfig.getIsActive()) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_TYPE_CONFIG_NOT_ACTIVE);
         }
 
-        if (request.getNominalDeposit().compareTo(depositTypeConfig.getMinDepositAmount()) < 0) {
+        if (DepositAccountRequest.getNominalDeposit().compareTo(depositTypeConfig.getMinDepositAmount()) < 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_AMOUNT_BELOW_MINIMUM);
         }
 
@@ -81,10 +81,10 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                 .accountNumber(accountNumber)
                 .customer(customer)
                 .depositTypeConfig(depositTypeConfig)
-                .principalAmount(request.getNominalDeposit())
+                .principalAmount(DepositAccountRequest.getNominalDeposit())
                 .maturityDate(maturityDate)
                 .accountStatus(DepositAccountStatus.ACTIVE)
-                .rolloverOption(RolloverOption.valueOf(request.getRolloverOption()))
+                .rolloverOption(RolloverOption.valueOf(DepositAccountRequest.getRolloverOption()))
                 .createdBy(userMetaData.getUserId())
                 .openedAt(LocalDateTime.now())
                 .build();
@@ -95,9 +95,9 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                 .depositAccount(savedAccount)
                 .transactionType(DepositoTransactionType.INITIAL_DEPOSIT)
                 .mutationType(MutationType.CREDIT)
-                .nominalTransaction(request.getNominalDeposit())
+                .nominalTransaction(DepositAccountRequest.getNominalDeposit())
                 .beginBalance(BigDecimal.ZERO)
-                .endBalance(request.getNominalDeposit())
+                .endBalance(DepositAccountRequest.getNominalDeposit())
                 .createdBy(userMetaData.getUserId())
                 .description("Setoran awal deposito")
                 .transactionAt(LocalDateTime.now())
@@ -105,7 +105,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
 
         depositAccountDetailRepository.save(depositAccountDetail);
 
-        DepositAccountResponse depositAccountResponse = new DepositAccountResponse(savedAccount);
+        DepositAccountResponse depositAccountResponse = new DepositAccountResponse();
         depositAccountResponse.setCustomerName(customer.getFullName());
 
         if (depositTypeConfig.getDepositType() != null) {
@@ -122,7 +122,21 @@ public class DepositAccountServiceImpl implements DepositAccountService {
     public DepositAccountResponse getDepositAccountById(Long depositAccountId) {
         DepositAccount depositAccount = depositAccountRepository.findById(depositAccountId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
-            return new DepositAccountResponse(depositAccount);
+        DepositAccountResponse depositAccountResponse = new DepositAccountResponse();
+        depositAccountResponse.setDepositoAccountId(depositAccount.getDepositoAccountId());
+        depositAccountResponse.setAccountNumber(depositAccount.getAccountNumber());
+        depositAccountResponse.setCustomerId(depositAccount.getCustomer().getId());
+        depositAccountResponse.setPrincipalAmount(depositAccount.getPrincipalAmount());
+        depositAccountResponse.setMaturityDate(depositAccount.getMaturityDate());
+        depositAccountResponse.setAccountStatus(depositAccount.getAccountStatus().name());
+        depositAccountResponse.setRolloverOption(String.valueOf(depositAccount.getRolloverOption()));
+        depositAccountResponse.setOpenedAt(depositAccount.getOpenedAt());
+        depositAccountResponse.setCustomerId(depositAccount.getCustomer().getId());
+        depositAccountResponse.setCustomerName(depositAccount.getCustomer().getFullName());
+        depositAccountResponse.setDepositTypeName(depositAccount.getDepositTypeConfig().getDepositType().getTypeName());
+        depositAccountResponse.setProfitSharePercentage(depositAccount.getDepositTypeConfig().getProfitSharePercentagePa());
+        depositAccountResponse.setTermInMonths(depositAccount.getDepositTypeConfig().getTermInMonths());
+        return depositAccountResponse;
     }
 
     @Override
@@ -130,7 +144,23 @@ public class DepositAccountServiceImpl implements DepositAccountService {
         customerRepository.findById(customerId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
         List<DepositAccountResponse> list = depositAccountRepository.findAll().stream()
                 .filter(data -> data.getCustomer().getId().equals(customerId))
-                .map(DepositAccountResponse::new)
+                .map(depositAccount -> {
+                    DepositAccountResponse depositAccountResponse = new DepositAccountResponse();
+                    depositAccountResponse.setDepositoAccountId(depositAccount.getDepositoAccountId());
+                    depositAccountResponse.setAccountNumber(depositAccount.getAccountNumber());
+                    depositAccountResponse.setCustomerId(depositAccount.getCustomer().getId());
+                    depositAccountResponse.setPrincipalAmount(depositAccount.getPrincipalAmount());
+                    depositAccountResponse.setMaturityDate(depositAccount.getMaturityDate());
+                    depositAccountResponse.setAccountStatus(String.valueOf(depositAccount.getAccountStatus()));
+                    depositAccountResponse.setRolloverOption(String.valueOf(depositAccount.getRolloverOption()));
+                    depositAccountResponse.setOpenedAt(depositAccount.getOpenedAt());
+                    depositAccountResponse.setCreatedAt(depositAccount.getCreatedAt());
+                    depositAccountResponse.setCustomerName(depositAccount.getCustomer().getFullName());
+                    depositAccountResponse.setDepositTypeName(depositAccount.getDepositTypeConfig().getDepositType().getTypeName());
+                    depositAccountResponse.setProfitSharePercentage(depositAccount.getDepositTypeConfig().getProfitSharePercentagePa());
+                    depositAccountResponse.setTermInMonths(depositAccount.getDepositTypeConfig().getTermInMonths());
+                    return depositAccountResponse;
+                })
                 .collect(Collectors.toList());
         return list;
     }
@@ -138,10 +168,26 @@ public class DepositAccountServiceImpl implements DepositAccountService {
     @Override
     public List<DepositAccountResponse> getDepositAccountsByStatus(DepositAccountStatus status) {
         List <DepositAccountResponse> list = depositAccountRepository.findByAccountStatus(status).stream()
-                .map(DepositAccountResponse::new)
+                .map(depositAccount -> {
+                    DepositAccountResponse depositAccountResponse = new DepositAccountResponse();
+                    depositAccountResponse.setDepositoAccountId(depositAccount.getDepositoAccountId());
+                    depositAccountResponse.setAccountNumber(depositAccount.getAccountNumber());
+                    depositAccountResponse.setCustomerId(depositAccount.getCustomer().getId());
+                    depositAccountResponse.setPrincipalAmount(depositAccount.getPrincipalAmount());
+                    depositAccountResponse.setMaturityDate(depositAccount.getMaturityDate());
+                    depositAccountResponse.setAccountStatus(String.valueOf(depositAccount.getAccountStatus()));
+                    depositAccountResponse.setRolloverOption(String.valueOf(depositAccount.getRolloverOption()));
+                    depositAccountResponse.setOpenedAt(depositAccount.getOpenedAt());
+                    depositAccountResponse.setCreatedAt(depositAccount.getCreatedAt());
+                    depositAccountResponse.setCustomerName(depositAccount.getCustomer().getFullName());
+                    depositAccountResponse.setDepositTypeName(depositAccount.getDepositTypeConfig().getDepositType().getTypeName());
+                    depositAccountResponse.setProfitSharePercentage(depositAccount.getDepositTypeConfig().getProfitSharePercentagePa());
+                    depositAccountResponse.setTermInMonths(depositAccount.getDepositTypeConfig().getTermInMonths());
+                    return depositAccountResponse;
+                })
                 .collect(Collectors.toList());
         return list;
-    }
+    }}
 
 //    @Override
 //    public String deleteDepositAccount(Long depositoAccountId) {
@@ -158,5 +204,4 @@ public class DepositAccountServiceImpl implements DepositAccountService {
 //        });
 //        return "SUCCESS DELETE A DEPOSITO ACCOUNT";
 //    }
-}
 

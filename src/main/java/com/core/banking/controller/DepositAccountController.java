@@ -21,7 +21,7 @@ public class DepositAccountController {
     @Autowired
     private DepositAccountService depositAccountService;
 
-    @GetMapping
+    @GetMapping("/get-all")
     public BaseResponse <List<DepositAccount>> getAll() {
         return buildSuccessResponse(depositAccountService.findAll());
     }
@@ -37,7 +37,7 @@ public class DepositAccountController {
     }
 
     @GetMapping("/customer/{customerId}")
-    BaseResponse<List<DepositAccountResponse>> getDepositAccountsByCustomerId(@PathVariable("customerId") String customerId) {
+    BaseResponse<List<DepositAccountResponse>> getDepositAccountByCustomerId(@PathVariable("customerId") String customerId) {
     return buildSuccessResponse(depositAccountService.getDepositAccountsByCustomerId(customerId));
     }
 
