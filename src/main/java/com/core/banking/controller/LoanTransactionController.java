@@ -24,31 +24,37 @@ import java.util.List;
 @RestController
 @RequestMapping("/loan-transactions")
 public class LoanTransactionController {
+
     @Autowired
     private LoanTransactionService loanTransactionService;
 
     @GetMapping
-    public List<LoanTransactionResponse> getAll() {
-        return loanTransactionService.findAll();
+    BaseResponse<List<LoanTransactionResponse>> getAll() {
+        return buildSuccessResponse(loanTransactionService.findAll());
     }
 
     @PostMapping("/create")
-    BaseResponse<String> createLoanTransaction (@RequestBody LoanTransactionRequest request, @CurrentUser UserMetaData userMetaData) {
+    BaseResponse<String> createLoanTransaction (@RequestBody LoanTransactionRequest request,
+                                                @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(loanTransactionService.createLoanTransaction(request, userMetaData));
     }
 
     @PostMapping("/{loanAccountId}")
-    BaseResponse<LoanTransactionResponse> approveAndDisburseLoan(@PathVariable String loanAccountId, @CurrentUser UserMetaData userMetaData) {
+    BaseResponse<LoanTransactionResponse> approveAndDisburseLoan(@PathVariable String loanAccountId,
+                                                                 @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(loanTransactionService.approveAndDIsburseLoan(loanAccountId, userMetaData));
     }
 
     @PutMapping("/{loanTransactionId}")
-    BaseResponse<String> updateLoanTransaction (@PathVariable String loanTransactionId, @RequestBody LoanTransactionRequest request, @CurrentUser UserMetaData userMetaData) {
+    BaseResponse<String> updateLoanTransaction (@PathVariable String loanTransactionId,
+                                                @RequestBody LoanTransactionRequest request,
+                                                @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(loanTransactionService.updateLoanTransaction(loanTransactionId,request, userMetaData));
     }
 
     @DeleteMapping("/{loanTransactionId}")
-    BaseResponse<String> deleteLoanTransaction (@PathVariable String loanTransactionId, @CurrentUser UserMetaData userMetaData) {
+    BaseResponse<String> deleteLoanTransaction (@PathVariable String loanTransactionId,
+                                                @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(loanTransactionService.deleteLoanTransaction(loanTransactionId, userMetaData));
     }
 }

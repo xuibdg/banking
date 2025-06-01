@@ -23,12 +23,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/loan-types")
 public class LoanTypeController {
+
     @Autowired
     private LoanTypeService loanTypeService;
 
     @GetMapping
-    public List<LoanType> getAll() {
-        return loanTypeService.findAll();
+    BaseResponse<List<LoanType>> getAll() {
+        return buildSuccessResponse(loanTypeService.findAll());
     }
 
     @PostMapping("/create")
@@ -38,14 +39,15 @@ public class LoanTypeController {
     }
 
     @PutMapping("/{loanTypeId}")
-    BaseResponse<String> updateLoanType (@PathVariable String loanTypeId, @RequestBody LoanTypeRequest request,
-                                  @CurrentUser UserMetaData userMetaData) {
+    BaseResponse<String> updateLoanType (@PathVariable String loanTypeId,
+                                         @RequestBody LoanTypeRequest request,
+                                         @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(loanTypeService.updateLoanType(loanTypeId, request, userMetaData));
     }
 
     @DeleteMapping("/{loanTypeId}")
     BaseResponse<String> deleteLoanType (@PathVariable String loanTypeId,
-                                  @CurrentUser UserMetaData userMetaData) {
+                                         @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(loanTypeService.deleteLoanType(loanTypeId, userMetaData));
     }
 }

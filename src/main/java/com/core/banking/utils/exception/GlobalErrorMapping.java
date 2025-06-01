@@ -43,7 +43,7 @@ public enum GlobalErrorMapping {
     DURATION_NOT_ENOUGHT("IEG-0050", "Durasi tidak sesuai dengan yang telah ditentukan!."),
     NOT_PENDING_APPROVAL("IEG-0051", "Status bukan PENDING_APPROVAL!."),
     NOT_PENDING("IEG-0052", "Status pembayaran bukan PENDING!."),
-    NOT_ACTIVE("IEG-0053", "Status akun bukan tidak ACTIVE!."),
+    NOT_ACTIVE("IEG-0053", "Status akun tidak ACTIVE!."),
     CUSTOMER_BORROW("IEG-0054", "Customer sudah memiliki pinjaman aktif!.")
     ;
 

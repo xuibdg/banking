@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface LoanRepaymentScheduleService {
     List<LoanRepaymentScheduleResponse> findAll();
+    List<LoanRepaymentScheduleResponse> findById(String customerId);
     String createLoanRepaymentSchedule (LoanRepaymentScheduleRequest request, UserMetaData userMetaData);
     LoanRepaymentScheduleResponse loanRepayment (LoanRepaymentScheduleRequest request, UserMetaData userMetaData);
     String updateLoanRepaymentSchedule (String loanRepaymentScheduleId, LoanRepaymentScheduleRequest request, UserMetaData userMetaData);

@@ -28,27 +28,37 @@ public class LoanRepaymentScheduleController {
     private LoanRepaymentScheduleService loanRepaymentScheduleService;
 
     @GetMapping
-    public List<LoanRepaymentScheduleResponse> getAll() {
-        return loanRepaymentScheduleService.findAll();
+    BaseResponse<List<LoanRepaymentScheduleResponse>> getAll() {
+        return buildSuccessResponse(loanRepaymentScheduleService.findAll());
+    }
+
+    @GetMapping("/{customerId}")
+    BaseResponse<List<LoanRepaymentScheduleResponse>> findByCustomerId(@PathVariable String customerId) {
+        return buildSuccessResponse(loanRepaymentScheduleService.findById(customerId));
     }
 
     @PostMapping("/create")
-    BaseResponse<String> createLoanRepaymentSchedule (@RequestBody LoanRepaymentScheduleRequest request,@CurrentUser UserMetaData userMetaData) {
+    BaseResponse<String> createLoanRepaymentSchedule (@RequestBody LoanRepaymentScheduleRequest request,
+                                                      @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(loanRepaymentScheduleService.createLoanRepaymentSchedule(request, userMetaData));
     }
 
     @PostMapping("/repayment")
-    BaseResponse<LoanRepaymentScheduleResponse> loanRepayment (@RequestBody LoanRepaymentScheduleRequest request,@CurrentUser UserMetaData userMetaData) {
+    BaseResponse<LoanRepaymentScheduleResponse> loanRepayment (@RequestBody LoanRepaymentScheduleRequest request,
+                                                               @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(loanRepaymentScheduleService.loanRepayment(request, userMetaData));
     }
 
     @PutMapping("/{loanRepaymentScheduleId}")
-    BaseResponse<String> updateLoanRepaymentSchedule (@PathVariable String loanRepaymentScheduleId,@RequestBody LoanRepaymentScheduleRequest request,@CurrentUser UserMetaData userMetaData) {
+    BaseResponse<String> updateLoanRepaymentSchedule (@PathVariable String loanRepaymentScheduleId,
+                                                      @RequestBody LoanRepaymentScheduleRequest request,
+                                                      @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(loanRepaymentScheduleService.updateLoanRepaymentSchedule(loanRepaymentScheduleId,request,userMetaData));
     }
 
     @DeleteMapping("/{loanRepaymentScheduleId}")
-    BaseResponse<String> deleteLoanRepaymentSchedule (@PathVariable String loanRepaymentScheduleId,@CurrentUser UserMetaData userMetaData) {
+    BaseResponse<String> deleteLoanRepaymentSchedule (@PathVariable String loanRepaymentScheduleId,
+                                                      @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(loanRepaymentScheduleService.deleteLoanRepaymentSchedule(loanRepaymentScheduleId, userMetaData));
     }
 }

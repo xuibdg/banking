@@ -64,6 +64,34 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
     }
 
     @Override
+    public List<LoanRepaymentScheduleResponse> findById(String customerId) {
+        List<LoanAccount> accounts = loanAccountRepository.findByCustomerId(customerId);
+
+        if (accounts.isEmpty()) {
+            throw new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.ID_NOT_FOUND);
+        }
+
+        List<LoanRepaymentSchedule> schedules = loanRepaymentScheduleRepository.findByLoanAccountIn(accounts);
+
+        return schedules.stream()
+                .map(schedule -> LoanRepaymentScheduleResponse.builder()
+                        .loanAccountId(schedule.getLoanAccount().getLoanAccountId())
+                        .installmentNumber(schedule.getInstallmentNumber())
+                        .dueDate(schedule.getDueDate())
+                        .principalDue(schedule.getPrincipalDue())
+                        .interestDue(schedule.getInterestDue())
+                        .amountPaid(schedule.getAmountPaid())
+                        .principalPaid(schedule.getPrincipalPaid())
+                        .interestPaid(schedule.getInterestPaid())
+                        .paymentDate(schedule.getPaymentDate())
+                        .paymentStatus(schedule.getPaymentStatus())
+                        .paymentAmount(schedule.getAmountPaid())
+                        .build())
+                .toList();
+    }
+
+
+    @Override
     public String createLoanRepaymentSchedule(LoanRepaymentScheduleRequest request, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(valueOf(request.getLoanAccountId()))
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
