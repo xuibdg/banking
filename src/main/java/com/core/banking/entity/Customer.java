@@ -64,5 +64,4 @@ public class Customer {
     @Column(name = "updated_by")
     private String updatedBy;
 
-
 }
