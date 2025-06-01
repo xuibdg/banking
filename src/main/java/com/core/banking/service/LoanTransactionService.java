@@ -1,8 +1,15 @@
 package com.core.banking.service;
 
-import com.core.banking.entity.LoanTransaction;
+import com.core.banking.dto.UserMetaData;
+import com.core.banking.dto.LoanTransactionRequest;
+import com.core.banking.dto.LoanTransactionResponse;
+
 import java.util.List;
 
 public interface LoanTransactionService {
-    List<LoanTransaction> findAll();
+    String createLoanTransaction (LoanTransactionRequest request, UserMetaData userMetaData);
+    LoanTransactionResponse approveAndDIsburseLoan (String loanAccountId, UserMetaData userMetaData);
+    List<LoanTransactionResponse> findAll();
+    String updateLoanTransaction (String loanTransactionId, LoanTransactionRequest request, UserMetaData userMetaData);
+    String deleteLoanTransaction (String loanTransactionId, UserMetaData userMetaData);
 }
