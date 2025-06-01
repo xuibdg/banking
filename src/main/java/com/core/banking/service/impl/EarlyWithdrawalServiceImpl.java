@@ -101,6 +101,8 @@ public class EarlyWithdrawalServiceImpl implements EarlyWithdrawalService {
 
         Map<String, Object> result = new HashMap<>();
         result.put("depositAccountId", depositAccount.getDepositoAccountId());
+        result.put("customerName", depositAccount.getCustomer().getFullName());
+        result.put("depositTypeName", depositAccount.getDepositTypeConfig().getDepositType().getTypeName());
         result.put("accountNumber", depositAccount.getAccountNumber());
         result.put("principalAmount", depositAccount.getPrincipalAmount());
         result.put("penaltyPercentage", penaltyPercentage);

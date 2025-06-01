@@ -140,6 +140,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
         depositAccountResponse.setAccountStatus(depositAccount.getAccountStatus().name());
         depositAccountResponse.setRolloverOption(String.valueOf(depositAccount.getRolloverOption()));
         depositAccountResponse.setOpenedAt(depositAccount.getOpenedAt());
+        depositAccountResponse.setCreatedAt(depositAccount.getCreatedAt());
         depositAccountResponse.setCustomerId(depositAccount.getCustomer().getId());
         depositAccountResponse.setCustomerName(depositAccount.getCustomer().getFullName());
         depositAccountResponse.setDepositTypeName(depositAccount.getDepositTypeConfig().getDepositType().getTypeName());
