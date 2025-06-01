@@ -14,7 +14,6 @@ public enum GlobalErrorMapping {
     NOMINAL_NOT_ENOUGH("IEG-0019", "Uang pelanggan kurang. Pelanggan tidak dapat membayar harga satuan produk, dikali quantity."),
     DATA_USER_NOT_FOUND("IEG-0020", "Data USER tidak ditemukan. Pastikan Value yang anda masukan sudah sesuai"),
     INVALID_CREDENTIAL("IEG-0021", "Username atau password salah."),
-    UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
     DATA_ALREADY_EXIST("IEG-0023", "Data ditemukan. Pastikan data yang anda masukan belum terdaftar"),
     INSUFFICIENT_AGE("IEG-0024", "Umur harus lebih dari 17 tahun"),
     CUSTOMER_INACTIVE("IEG-0025", "Tidak bisa memperbaharui data customer, silakan melakukan update status terlebih dahulu"),
@@ -44,6 +43,15 @@ public enum GlobalErrorMapping {
     NEGATIVE_INITIAL_DEPOSIT("IEG-0049", "Initial deposit cannot be negative."),
     MINIMUM_INITIAL_DEPOSIT("IEG-0050", "Initial deposit less than minimum."),
     ACCOUNT_NUMBER_NOT_FOUND("IEG-0051", "Account number not found. Make sure the value you entered is correct."),
+    ID_NOT_FOUND("IEG-0052", "ID Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
+    AMOUNT_NOT_ENOUGH("IEG-0053", "Amount tidak sesuai dengan yang telah ditentukan!."),
+    CUSTOMER_NOT_ACTIVE("IEG-0054", "Customer tersebut tidak active!."),
+    NOMINAL_NOT_ENOUGHT("IEG-0055", "Nominal tidak sesuai dengan yang telah ditentukan!."),
+    DURATION_NOT_ENOUGHT("IEG-0056", "Durasi tidak sesuai dengan yang telah ditentukan!."),
+    NOT_PENDING_APPROVAL("IEG-0057", "Status bukan PENDING_APPROVAL!."),
+    NOT_PENDING("IEG-0058", "Status pembayaran bukan PENDING!."),
+    NOT_ACTIVE("IEG-0059", "Status akun tidak ACTIVE!."),
+    CUSTOMER_BORROW("IEG-0060", "Customer sudah memiliki pinjaman aktif!.")
     ;
 
 
