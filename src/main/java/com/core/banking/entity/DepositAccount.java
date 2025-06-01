@@ -23,7 +23,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class DepositAccount {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "deposito_account_id")

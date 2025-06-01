@@ -1,8 +1,21 @@
 package com.core.banking.entity;
 
 import com.core.banking.enums.LoanRepaymentStatus;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -17,7 +30,6 @@ import java.time.OffsetDateTime;
 @Builder
 public class LoanRepaymentSchedule {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "loan_repayment_schedule_id")
     private String loanRepaymentScheduleId;
 
@@ -61,4 +73,7 @@ public class LoanRepaymentSchedule {
 
     @Column(name = "updated_at")
     private Timestamp updatedAt;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted;
 }
