@@ -68,7 +68,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                 .totalAmount(total)
                 .maturityDate(depositAccount.getMaturityDate())
                 .beforeStatus(oldStatus)
-                .rolloverOption(rolloverOption.toString())
+                .rolloverOption(rolloverOption.name()) // TODO: tidak boleh to string. harusnya pake name.
                 .success(true)
                 .build();
 
@@ -124,7 +124,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                         .totalAmount(total)
                         .maturityDate(data.getMaturityDate())
                         .beforeStatus(data.getAccountStatus())
-                        .rolloverOption(data.getRolloverOption().toString())
+                        .rolloverOption(data.getRolloverOption().name())
                         .message("Akun telah siap untuk diproses")
                         .success(true)
                         .build();
