@@ -49,10 +49,10 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_ACTIVE);
         }
 
-        LocalDate today = LocalDate.now();
-        if (today.isBefore(depositAccount.getMaturityDate())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.MATURITY_DATE_NOT_REACHED);
-        }
+//        LocalDate today = LocalDate.now();
+//        if (today.isBefore(depositAccount.getMaturityDate())) {
+//            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.MATURITY_DATE_NOT_REACHED);
+//        }
 
         BigDecimal profit = calculateProfit(depositAccount);
         BigDecimal total = depositAccount.getPrincipalAmount().add(profit);
@@ -68,7 +68,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                 .totalAmount(total)
                 .maturityDate(depositAccount.getMaturityDate())
                 .beforeStatus(oldStatus)
-                .rolloverOption(rolloverOption.toString())
+                .rolloverOption(rolloverOption.name())
                 .success(true)
                 .build();
 
@@ -124,7 +124,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                         .totalAmount(total)
                         .maturityDate(data.getMaturityDate())
                         .beforeStatus(data.getAccountStatus())
-                        .rolloverOption(data.getRolloverOption().toString())
+                        .rolloverOption(data.getRolloverOption().name())
                         .message("Akun telah siap untuk diproses")
                         .success(true)
                         .build();
