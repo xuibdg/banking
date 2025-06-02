@@ -70,7 +70,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         List<LoanAccount> accounts = loanAccountRepository.findByCustomerId(customerId);
 
         if (accounts.isEmpty()) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.ID_NOT_FOUND);
+            throw new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.ID_CUSTOMER_NOT_FOUND);
         }
 
         List<LoanRepaymentSchedule> schedules = loanRepaymentScheduleRepository.findByLoanAccountIn(accounts);
@@ -96,7 +96,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
     @Override
     public String createLoanRepaymentSchedule(LoanRepaymentScheduleRequest request, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(valueOf(request.getLoanAccountId()))
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
 
         LoanRepaymentSchedule schedule = new LoanRepaymentSchedule();
         schedule.setLoanAccount(loanAccount);
@@ -123,11 +123,11 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
     @Transactional
     public LoanRepaymentScheduleResponse loanRepayment(LoanRepaymentScheduleRequest request, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(request.getLoanAccountId())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
 
         LoanRepaymentSchedule repaymentSchedule = loanRepaymentScheduleRepository
                 .findByLoanAccount_LoanAccountIdAndInstallmentNumber(request.getLoanAccountId(), request.getInstallmentNumber())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENTNOT_FOUND));
 
         if (repaymentSchedule.getPaymentStatus() != LoanRepaymentStatus.PENDING){
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NOT_PENDING);
@@ -220,11 +220,11 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
     @Override
     public String updateLoanRepaymentSchedule(String loanRepaymentScheduleId, LoanRepaymentScheduleRequest request, UserMetaData userMetaData) {
         LoanRepaymentSchedule schedule = loanRepaymentScheduleRepository.findById(loanRepaymentScheduleId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENTNOT_FOUND));
 
         if (request.getLoanAccountId() != null) {
             LoanAccount loanAccount = loanAccountRepository.findById(valueOf(request.getLoanAccountId()))
-                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
             schedule.setLoanAccount(loanAccount);
         }
 
@@ -252,7 +252,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
     @Override
     public String deleteLoanRepaymentSchedule(String loanRepaymentScheduleId, UserMetaData userMetaData) {
         LoanRepaymentSchedule schedule = loanRepaymentScheduleRepository.findById(loanRepaymentScheduleId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENTNOT_FOUND));
 
         schedule.setIsDeleted(true);
         loanRepaymentScheduleRepository.save(schedule);
