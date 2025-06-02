@@ -51,8 +51,18 @@ public enum GlobalErrorMapping {
     NOT_PENDING_APPROVAL("IEG-0057", "Status bukan PENDING_APPROVAL!."),
     NOT_PENDING("IEG-0058", "Status pembayaran bukan PENDING!."),
     NOT_ACTIVE("IEG-0059", "Status akun tidak ACTIVE!."),
-    CUSTOMER_BORROW("IEG-0060", "Customer sudah memiliki pinjaman aktif!.")
-    ;
+    CUSTOMER_BORROW("IEG-0060", "Customer sudah memiliki pinjaman aktif!."),
+    UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
+    ACC_NUMBER_REQ("IEG-0028", "Account number diperlukan. Hint: Pastikan account number ada"),
+    ACC_NUMBER_EXIST("IEG-0029", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),
+    DEPOSIT_TYPE_CONFIG_NOT_FOUND("DEP-0003", "Konfigurasi jenis deposito tidak ditemukan. Hint: Cek teliti deposit type config id."),
+    DEPOSIT_TYPE_CONFIG_NOT_ACTIVE("DEP-0004", "Konfigurasi jenis deposito tersebut tidak aktif. Hint: Pastikan konfigurasi jenis deposito tersebut berstatus aktif."),
+    DEPOSIT_AMOUNT_BELOW_MINIMUM("DEP-0005", "Jumlah setoran/nominal deposit tidak memenuhi nominal dari minimum deposit, juga tidak boleh minus. Hint: Pastikan jumlah setoran/nominal deposit lebih dari minimum deposit."),
+    DEPOSIT_ACCOUNT_NOT_ACTIVE("DEP-007", "Akun deposito tersebut tidak aktif. Hint: Pastikan akun deposito tersebut berstatus aktif"),
+    DEPOSIT_MATURITY_DATE_NOT_REACHED("DEP-008", "Akun deposito tersebut, tanggal jatuh temponya belum memenuhi. Hint: Cek teliti tanggal jatuh tempo vs tanggal saat ini"),
+    INVALID_ROLLOVER_OPTION("DEP-009", "Opsi perpanjangan tidak valid. Hint: Cek teliti opsi perpanjangan yang tersedia."),
+    MATURITY_DATE_NOT_REACHED("DEP-010", "Tanggal jatuh tempo belum tercapai. Hint: Periksa kembali tanggal pada opened at dan maturity date.");
+
 
 
 

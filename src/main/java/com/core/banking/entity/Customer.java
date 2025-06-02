@@ -1,5 +1,6 @@
 package com.core.banking.entity;
 
+import com.core.banking.dto.UserMetaData;
 import com.core.banking.enums.CustomerStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
@@ -56,5 +57,12 @@ public class Customer {
 
     @Column(name = "is_special_administrative")
     private Boolean isSpecialAdministrative = false;
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "updated_by")
+    private String updatedBy;
+
 
 }
