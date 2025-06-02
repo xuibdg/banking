@@ -43,12 +43,12 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
     @Override
     public String createLoanTransaction(LoanTransactionRequest request, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(request.getLoanAccountId())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
 
         LoanRepaymentSchedule repaymentSchedule = null;
         if (request.getLoanRepaymentScheduleId() != null) {
             repaymentSchedule = loanRepaymentScheduleRepository.findById(request.getLoanRepaymentScheduleId())
-                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENTNOT_FOUND));
         }
 
         LoanTransaction transaction = new LoanTransaction();
@@ -73,7 +73,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
     @Transactional
     public LoanTransactionResponse approveAndDIsburseLoan(String loanAccountId, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(loanAccountId)
-                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
 
         if (loanAccount.getAccountStatus() != LoanAccountStatus.PENDING_APPROVAL) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NOT_PENDING_APPROVAL);
@@ -172,15 +172,15 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
     @Override
     public String updateLoanTransaction(String loanTransactionId, LoanTransactionRequest request, UserMetaData userMetaData) {
         LoanTransaction transaction = loanTransactionRepository.findById(loanTransactionId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_TRANSACITON_NOT_FOUND));
 
         LoanAccount loanAccount = loanAccountRepository.findById(request.getLoanAccountId())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
 
         LoanRepaymentSchedule repaymentSchedule = null;
         if (request.getLoanRepaymentScheduleId() != null) {
             repaymentSchedule = loanRepaymentScheduleRepository.findById(request.getLoanRepaymentScheduleId())
-                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENTNOT_FOUND));
         }
 
         transaction.setLoanAccount(loanAccount);
@@ -203,7 +203,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
     @Override
     public String deleteLoanTransaction(String loanTransactionId, UserMetaData userMetaData) {
         LoanTransaction transaction = loanTransactionRepository.findById(loanTransactionId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_TRANSACITON_NOT_FOUND));
 
         transaction.setIsDeleted(true);
         return "Sukses delete loan transaction";

@@ -84,7 +84,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         Integer duration = request.getDurationMonths();
 
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_CUSTOMER_NOT_FOUND));
 
         if (!"ACTIVE".equalsIgnoreCase(customer.getCustomerStatus().toString())) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_ACTIVE);
@@ -102,7 +102,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         }
 
         LoanTypeConfig config = loanTypeConfigRepository.findById(loanTypeConfigId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_CONFIG_NOT_FOUND));
 
         if (nominal == null || nominal.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NOMINAL_NOT_ENOUGHT);
@@ -167,13 +167,13 @@ public class LoanAccountServiceImpl implements LoanAccountService {
     @Transactional
     public String updateLoanAccount(String loanAccountId, LoanAccountRequest request, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(loanAccountId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
 
         Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_CUSTOMER_NOT_FOUND));
 
         LoanTypeConfig config = loanTypeConfigRepository.findById(request.getLoanTypeConfigId())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_CONFIG_NOT_FOUND));
 
         loanAccount.setCustomer(customer);
         loanAccount.setLoanTypeConfig(config);
@@ -195,7 +195,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
     @Override
     public String deleteLoanAccount(String loanAccountId, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(loanAccountId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
 
         loanAccount.setIsDeleted(true);
         return "SUCCES DELETE ACCOUNT";
