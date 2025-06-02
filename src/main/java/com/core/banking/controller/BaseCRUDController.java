@@ -10,12 +10,10 @@ public abstract class BaseCRUDController {
     public static BaseResponse buildSuccessResponse(Object data) {
         return BaseResponse.builder()
                 .httpStatus(HttpStatus.OK)
-                .status(0)
+                .status("success")
                 .message("ok")
                 .data(data)
                 .build();
     }
-
-
 }
 

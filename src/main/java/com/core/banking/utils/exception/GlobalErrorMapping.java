@@ -17,10 +17,11 @@ public enum GlobalErrorMapping {
     DATA_ALREADY_EXIST("IEG-0023", "Data ditemukan. Pastikan data yang anda masukan belum terdaftar"),
     INSUFFICIENT_AGE("IEG-0024", "Umur harus lebih dari 17 tahun"),
     CUSTOMER_INACTIVE("IEG-0025", "Tidak bisa memperbaharui data customer, silakan melakukan update status terlebih dahulu"),
-    ACCOUNT_CLOSE_RESTRICTED("IEG-0025", "Rekening tidak dapat ditutup karena masih terdapat data tabungan atau pinjaman yang aktif"),
     EMAIL_ALREADY_EXIST("IEG-0026", "Email ditemukan. Pastikan email yang anda masukan belum terdaftar"),
     PHONE_ALREADY_EXIST("IEG-0027", "Nomor Telepon ditemukan. Pastikan nomor yang anda masukan belum terdaftar"),
     NOT_FOUND_ID("IEG-0028", "Data ID Tidak Ditemukan"),
+    ACCOUNT_CLOSE_RESTRICTED("IEG-0029", "Rekening tidak dapat ditutup karena masih terdapat data tabungan atau pinjaman yang aktif"),
+    ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND("IEG-0030", "ID Escrow account detail tidak ditemukan"),
     PAYER_CUSTOMER_NOT_FOUND("IEG-0031", "Payer customer tidak ditemukan"),
     BENEFICIARY_CUSTOMER_NOT_FOUND("IEG-0032", "Beneficiary customer tidak ditemukan"),
     TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033","Transaction type tidak valid atau tidak tersedia"),
@@ -35,7 +36,6 @@ public enum GlobalErrorMapping {
     ESCROW_STATUS_NOT_FUNDED("IEG-0042", "Status escrow account harus FUNDED untuk melakukan transaksi, mengubah status menjadi RELEASE atau RETURN"),
     ESCROW_BALANCE_NOT_ENOUGH("IEG-0043", "Saldo escrow account tidak mencukupi untuk melakukan transaksi"),
     ESCROW_TRANSACTION_TYPE_INVALID("IEG-0044", "Jenis transaksi escrow tidak valid atau tidak didukung"),
-    ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND("IEG-0037", "ID Escrow account detail tidak ditemukan"),
     CLOSED_ACCOUNT_FAILED("IEG-0045", "Cannot close account with non-zero balance."),
     DORMANT_ACCOUNT_FAILED("IEG-0046", "Cannot mark a CLOSED account as DORMANT."),
     BLOCK_ACCOUNT_FAILED("IEG-0047", "Cannot BLOCK a CLOSED account."),
@@ -53,8 +53,6 @@ public enum GlobalErrorMapping {
     NOT_ACTIVE("IEG-0059", "Status akun tidak ACTIVE!."),
     CUSTOMER_BORROW("IEG-0060", "Customer sudah memiliki pinjaman aktif!.")
     ;
-
-
 
 
 

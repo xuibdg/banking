@@ -126,6 +126,9 @@ public class SavingAccountServiceImpl implements SavingAccountService {
         savingAccount.setAccountStatus(status);
         savingAccount.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         savingAccount.setUpdateBy(userMetaData.getUserId());
+        if (status == SavingAccountStatus.CLOSED){
+            savingAccount.setClosedAt(Timestamp.valueOf(LocalDateTime.now()));
+        } else { savingAccount.setClosedAt(null); }
 
         savingAccountRepository.save(savingAccount);
         return toResponse(savingAccount);
@@ -144,7 +147,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
     private String generateUniqueAccountNumber() {
         String number;
         do {
-            number = "3232" + String.format("%06d", new Random().nextInt(100000));
+            number = "3232" + String.format("%06d", new Random().nextInt(10000));
         } while (savingAccountRepository.existsByAccountNumber(number));
         return number;
     }
