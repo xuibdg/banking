@@ -55,6 +55,8 @@ public enum GlobalErrorMapping {
     NOT_PENDING("IEG-0058", "Status pembayaran bukan PENDING!."),
     NOT_ACTIVE("IEG-0059", "Status akun tidak ACTIVE!."),
     CUSTOMER_BORROW("IEG-0060", "Customer sudah memiliki pinjaman aktif!."),
+    PAYMENT_AMOUNT_MISMATCH("IEG-0061", "Yang harus dibayar adalah: pokok + bunga + biaya admin + denda keterlambatan jika ada = %s"),
+    CUSTOMER_BORROW("IEG-0060", "Customer sudah memiliki pinjaman aktif!."),
     UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
     ACC_NUMBER_REQ("IEG-0028", "Account number diperlukan. Hint: Pastikan account number ada"),
     ACC_NUMBER_EXIST("IEG-0029", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),

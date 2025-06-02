@@ -83,6 +83,9 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         loanAccount.setDisbursementDate(LocalDate.now());
         loanAccountRepository.save(loanAccount);
 
+        BigDecimal fixedFee = new BigDecimal("10000");
+
+
         LoanTransaction transaction = new LoanTransaction();
         transaction.setLoanTransactionId(UUID.randomUUID().toString());
         transaction.setLoanAccount(loanAccount);
@@ -90,7 +93,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         transaction.setAmount(loanAccount.getPrincipalAmount());
         transaction.setPrincipalComponent(loanAccount.getPrincipalAmount());
         transaction.setInterestComponent(BigDecimal.ZERO);
-        transaction.setFeeComponent(BigDecimal.ZERO);
+        transaction.setFeeComponent(fixedFee);
         transaction.setDescription("Loan disbursed");
         transaction.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
         transaction.setTransactionDate(Timestamp.valueOf(LocalDateTime.now()));
@@ -137,7 +140,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
                 .status(loanAccount.getAccountStatus())
                 .installmentAmount(loanAccount.getInstallmentAmount())
                 .firstRepaymentDate(loanAccount.getFirstRepaymentDate())
-                .message("Loan approved and disbursed successfully")
+                .message("SUKSES DISBURED")
                 .build();
     }
 

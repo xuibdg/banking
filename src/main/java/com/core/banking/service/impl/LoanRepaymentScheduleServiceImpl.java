@@ -22,9 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -135,25 +137,46 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NOT_ACTIVE);
         }
 
-        BigDecimal paymentAmount = request.getAmountPaid();
-        if (paymentAmount.compareTo(loanAccount.getInstallmentAmount()) != 0) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.AMOUNT_NOT_ENOUGH);
+        BigDecimal fixedFee = new BigDecimal("10000");
+
+        Timestamp paymentDate = request.getPaymentDate() != null
+                ? request.getPaymentDate()
+                : Timestamp.valueOf(LocalDateTime.now());
+
+        BigDecimal lateFee = BigDecimal.ZERO;
+
+        if (repaymentSchedule.getDueDate() != null) {
+            LocalDate dueDate = repaymentSchedule.getDueDate();
+            LocalDate paidDate = paymentDate.toLocalDateTime().toLocalDate();
+
+            if (paidDate.isAfter(dueDate)) {
+                long daysLate = ChronoUnit.DAYS.between(dueDate, paidDate);
+                BigDecimal dailyLateFee = new BigDecimal("5000");
+                lateFee = dailyLateFee.multiply(BigDecimal.valueOf(daysLate));
+            }
         }
 
         BigDecimal expectedInterest = repaymentSchedule.getInterestDue();
         BigDecimal expectedPrincipal = repaymentSchedule.getPrincipalDue();
 
-        BigDecimal interestPaid = expectedInterest;
-        BigDecimal principalPaid = expectedPrincipal;
+        BigDecimal totalDue = expectedPrincipal.add(expectedInterest).add(fixedFee).add(lateFee);
+
+        BigDecimal paymentAmount = request.getAmountPaid();
+
+        if (paymentAmount.compareTo(totalDue) != 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST,
+                    String.format(GlobalErrorMapping.PAYMENT_AMOUNT_MISMATCH.message, totalDue));
+        }
 
         LoanTransaction payment = new LoanTransaction();
         payment.setLoanTransactionId(UUID.randomUUID().toString());
         payment.setLoanAccount(loanAccount);
         payment.setTransactionType(LoanTransactionType.REPAYMENT);
         payment.setAmount(paymentAmount);
-        payment.setInterestComponent(interestPaid);
-        payment.setPrincipalComponent(principalPaid);
-        payment.setFeeComponent(BigDecimal.ZERO);
+        payment.setInterestComponent(expectedInterest);
+        payment.setPrincipalComponent(expectedPrincipal);
+        payment.setFeeComponent(fixedFee);
+        payment.setLatePaymentFeeComponent(lateFee);
         payment.setReferenceNumber(generateReferenceNumber());
         payment.setTransactionDate(request.getPaymentDate() != null ? request.getPaymentDate() : Timestamp.valueOf(LocalDateTime.now()));
         payment.setDescription("Loan repayment");
@@ -164,11 +187,11 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         repaymentSchedule.setPaymentStatus(LoanRepaymentStatus.PAID);
         repaymentSchedule.setPaymentDate(Timestamp.valueOf(LocalDateTime.now()));
         repaymentSchedule.setAmountPaid(paymentAmount);
-        repaymentSchedule.setPrincipalPaid(principalPaid);
-        repaymentSchedule.setInterestPaid(interestPaid);
+        repaymentSchedule.setPrincipalPaid(expectedPrincipal);
+        repaymentSchedule.setInterestPaid(expectedInterest);
         loanRepaymentScheduleRepository.save(repaymentSchedule);
 
-        BigDecimal newOutstanding = loanAccount.getOutstandingPrincipal().subtract(principalPaid);
+        BigDecimal newOutstanding = loanAccount.getOutstandingPrincipal().subtract(expectedPrincipal);
         loanAccount.setOutstandingPrincipal(newOutstanding.max(BigDecimal.ZERO));
 
         if (newOutstanding.compareTo(BigDecimal.ZERO) <= 0) {
@@ -180,19 +203,19 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         return LoanRepaymentScheduleResponse.builder()
                 .loanAccountId(loanAccount.getLoanAccountId())
                 .paymentAmount(paymentAmount)
-                .principalPaid(principalPaid)
-                .interestPaid(interestPaid)
+                .principalPaid(expectedPrincipal)
+                .interestPaid(expectedInterest)
+                .feePaid(fixedFee)
                 .status(loanAccount.getAccountStatus().name())
-                .message("Repayment recorded successfully")
+                .message("Repayment recorded successfully including fixed fee")
                 .build();
     }
 
     private String generateReferenceNumber() {
         String datePart = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        int randomPart = new Random().nextInt(9000) + 1000; // 1000 - 9999
+        int randomPart = new Random().nextInt(9000) + 1000;
         return "LOAN-" + datePart + "-" + randomPart;
     }
-
 
     @Override
     public String updateLoanRepaymentSchedule(String loanRepaymentScheduleId, LoanRepaymentScheduleRequest request, UserMetaData userMetaData) {
