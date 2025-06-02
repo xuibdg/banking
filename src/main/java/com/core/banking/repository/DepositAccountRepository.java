@@ -20,8 +20,7 @@ public interface DepositAccountRepository extends JpaRepository<DepositAccount, 
 
     List<DepositAccount> findByCustomerId(String customerId);
 
-    @Query("SELECT d FROM DepositAccount d WHERE d.accountStatus = :status ORDER BY d.depositoAccountId ASC")
-    List<DepositAccount> findByAccountStatusWithLimit(@Param("status") DepositAccountStatus status, Pageable pageable);
+    Optional<DepositAccount> findFirstByAccountStatusOrderByDepositoAccountIdAsc(DepositAccountStatus accountStatus);
 
     List<DepositAccount> findByAccountStatus(DepositAccountStatus accountStatus);
 
