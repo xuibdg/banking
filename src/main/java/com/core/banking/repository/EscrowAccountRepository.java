@@ -9,8 +9,15 @@ import org.springframework.data.repository.query.Param;
 
 import java.sql.Timestamp;
 import java.util.List;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.stereotype.Repository;
 
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
+
+@Repository
 public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, String> {
+    Optional<EscrowAccount> findByAccountNumber(String accountNumber);
 
     long countByAccountNumberStartingWith(String prefix);
 
@@ -31,5 +38,8 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
             @Param("accountStatus")EscrowAccountStatus accountStatus
             );
 
-
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<EscrowAccount> findWithLockByAccountNumber(String accountNumber);
 }
+
+

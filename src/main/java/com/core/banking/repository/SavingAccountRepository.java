@@ -10,6 +10,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
+
+@Repository
 public interface SavingAccountRepository extends JpaRepository<SavingAccount, String> {
     boolean existsByCustomer_IdAndAccountStatus(String customerId, SavingAccountStatus accountStatus);
     boolean existsByAccountNumber(String number);
@@ -24,4 +28,12 @@ public interface SavingAccountRepository extends JpaRepository<SavingAccount, St
     Optional<SavingAccount> findById(String id);
 
     SavingAccount findByCustomerId (String customer_id);
+    Optional<SavingAccount> findAccountNumber(String accountNumber);
+
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<SavingAccount> findWithLockByAccountNumber(String accountNumber);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<SavingAccount> findWithLockBySavingAccountId(String savingAccountId);
 }
