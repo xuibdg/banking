@@ -51,7 +51,8 @@ public enum GlobalErrorMapping {
     NOT_PENDING_APPROVAL("IEG-0057", "Status bukan PENDING_APPROVAL!."),
     NOT_PENDING("IEG-0058", "Status pembayaran bukan PENDING!."),
     NOT_ACTIVE("IEG-0059", "Status akun tidak ACTIVE!."),
-    CUSTOMER_BORROW("IEG-0060", "Customer sudah memiliki pinjaman aktif!.")
+    CUSTOMER_BORROW("IEG-0060", "Customer sudah memiliki pinjaman aktif!."),
+    PAYMENT_AMOUNT_MISMATCH("IEG-0061", "Yang harus dibayar adalah: pokok + bunga + biaya admin + denda keterlambatan jika ada = %s"),
     ;
 
 
