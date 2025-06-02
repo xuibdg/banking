@@ -1,11 +1,23 @@
 package com.core.banking.entity;
 
 import com.core.banking.enums.LoanTransactionType;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "loan_transactions")
@@ -16,11 +28,10 @@ import java.time.OffsetDateTime;
 @Builder
 public class LoanTransaction {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "loan_transaction_id")
     private String loanTransactionId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "loan_account_id", nullable = false)
     private LoanAccount loanAccount;
 
@@ -55,4 +66,10 @@ public class LoanTransaction {
 
     @Column(name = "created_at")
     private Timestamp createdAt;
+
+    @Column(name = "updated_at")
+    private Timestamp updatedAt;
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted;
 }
