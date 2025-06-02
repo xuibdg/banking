@@ -68,7 +68,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                 .totalAmount(total)
                 .maturityDate(depositAccount.getMaturityDate())
                 .beforeStatus(oldStatus)
-                .rolloverOption(rolloverOption.name()) // TODO: tidak boleh to string. harusnya pake name.
+                .rolloverOption(rolloverOption.name())
                 .success(true)
                 .build();
 
