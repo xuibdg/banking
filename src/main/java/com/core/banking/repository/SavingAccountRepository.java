@@ -28,7 +28,6 @@ public interface SavingAccountRepository extends JpaRepository<SavingAccount, St
     Optional<SavingAccount> findById(String id);
 
     SavingAccount findByCustomerId (String customer_id);
-}
     Optional<SavingAccount> findAccountNumber(String accountNumber);
 
 

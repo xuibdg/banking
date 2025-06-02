@@ -38,9 +38,6 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
             @Param("accountStatus")EscrowAccountStatus accountStatus
             );
 
-
-}
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<EscrowAccount> findWithLockByAccountNumber(String accountNumber);
 }
