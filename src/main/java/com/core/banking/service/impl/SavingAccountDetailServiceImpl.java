@@ -20,6 +20,7 @@ import com.core.banking.service.SavingAccountDetailService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,14 +43,14 @@ import static com.core.banking.utils.exception.GlobalErrorMapping.INVALID_PAGE_S
 import static com.core.banking.utils.exception.GlobalErrorMapping.TRX_REF_GENERATION_FAILED;
 
 @Service
-@RequiredArgsConstructor // Ini sudah cukup untuk dependency injection jika field final
+@RequiredArgsConstructor
 public class SavingAccountDetailServiceImpl implements SavingAccountDetailService {
 
-    // @Autowired // Tidak wajib jika menggunakan @RequiredArgsConstructor dan field final
+    @Autowired
     private final SavingAccountRepository savingAccountRepository;
-    // @Autowired // Tidak wajib
+    @Autowired
     private final SavingAccountDetailRepository savingAccountDetailRepository;
-    // @Autowired // Tidak wajib
+    @Autowired
     private final EscrowAccountRepository escrowAccountRepository;
 
 
