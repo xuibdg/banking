@@ -13,5 +13,4 @@ public class SavingAccountRequest {
 
     private String customerId;
     private String savingTypeConfig;
-    private BigDecimal initialDeposit;
 }

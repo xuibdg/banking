@@ -22,4 +22,8 @@ public interface CustomerRepository extends JpaRepository<Customer, String> {
     boolean existsByPhoneNumber(String phoneNumber);
 
     Optional<Customer> findByCustomerStatus(CustomerStatus customerStatus);
+
+    @Query(value = "SELECT * FROM customers c  where customer_id = :customerId and customer_status = :status and is_deleted = false",
+            nativeQuery = true)
+    Optional<Customer> findByIdEligible(String customerId, String status);
 }
