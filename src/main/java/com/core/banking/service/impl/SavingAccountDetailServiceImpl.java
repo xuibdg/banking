@@ -231,12 +231,11 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
     @Transactional(readOnly = true)
     public PaginatedResponseDTO<SavingTransactionResponseDTO> getAccountStatement(
             String savingAccountNumber,
-            LocalDate startDate, // Sesuai dengan nama parameter di interface
-            LocalDate endDate,   // Sesuai dengan nama parameter di interface
+            LocalDate startDate,
+            LocalDate endDate,
             int page,
             int size) {
 
-        // 1. Konversi LocalDate ke Timestamp
         Timestamp startTimestamp = null;
         if (startDate != null) {
             startTimestamp = Timestamp.valueOf(startDate.atStartOfDay());
@@ -244,11 +243,11 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
 
         Timestamp endTimestamp = null;
         if (endDate != null) {
-            // Untuk endDate, kita ambil sampai akhir hari (23:59:59.999...)
+
             endTimestamp = Timestamp.valueOf(endDate.atTime(LocalTime.MAX));
         }
 
-        // 2. Buat AccountStatementRequestDTO secara internal
+
         AccountStatementRequestDTO internalRequestDTO = AccountStatementRequestDTO.builder()
                 .savingAccountNumber(savingAccountNumber)
                 .startDate(startTimestamp)
@@ -257,14 +256,12 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
                 .size(size)
                 .build();
 
-        // 3. Validasi menggunakan DTO yang baru dibuat
+
         validateAccountStatementRequest(internalRequestDTO);
 
-        // 4. Lanjutkan dengan logika yang ada, menggunakan internalRequestDTO
         SavingAccount savingAccount = savingAccountRepository.findByAccountNumber(internalRequestDTO.getSavingAccountNumber())
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
 
-        // Ambil start/end Timestamp dari internalRequestDTO untuk konsistensi
         Timestamp effectiveStartDateTime = internalRequestDTO.getStartDate();
         Timestamp effectiveEndDateTime = internalRequestDTO.getEndDate();
 
@@ -276,8 +273,8 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
 
         Page<SavingAccountDetail> pageResult = savingAccountDetailRepository.findBySavingAccountAndDateRange(
                 savingAccount.getSavingAccountId(),
-                effectiveStartDateTime, // Gunakan Timestamp yang sudah diproses
-                effectiveEndDateTime,   // Gunakan Timestamp yang sudah diproses
+                effectiveStartDateTime,
+                effectiveEndDateTime,
                 pageable
         );
 
