@@ -11,7 +11,7 @@ public class BaseResponse<T> {
 
     private HttpStatus httpStatus;
 
-    private String status;
+    private Integer status;
 
     private String message;
 
