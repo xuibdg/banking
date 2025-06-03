@@ -27,6 +27,7 @@ public class SavingAccountResponse {
     private String accountNumber;
     private String customerId;
     private String customerName;
+    private String nik;
     private String savingTypeConfig;
     private String savingTypeName;
     private BigDecimal balance;
