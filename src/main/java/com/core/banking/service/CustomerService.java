@@ -10,6 +10,6 @@ import java.util.List;
 public interface CustomerService {
     String registerNewCustomer(CustomerRequest request, UserMetaData userMetaData);
     CustomerResponse viewCustomerDetails(String id, String nik);
-    String updateCustomerInformation(String id, String nik, CustomerRequest request);
-    String changeCustomerStatus(String id, CustomerStatus newStatus);
+    String updateCustomerInformation(String id, String nik, CustomerRequest request, UserMetaData userMetaData);
+    String changeCustomerStatus(String id, CustomerStatus newStatus, UserMetaData userMetaData);
 }
