@@ -123,7 +123,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
         depositAccountResponse.setPrincipalAmount(savedAccount.getPrincipalAmount());
         depositAccountResponse.setMaturityDate(savedAccount.getMaturityDate());
         depositAccountResponse.setAccountStatus(savedAccount.getAccountStatus().name());
-        depositAccountResponse.setRolloverOption(String.valueOf(savedAccount.getRolloverOption()));
+        depositAccountResponse.setRolloverOption(savedAccount.getRolloverOption().name());
         depositAccountResponse.setOpenedAt(savedAccount.getOpenedAt());
         depositAccountResponse.setCreatedAt(savedAccount.getCreatedAt());
 
@@ -142,7 +142,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
         depositAccountResponse.setPrincipalAmount(depositAccount.getPrincipalAmount());
         depositAccountResponse.setMaturityDate(depositAccount.getMaturityDate());
         depositAccountResponse.setAccountStatus(depositAccount.getAccountStatus().name());
-        depositAccountResponse.setRolloverOption(String.valueOf(depositAccount.getRolloverOption()));
+        depositAccountResponse.setRolloverOption(depositAccount.getRolloverOption().name());
         depositAccountResponse.setOpenedAt(depositAccount.getOpenedAt());
         depositAccountResponse.setCreatedAt(depositAccount.getCreatedAt());
         depositAccountResponse.setCustomerId(depositAccount.getCustomer().getId());
@@ -166,7 +166,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                     depositAccountResponse.setPrincipalAmount(depositAccount.getPrincipalAmount());
                     depositAccountResponse.setMaturityDate(depositAccount.getMaturityDate());
                     depositAccountResponse.setAccountStatus(String.valueOf(depositAccount.getAccountStatus()));
-                    depositAccountResponse.setRolloverOption(String.valueOf(depositAccount.getRolloverOption()));
+                    depositAccountResponse.setRolloverOption(depositAccount.getRolloverOption().name());
                     depositAccountResponse.setOpenedAt(depositAccount.getOpenedAt());
                     depositAccountResponse.setCreatedAt(depositAccount.getCreatedAt());
                     depositAccountResponse.setCustomerName(depositAccount.getCustomer().getFullName());
@@ -190,7 +190,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                     depositAccountResponse.setPrincipalAmount(depositAccount.getPrincipalAmount());
                     depositAccountResponse.setMaturityDate(depositAccount.getMaturityDate());
                     depositAccountResponse.setAccountStatus(String.valueOf(depositAccount.getAccountStatus()));
-                    depositAccountResponse.setRolloverOption(String.valueOf(depositAccount.getRolloverOption()));
+                    depositAccountResponse.setRolloverOption(depositAccount.getRolloverOption().name());
                     depositAccountResponse.setOpenedAt(depositAccount.getOpenedAt());
                     depositAccountResponse.setCreatedAt(depositAccount.getCreatedAt());
                     depositAccountResponse.setCustomerName(depositAccount.getCustomer().getFullName());
