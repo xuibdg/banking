@@ -6,6 +6,8 @@ import com.core.banking.dto.SavingAccountDetail.PaginatedResponseDTO;
 import com.core.banking.dto.SavingAccountDetail.SavingTransactionResponseDTO;
 import com.core.banking.dto.SavingAccountDetail.WithdrawalRequestDTO;
 
+import java.time.LocalDate;
+
 public interface SavingAccountDetailService {
 
     SavingTransactionResponseDTO recordDeposit(DepositRequestDTO depositRequestDTO);
@@ -13,6 +15,10 @@ public interface SavingAccountDetailService {
     SavingTransactionResponseDTO recordWithdrawal(WithdrawalRequestDTO withdrawalRequestDTO);
 
     PaginatedResponseDTO<SavingTransactionResponseDTO> getAccountStatement(
-            AccountStatementRequestDTO statementRequestDTO
-    );
+            String savingAccountNumber,
+            LocalDate startDate,
+            LocalDate endDate,
+            int page,
+            int size);
 }
+

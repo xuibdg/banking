@@ -20,7 +20,6 @@ import com.core.banking.service.SavingAccountDetailService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,14 +42,14 @@ import static com.core.banking.utils.exception.GlobalErrorMapping.INVALID_PAGE_S
 import static com.core.banking.utils.exception.GlobalErrorMapping.TRX_REF_GENERATION_FAILED;
 
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor // Ini sudah cukup untuk dependency injection jika field final
 public class SavingAccountDetailServiceImpl implements SavingAccountDetailService {
 
-    @Autowired
+    // @Autowired // Tidak wajib jika menggunakan @RequiredArgsConstructor dan field final
     private final SavingAccountRepository savingAccountRepository;
-    @Autowired
+    // @Autowired // Tidak wajib
     private final SavingAccountDetailRepository savingAccountDetailRepository;
-    @Autowired
+    // @Autowired // Tidak wajib
     private final EscrowAccountRepository escrowAccountRepository;
 
 
@@ -230,23 +229,56 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
 
     @Override
     @Transactional(readOnly = true)
-    public PaginatedResponseDTO<SavingTransactionResponseDTO> getAccountStatement(AccountStatementRequestDTO request) {
-        validateAccountStatementRequest(request);
+    public PaginatedResponseDTO<SavingTransactionResponseDTO> getAccountStatement(
+            String savingAccountNumber,
+            LocalDate startDate, // Sesuai dengan nama parameter di interface
+            LocalDate endDate,   // Sesuai dengan nama parameter di interface
+            int page,
+            int size) {
 
-        SavingAccount savingAccount = savingAccountRepository.findByAccountNumber(request.getSavingAccountNumber())
+        // 1. Konversi LocalDate ke Timestamp
+        Timestamp startTimestamp = null;
+        if (startDate != null) {
+            startTimestamp = Timestamp.valueOf(startDate.atStartOfDay());
+        }
+
+        Timestamp endTimestamp = null;
+        if (endDate != null) {
+            // Untuk endDate, kita ambil sampai akhir hari (23:59:59.999...)
+            endTimestamp = Timestamp.valueOf(endDate.atTime(LocalTime.MAX));
+        }
+
+        // 2. Buat AccountStatementRequestDTO secara internal
+        AccountStatementRequestDTO internalRequestDTO = AccountStatementRequestDTO.builder()
+                .savingAccountNumber(savingAccountNumber)
+                .startDate(startTimestamp)
+                .endDate(endTimestamp)
+                .page(page)
+                .size(size)
+                .build();
+
+        // 3. Validasi menggunakan DTO yang baru dibuat
+        validateAccountStatementRequest(internalRequestDTO);
+
+        // 4. Lanjutkan dengan logika yang ada, menggunakan internalRequestDTO
+        SavingAccount savingAccount = savingAccountRepository.findByAccountNumber(internalRequestDTO.getSavingAccountNumber())
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
 
-        Timestamp startDateTime = request.getStartDate();
-        Timestamp endDateTime = request.getEndDate();
+        // Ambil start/end Timestamp dari internalRequestDTO untuk konsistensi
+        Timestamp effectiveStartDateTime = internalRequestDTO.getStartDate();
+        Timestamp effectiveEndDateTime = internalRequestDTO.getEndDate();
 
-        if (startDateTime != null && endDateTime != null && endDateTime.before(startDateTime)) {
+        if (effectiveStartDateTime != null && effectiveEndDateTime != null && effectiveEndDateTime.before(effectiveStartDateTime)) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DATE_RANGE);
         }
 
-        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), Sort.by("transactionAt").descending());
+        Pageable pageable = PageRequest.of(internalRequestDTO.getPage(), internalRequestDTO.getSize(), Sort.by("transactionAt").descending());
 
         Page<SavingAccountDetail> pageResult = savingAccountDetailRepository.findBySavingAccountAndDateRange(
-                savingAccount.getSavingAccountId(), startDateTime, endDateTime, pageable
+                savingAccount.getSavingAccountId(),
+                effectiveStartDateTime, // Gunakan Timestamp yang sudah diproses
+                effectiveEndDateTime,   // Gunakan Timestamp yang sudah diproses
+                pageable
         );
 
         List<SavingTransactionResponseDTO> transactionDTOs = pageResult.getContent().stream()
@@ -333,7 +365,7 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         if (request.getPage() < 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST,GlobalErrorMapping.INVALID_PAGE_PARAM);
         }
-        if (request.getSize() <= 0 || request.getSize() > 100) {
+        if (request.getSize() <= 0 || request.getSize() > 100) { // Batas atas 100 seperti di controller
             throw new BusinessException(HttpStatus.BAD_REQUEST, INVALID_PAGE_SIZE_PARAM);
         }
     }
