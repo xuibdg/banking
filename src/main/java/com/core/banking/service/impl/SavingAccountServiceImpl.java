@@ -55,7 +55,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_ALREADY_EXIST);
         }
 
-        SavingTypeConfig config = savingTypeConfigRepository.findById(request.getSavingTypeConfig())
+        SavingTypeConfig config = savingTypeConfigRepository.findById(request.getSavingTypeConfigId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND));
 
         String accountNumber = generateUniqueAccountNumber();
@@ -66,6 +66,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
                 .customer(customer)
                 .savingTypeConfig(config)
                 .currentBalance(BigDecimal.ZERO)
+                .accruedInterest(BigDecimal.ZERO)
                 .accountStatus(SavingAccountStatus.ACTIVE)
                 .createdAt(now)
                 .createBy(userMetaData.getUserId())
@@ -85,9 +86,10 @@ public class SavingAccountServiceImpl implements SavingAccountService {
                     .customerId(data.getCustomer().getId())
                     .customerName(data.getCustomer().getFullName())
                     .nik(data.getCustomer().getNik())
-                    .savingTypeConfig(data.getSavingTypeConfig().getSavingTypeConfigId())
+                    .savingTypeConfigId(data.getSavingTypeConfig().getSavingTypeConfigId())
                     .savingTypeName(String.valueOf(data.getSavingTypeConfig().getSavingType().getTypeName()))
-                    .balance(data.getCurrentBalance())
+                    .currentBalance(data.getCurrentBalance())
+                    .accruedInterest(data.getAccruedInterest())
                     .status(data.getAccountStatus())
                     .isDeleted(data.getIsDeleted())
                     .build();
@@ -151,9 +153,10 @@ public class SavingAccountServiceImpl implements SavingAccountService {
                 .customerId(savingAccount.getCustomer().getId())
                 .customerName(savingAccount.getCustomer().getFullName())
                 .nik(savingAccount.getCustomer().getNik())
-                .savingTypeConfig(savingAccount.getSavingTypeConfig().getSavingTypeConfigId())
+                .savingTypeConfigId(savingAccount.getSavingTypeConfig().getSavingTypeConfigId())
                 .savingTypeName(String.valueOf(savingAccount.getSavingTypeConfig().getSavingType().getTypeName()))
-                .balance(savingAccount.getCurrentBalance())
+                .currentBalance(savingAccount.getCurrentBalance())
+                .accruedInterest(savingAccount.getAccruedInterest())
                 .status(savingAccount.getAccountStatus())
                 .build();
     }

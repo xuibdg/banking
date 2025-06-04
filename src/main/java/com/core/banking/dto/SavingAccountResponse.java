@@ -28,9 +28,10 @@ public class SavingAccountResponse {
     private String customerId;
     private String customerName;
     private String nik;
-    private String savingTypeConfig;
+    private String savingTypeConfigId;
     private String savingTypeName;
-    private BigDecimal balance;
+    private BigDecimal currentBalance;
+    private BigDecimal accruedInterest;
     private SavingAccountStatus status;
     private Boolean isDeleted;
 
