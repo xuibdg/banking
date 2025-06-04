@@ -23,7 +23,7 @@ public enum GlobalErrorMapping {
     NOT_FOUND_ID("IEG-0028", "Data ID Tidak Ditemukan"),
     PAYER_CUSTOMER_NOT_FOUND("IEG-0031", "Payer customer tidak ditemukan"),
     BENEFICIARY_CUSTOMER_NOT_FOUND("IEG-0032", "Beneficiary customer tidak ditemukan"),
-    TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033","Transaction type tidak valid atau tidak tersedia"),
+    TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033", "Transaction type tidak valid atau tidak tersedia"),
     SAVING_ACCOUNT_NOT_FOUND("IEG-0034", "Saving account tidak ditemukan"),
     LOAN_ACCOUNT_NOT_FOUND("IEG-0035", "Loan account tidak ditemukan"),
     DEPOSIT_ACCOUNT_NOT_FOUND("IEG-0036", "Deposit account not found"),
@@ -61,11 +61,9 @@ public enum GlobalErrorMapping {
     DEPOSIT_ACCOUNT_NOT_ACTIVE("DEP-007", "Akun deposito tersebut tidak aktif. Hint: Pastikan akun deposito tersebut berstatus aktif"),
     DEPOSIT_MATURITY_DATE_NOT_REACHED("DEP-008", "Akun deposito tersebut, tanggal jatuh temponya belum memenuhi. Hint: Cek teliti tanggal jatuh tempo vs tanggal saat ini"),
     INVALID_ROLLOVER_OPTION("DEP-009", "Opsi perpanjangan tidak valid. Hint: Cek teliti opsi perpanjangan yang tersedia."),
-    MATURITY_DATE_NOT_REACHED("DEP-010", "Tanggal jatuh tempo belum tercapai. Hint: Periksa kembali tanggal pada opened at dan maturity date.");
-
-
-
-
+    MATURITY_DATE_NOT_REACHED("DEP-010", "Tanggal jatuh tempo belum tercapai. Hint: Periksa kembali tanggal pada opened at dan maturity date."),
+    DATA_ACOUNT_NOT_FOUND("DEP-011", "Data tidak ditemukan. Hint:Harap Masukan Data Account Yang benar"),
+    ID_DEPOSIT_SHARING_NOT_FOUND("DEP-012", "ID Deposit Profit Sharing Tidak Ditemukan");
 
 
     public final String code;
