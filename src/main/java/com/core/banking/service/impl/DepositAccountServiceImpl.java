@@ -4,19 +4,9 @@ import com.core.banking.config.CurrentUser;
 import com.core.banking.dto.DepositAccountRequest;
 import com.core.banking.dto.DepositAccountResponse;
 import com.core.banking.dto.UserMetaData;
-import com.core.banking.entity.Customer;
-import com.core.banking.entity.DepositAccount;
-import com.core.banking.entity.DepositAccountDetail;
-import com.core.banking.entity.DepositTypeConfig;
-import com.core.banking.enums.CustomerStatus;
-import com.core.banking.enums.DepositAccountStatus;
-import com.core.banking.enums.DepositoTransactionType;
-import com.core.banking.enums.MutationType;
-import com.core.banking.enums.RolloverOption;
-import com.core.banking.repository.CustomerRepository;
-import com.core.banking.repository.DepositAccountDetailRepository;
-import com.core.banking.repository.DepositAccountRepository;
-import com.core.banking.repository.DepositTypeConfigRepository;
+import com.core.banking.entity.*;
+import com.core.banking.enums.*;
+import com.core.banking.repository.*;
 import com.core.banking.service.DepositAccountService;
 import com.core.banking.utils.DepositAccountNumberGenerator;
 import com.core.banking.utils.exception.BusinessException;
@@ -50,6 +40,9 @@ public class DepositAccountServiceImpl implements DepositAccountService {
     @Autowired
     DepositAccountNumberGenerator depositAccountNumberGenerator;
 
+    @Autowired
+    SavingAccountRepository savingAccountRepository;
+
     @Override
     public List<DepositAccount> findAll() {
         return depositAccountRepository.findAll();
@@ -58,12 +51,18 @@ public class DepositAccountServiceImpl implements DepositAccountService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
-    public DepositAccountResponse openDepositAccount(DepositAccountRequest DepositAccountRequest, @CurrentUser UserMetaData userMetaData) {
+    public DepositAccountResponse openDepositAccount(DepositAccountRequest DepositAccountRequest, String savingAccountId, @CurrentUser UserMetaData userMetaData) {
         Customer customer = customerRepository.findById(DepositAccountRequest.getCustomerId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
 
         if (customer.getCustomerStatus() != CustomerStatus.ACTIVE) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_ACTIVE);
+        }
+
+        SavingAccount savingAccount = savingAccountRepository.findById(savingAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
+
+        if (savingAccount.getAccountStatus() != SavingAccountStatus.ACTIVE) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_ACTIVE);
         }
 
         DepositTypeConfig depositTypeConfig = depositTypeConfigRepository.findById(DepositAccountRequest.getDepositTypeConfigId())

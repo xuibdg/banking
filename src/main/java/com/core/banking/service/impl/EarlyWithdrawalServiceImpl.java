@@ -1,15 +1,18 @@
 package com.core.banking.service.impl;
 
+import com.core.banking.dto.DepositAccountRequest;
 import com.core.banking.dto.DepositAccountResponse;
 import com.core.banking.dto.EarlyWithdrawalResponse;
 import com.core.banking.dto.UserMetaData;
+import com.core.banking.entity.Customer;
 import com.core.banking.entity.DepositAccount;
 import com.core.banking.entity.DepositAccountDetail;
-import com.core.banking.enums.DepositAccountStatus;
-import com.core.banking.enums.DepositoTransactionType;
-import com.core.banking.enums.MutationType;
+import com.core.banking.entity.SavingAccount;
+import com.core.banking.enums.*;
+import com.core.banking.repository.CustomerRepository;
 import com.core.banking.repository.DepositAccountDetailRepository;
 import com.core.banking.repository.DepositAccountRepository;
+import com.core.banking.repository.SavingAccountRepository;
 import com.core.banking.service.EarlyWithdrawalService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -36,13 +39,36 @@ public class EarlyWithdrawalServiceImpl implements EarlyWithdrawalService {
     @Autowired
     DepositAccountDetailRepository depositAccountDetailRepository;
 
+    @Autowired
+    SavingAccountRepository savingAccountRepository;
+
+    @Autowired
+    CustomerRepository customerRepository;
+
     @Override
-    public EarlyWithdrawalResponse processEarlyWithdrawal(Long depositAccountId, UserMetaData userMetaData) {
+    public EarlyWithdrawalResponse processEarlyWithdrawal(DepositAccountRequest DepositAccountRequest, Long depositAccountId, String savingAccountId, UserMetaData userMetaData) {
         DepositAccount depositAccount = depositAccountRepository.findById(depositAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
+        SavingAccount savingAccount = savingAccountRepository.findById(savingAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
+
+        Customer customer = customerRepository.findById(DepositAccountRequest.getCustomerId())
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
+
+        if (customer.getCustomerStatus() != CustomerStatus.ACTIVE) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_ACTIVE);
+        }
+
+        if (savingAccount.getAccountStatus() != SavingAccountStatus.ACTIVE) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_ACTIVE);
+        }
+
+        if (!depositAccount.getCustomer().getId().equals(savingAccount.getCustomer().getId())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR); //TODO: MAXIMIZE GLOBALERRORMAPPING
+        }
 
         if (depositAccount.getAccountStatus() != DepositAccountStatus.ACTIVE) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_ACTIVE);
         }
+
         BigDecimal penaltyPercentage = depositAccount.getDepositTypeConfig().getEarlyWithdrawalPenaltyPercentage();
         BigDecimal penaltyAmount = depositAccount.getPrincipalAmount().multiply(penaltyPercentage).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
         BigDecimal amountToReturn = depositAccount.getPrincipalAmount().subtract(penaltyAmount);

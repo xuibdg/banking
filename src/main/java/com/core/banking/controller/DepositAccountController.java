@@ -32,9 +32,9 @@ public class DepositAccountController {
         return buildSuccessResponse(depositAccountService.findAll());
     }
 
-    @PostMapping
-    BaseResponse<DepositAccountResponse> openDepositAccount(@RequestBody DepositAccountRequest depositAccountRequest, UserMetaData userMetaData) {
-        return buildSuccessResponse(depositAccountService.openDepositAccount(depositAccountRequest, userMetaData));
+    @PostMapping("/open")
+    BaseResponse<DepositAccountResponse> openDepositAccount(@RequestBody DepositAccountRequest depositAccountRequest, String savingAccountId, UserMetaData userMetaData) {
+        return buildSuccessResponse(depositAccountService.openDepositAccount(depositAccountRequest, savingAccountId,userMetaData));
     }
 
     @GetMapping("/{id}")

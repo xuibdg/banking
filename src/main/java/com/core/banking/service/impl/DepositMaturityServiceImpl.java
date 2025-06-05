@@ -2,10 +2,7 @@ package com.core.banking.service.impl;
 
 import com.core.banking.dto.DepositMaturityResponse;
 import com.core.banking.entity.*;
-import com.core.banking.enums.DepositAccountStatus;
-import com.core.banking.enums.DepositoTransactionType;
-import com.core.banking.enums.MutationType;
-import com.core.banking.enums.RolloverOption;
+import com.core.banking.enums.*;
 import com.core.banking.repository.DepositAccountDetailRepository;
 import com.core.banking.repository.DepositAccountRepository;
 import com.core.banking.repository.SavingAccountRepository;
@@ -52,9 +49,12 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
         //TODO: TAMBAH VALIDASI SAVING ACCOUNT ID
 
         if (!depositAccount.getCustomer().getId().equals(savingAccount.getCustomer().getId())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR); //TODO: MAXIMIZE GLOBALERRORMAPPING
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_CUSTOMER_INEQUAL); //TODO: MAXIMIZE GLOBALERRORMAPPING
         }
 
+        if (savingAccount.getAccountStatus() != SavingAccountStatus.ACTIVE) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_ACTIVE);
+        }
 
         if (depositAccount.getAccountStatus() != DepositAccountStatus.ACTIVE) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_ACTIVE);

@@ -12,7 +12,7 @@ import java.util.List;
 public interface DepositAccountService {
     List<DepositAccount> findAll();
 
-    DepositAccountResponse openDepositAccount(DepositAccountRequest depositAccountRequest, @CurrentUser UserMetaData userMetaData);
+    DepositAccountResponse openDepositAccount(DepositAccountRequest depositAccountRequest, String savingAccountId, @CurrentUser UserMetaData userMetaData);
 
     DepositAccountResponse getDepositAccountById(Long depositAccountId);
 

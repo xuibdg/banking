@@ -21,9 +21,9 @@ public class EarlyWithdrawalController {
     @Autowired
     private EarlyWithdrawalService earlyWithdrawalService;
 
-    @PostMapping("/{id}/early-withdrawal")
-    BaseResponse<EarlyWithdrawalResponse> processEarlyWithdrawal(@PathVariable("id") Long depositAccountId, @RequestBody(required = false)EarlyWithdrawalRequest earlyWithdrawalRequest, @CurrentUser UserMetaData userMetaData) {
-        EarlyWithdrawalResponse earlyWithdrawalResponse = earlyWithdrawalService.processEarlyWithdrawal(depositAccountId, userMetaData);
+    @PostMapping("/{depositAccountId}/early-withdrawal/{savingAccountId}")
+    BaseResponse<EarlyWithdrawalResponse> processEarlyWithdrawal(@PathVariable("depositAccountId") Long depositAccountId, @PathVariable("savingAccountId") String savingAccountId, @RequestBody(required = false)EarlyWithdrawalRequest earlyWithdrawalRequest, @CurrentUser UserMetaData userMetaData) {
+        EarlyWithdrawalResponse earlyWithdrawalResponse = earlyWithdrawalService.processEarlyWithdrawal(depositAccountId, savingAccountId,userMetaData);
         return buildSuccessResponse(earlyWithdrawalResponse);
     }
 
