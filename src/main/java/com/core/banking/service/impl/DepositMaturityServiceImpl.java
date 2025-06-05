@@ -8,6 +8,7 @@ import com.core.banking.enums.MutationType;
 import com.core.banking.enums.RolloverOption;
 import com.core.banking.repository.DepositAccountDetailRepository;
 import com.core.banking.repository.DepositAccountRepository;
+import com.core.banking.repository.SavingAccountRepository;
 import com.core.banking.service.DepositMaturityService;
 import com.core.banking.utils.DepositAccountNumberGenerator;
 import com.core.banking.utils.exception.BusinessException;
@@ -40,10 +41,20 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
     @Autowired
     DepositAccountNumberGenerator depositAccountNumberGenerator;
 
+    @Autowired
+    SavingAccountRepository savingAccountRepository;
+
     @Override
     @Transactional
-    public DepositMaturityResponse processMaturity(Long depositoAccountId) {
+    public DepositMaturityResponse processMaturity(Long depositoAccountId, String savingAccountId) {
         DepositAccount depositAccount = depositAccountRepository.findById(depositoAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
+        SavingAccount savingAccount = savingAccountRepository.findById(savingAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
+        //TODO: TAMBAH VALIDASI SAVING ACCOUNT ID
+
+        if (!depositAccount.getCustomer().getId().equals(savingAccount.getCustomer().getId())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR); //TODO: MAXIMIZE GLOBALERRORMAPPING
+        }
+
 
         if (depositAccount.getAccountStatus() != DepositAccountStatus.ACTIVE) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_ACTIVE);
@@ -74,7 +85,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
 
         switch (rolloverOption) {
             case NO_ROLLOVER:
-                depositPayout(depositAccount, profit);
+                depositPayout(depositAccount, profit, savingAccount);
                 depositMaturityResponse.setAfterStatus(DepositAccountStatus.MATURED_PAID);
                 depositMaturityResponse.setMessage("Akun Deposito Mudharabah telah sukses dibayar");
                 break;
@@ -167,7 +178,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
         return expectedProfit;
     }
 
-    private void depositPayout(DepositAccount depositAccount, BigDecimal profit) {
+    private void depositPayout(DepositAccount depositAccount, BigDecimal profit, SavingAccount savingAccount) {
         DepositAccountDetail profitDetail = DepositAccountDetail.builder()
                 .depositAccount(depositAccount)
                 .transactionType(DepositoTransactionType.PROFIT_PAYOUT)
