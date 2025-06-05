@@ -1,22 +1,22 @@
 package com.core.banking.service;
 
+import com.core.banking.config.CurrentUser;
 import com.core.banking.dto.DepositProfitSharingRequest;
 import com.core.banking.dto.DepositProfitSharingResponse;
-import com.core.banking.entity.DepositProfitSharing;
+import com.core.banking.dto.UserMetaData;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 public interface DepositProfitSharingService {
 
-    void processProfitSharing(LocalDate profitPeriodStart, LocalDate profitPeriodEnd);
+    DepositProfitSharingResponse createProcessDepositSharing(DepositProfitSharingRequest depositProfitSharingRequest, @CurrentUser UserMetaData userMetaData);
 
     BigDecimal totalProfitBank();
 
-    DepositProfitSharingResponse update(String id, DepositProfitSharingRequest request);
+    String updateDepositProfitSharing(Long id, DepositProfitSharingRequest request, UserMetaData userMetaData);
 
-    void delete(String id);
+    String deleteDepositProfitSharing(Long id, UserMetaData userMetaData);
 
-    List<DepositProfitSharing> findAll();
+    List<DepositProfitSharingResponse> findAll();
 }

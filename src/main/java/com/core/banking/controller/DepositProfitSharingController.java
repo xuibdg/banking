@@ -1,10 +1,16 @@
 package com.core.banking.controller;
 
+import com.core.banking.config.CurrentUser;
 import com.core.banking.dto.DepositProfitSharingRequest;
+import com.core.banking.dto.DepositProfitSharingResponse;
+import com.core.banking.dto.UserMetaData;
 import com.core.banking.service.DepositProfitSharingService;
 import com.core.banking.utils.exception.BaseResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/deposit-profit-sharings")
@@ -14,25 +20,22 @@ public class DepositProfitSharingController extends BaseCRUDController {
     private DepositProfitSharingService depositProfitSharingService;
 
     @PostMapping("/process")
-    public BaseResponse processProfitSharing(@RequestBody DepositProfitSharingRequest request) {
-        depositProfitSharingService.processProfitSharing(request.getProfitPeriodStartDate(), request.getProfitPeriodEndDate());
-        return buildSuccessResponse("Profit sharing processed successfully.");
+    BaseResponse<DepositProfitSharingResponse> createProcessProfitSharring(@RequestBody @Validated DepositProfitSharingRequest request, @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(depositProfitSharingService.createProcessDepositSharing(request, userMetaData));
     }
 
-    // Uncomment and use BaseResponse for findAll
-//    @GetMapping
-//    public BaseResponse findAll() {
-//        return buildSuccessResponse(depositProfitSharingService.findAll());
-//    }
+    @GetMapping
+    BaseResponse<List<DepositProfitSharingResponse>> getAll() {
+        return buildSuccessResponse(depositProfitSharingService.findAll());
+    }
 
     @PutMapping("/{id}")
-    public BaseResponse update(@PathVariable String id, @RequestBody DepositProfitSharingRequest request) {
-        return buildSuccessResponse(depositProfitSharingService.update(id, request));
+    BaseResponse update(@PathVariable Long id, @RequestBody DepositProfitSharingRequest request, @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(depositProfitSharingService.updateDepositProfitSharing(id, request, userMetaData));
     }
 
     @DeleteMapping("/{id}")
-    public BaseResponse delete(@PathVariable String id) {
-        depositProfitSharingService.delete(id);
-        return buildSuccessResponse("Deleted successfully.");
+    BaseResponse<String> delete(@PathVariable Long id, @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(depositProfitSharingService.deleteDepositProfitSharing(id, userMetaData));
     }
 }

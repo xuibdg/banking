@@ -63,7 +63,9 @@ public enum GlobalErrorMapping {
     INVALID_ROLLOVER_OPTION("DEP-009", "Opsi perpanjangan tidak valid. Hint: Cek teliti opsi perpanjangan yang tersedia."),
     MATURITY_DATE_NOT_REACHED("DEP-010", "Tanggal jatuh tempo belum tercapai. Hint: Periksa kembali tanggal pada opened at dan maturity date."),
     DATA_ACOUNT_NOT_FOUND("DEP-011", "Data tidak ditemukan. Hint:Harap Masukan Data Account Yang benar"),
-    ID_DEPOSIT_SHARING_NOT_FOUND("DEP-012", "ID Deposit Profit Sharing Tidak Ditemukan");
+    ID_DEPOSIT_SHARING_NOT_FOUND("DEP-012", "ID Deposit Profit Sharing Tidak Ditemukan"),
+    NO_PRROFIT_SHARING_PROCESSED("DEP-013", "Tidak ada proses pembagian profit yang dilakukan pada akun deposito ini. Pastikan akun deposito sudah memenuhi syarat untuk pembagian profit."),
+    ;
 
 
     public final String code;

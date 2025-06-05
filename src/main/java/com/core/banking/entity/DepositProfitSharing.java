@@ -21,7 +21,7 @@ public class DepositProfitSharing {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "deposito_profit_sharing_id")
-    private Long depositoProfitSharingId;
+    private Long depositProfitSharingId;
 
     @ManyToOne
     @JoinColumn(name = "deposito_account_id", nullable = false)
