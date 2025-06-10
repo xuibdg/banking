@@ -41,5 +41,3 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<EscrowAccount> findWithLockByAccountNumber(String accountNumber);
 }
-
-
