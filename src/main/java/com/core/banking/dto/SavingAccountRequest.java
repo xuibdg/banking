@@ -12,6 +12,5 @@ import java.math.BigDecimal;
 public class SavingAccountRequest {
 
     private String customerId;
-    private String savingTypeConfig;
-    private BigDecimal initialDeposit;
+    private String savingTypeConfigId;
 }

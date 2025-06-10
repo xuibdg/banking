@@ -23,6 +23,9 @@ import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -54,6 +57,7 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
     private DepositAccountRepository depositAccountRepository;
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
     public String createEscrowAccount(EscrowAccountRequest request, UserMetaData userMetaData) {
         Customer payerId = customerRepository.findById(request.getPayerCustomer())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.PAYER_CUSTOMER_NOT_FOUND));
@@ -238,10 +242,16 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                 "| ID : " + deleteEscrowAccount.getId() + " |";
     }
 
-    private String generateAccountNumber() {
+    public String generateAccountNumber() {
+        Long count = escrowAccountRepository.countAccountNumber();
+        if (count != null || count != 0) {
+            Long finalAccountNumber = count + 1;
+            return String.valueOf(finalAccountNumber);
+        }
+
         String prefix = "2358";
-        long count = escrowAccountRepository.countByAccountNumberStartingWith(prefix);
-        String suffix = String.format("%06d", count + 1);
+        long counting = escrowAccountRepository.countByAccountNumberStartingWith(prefix);
+        String suffix = String.format("%06d", counting + 1);
         return prefix + suffix;
     }
 }
