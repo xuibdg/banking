@@ -13,10 +13,9 @@ import java.sql.Timestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccountStatementRequestDTO {
-
     private String savingAccountNumber;
     private Timestamp startDate;
     private Timestamp endDate;
-    private int page = 0;
-    private int size = 10;
+    private int page;
+    private int size;
 }

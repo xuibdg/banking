@@ -5,6 +5,8 @@ import com.core.banking.enums.SavingAccountStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -29,9 +31,11 @@ public interface SavingAccountRepository extends JpaRepository<SavingAccount, St
     SavingAccount findByCustomerId (String customer_id);
 
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    Optional<SavingAccount> findWithLockByAccountNumber(String accountNumber);
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    Optional<SavingAccount> findWithLockBySavingAccountId(String savingAccountId);
+
+
+    @Query("SELECT sa FROM SavingAccount sa WHERE sa.accountNumber = :accountNumber")
+    Optional<SavingAccount> findWithLockByAccountNumber(@Param("accountNumber") String accountNumber);
+
+
 }

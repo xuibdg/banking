@@ -77,7 +77,8 @@ public enum GlobalErrorMapping {
     SAVING_CONFIG_NOT_FOUND ("IEG-0114", "Saving Config tidak ditemukan"),
     TRX_REF_GENERATION_FAILED ("IEG-0115", "gagal generate code"),
     ESCROW_ACCOUNT_NOT_FUNDED ("IEG-0116", "Escrow account harus dalam status funded"),
-    ESCROW_INSUFFICIENT_BALANCE ("IEG-0117","Dana di escrow akun tidak memadai")
+    ESCROW_INSUFFICIENT_BALANCE ("IEG-0117","Dana di escrow akun tidak memadai"),
+    TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan")
 
     ;
 

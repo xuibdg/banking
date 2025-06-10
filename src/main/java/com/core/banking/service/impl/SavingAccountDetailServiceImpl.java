@@ -1,21 +1,18 @@
 package com.core.banking.service.impl;
 
-import com.core.banking.dto.SavingAccountDetail.AccountStatementRequestDTO;
-import com.core.banking.dto.SavingAccountDetail.DepositRequestDTO;
-import com.core.banking.dto.SavingAccountDetail.PaginatedResponseDTO;
-import com.core.banking.dto.SavingAccountDetail.SavingTransactionResponseDTO;
-import com.core.banking.dto.SavingAccountDetail.WithdrawalRequestDTO;
-import com.core.banking.entity.EscrowAccount;
-import com.core.banking.entity.SavingAccount;
-import com.core.banking.entity.SavingAccountDetail;
-import com.core.banking.entity.SavingTypeConfig;
-import com.core.banking.enums.EscrowAccountStatus;
+import com.core.banking.dto.EscrowAccountDetailRequest;
+import com.core.banking.dto.SavingAccountDetail.*;
+import com.core.banking.dto.UserMetaData;
+import com.core.banking.entity.*;
+import com.core.banking.enums.EscrowTransactionType;
 import com.core.banking.enums.MutationType;
 import com.core.banking.enums.SavingAccountStatus;
 import com.core.banking.enums.SavingTransactionType;
+import com.core.banking.repository.EscrowAccountDetailRepository;
 import com.core.banking.repository.EscrowAccountRepository;
 import com.core.banking.repository.SavingAccountDetailRepository;
 import com.core.banking.repository.SavingAccountRepository;
+import com.core.banking.service.EscrowAccountDetailService;
 import com.core.banking.service.SavingAccountDetailService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -29,258 +26,146 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalTime;
 import java.util.List;
-import java.util.Random;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.core.banking.utils.exception.GlobalErrorMapping.INVALID_PAGE_SIZE_PARAM;
-import static com.core.banking.utils.exception.GlobalErrorMapping.TRX_REF_GENERATION_FAILED;
-
 @Service
-@RequiredArgsConstructor
+
 public class SavingAccountDetailServiceImpl implements SavingAccountDetailService {
 
     @Autowired
-    private final SavingAccountRepository savingAccountRepository;
+    private  SavingAccountRepository savingAccountRepository;
+
     @Autowired
-    private final SavingAccountDetailRepository savingAccountDetailRepository;
+    private  SavingAccountDetailRepository savingAccountDetailRepository;
+
     @Autowired
-    private final EscrowAccountRepository escrowAccountRepository;
+    private  EscrowAccountRepository escrowAccountRepository;
+
+    @Autowired
+    private  EscrowAccountDetailService escrowAccountDetailService;
+
+    @Autowired
+    private  EscrowAccountDetailRepository escrowAccountDetailRepository;
 
 
-    private static final DateTimeFormatter TRX_REF_DATETIME_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyyHHmmss");
-    private static final Random random = new Random();
+    private static final String DESC_INITIAL_DEPOSIT_TELLER = "Initial Deposit Melalui Teller";
+    private static final String DESC_DEPOSIT_DEFAULT = "Deposit";
+    private static final String DESC_OPENING_FEE = "Biaya Pembukaan Rekening";
+    private static final String CHANNEL_SYSTEM = "SYSTEM";
+    private static final String PREFIX_FEE = "FEE-";
+    private static final String PREFIX_DEPOSIT = "DEP";
+    private static final String PREFIX_WITHDRAWAL = "WDR";
+    private static final String PREFIX_INITIAL = "INIT";
 
-    private String formatErrorMessage(GlobalErrorMapping mapping, String... params) {
-        String message = mapping.message;
-        if (params != null) {
-            for (int i = 0; i < params.length; i++) {
-                message = message.replace("${" + (i + 1) + "}", params[i]);
-            }
-        }
-        return message;
-    }
+    @Override
+    @Transactional
+    public SavingTransactionResponseDTO recordDeposit(DepositRequestDTO request, UserMetaData userMetaData) {
+        validateDepositRequest(request);
+        Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
-    private String generateTransactionReference(String type) {
-        LocalDateTime ldt = LocalDateTime.now();
-        String dateTimeStr = ldt.format(TRX_REF_DATETIME_FORMATTER);
+        SavingAccount savingAccount = findAndLockSavingAccount(request.getSavingAccountNumber());
+        SavingTypeConfig config = getActiveSavingConfig(savingAccount);
+        validateAccountIsActive(savingAccount);
+        EscrowAccount sourceEscrowAccount = findAndLockEscrowAccount(request.getSourceEscrowAccountNumber());
 
-        int sequence = random.nextInt(10000);
-        String sequenceStr = String.format("%04d", sequence);
+        BigDecimal endBalanceSaving = savingAccount.getCurrentBalance().add(request.getAmount());
+        validateTransactionRules(savingAccount, config, request.getAmount(), MutationType.CREDIT, endBalanceSaving);
 
-        String ref = type + "-" + sequenceStr + "-" + dateTimeStr;
+        String escrowRef = processTwoStepEscrowDeposit(sourceEscrowAccount, savingAccount.getAccountNumber(), request.getAmount(), userMetaData);
+        String savingRef = generateSavingTransactionReference(PREFIX_DEPOSIT, savingAccount, SavingTransactionType.DEPOSIT, escrowRef);
 
-        int maxAttempts = 5;
-        int attempt = 0;
-        while(savingAccountDetailRepository.findByTransactionReference(ref).isPresent() && attempt < maxAttempts) {
-            sequence = random.nextInt(10000);
-            sequenceStr = String.format("%04d", sequence);
-            ref = type + "-" + sequenceStr + "-" + dateTimeStr;
-            attempt++;
-        }
-        if (attempt >= maxAttempts) {
-            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, TRX_REF_GENERATION_FAILED);
-        }
-        return ref;
+        String description = (request.getDescription() != null && !request.getDescription().isBlank())
+                ? request.getDescription()
+                : DESC_DEPOSIT_DEFAULT;
+
+        SavingAccountDetail savingDetail = createAndSaveSavingDetail(savingAccount, SavingTransactionType.DEPOSIT, MutationType.CREDIT, request.getAmount(), description, savingRef, request.getChannel(), now);
+        updateSavingAccountBalance(savingAccount, savingDetail.getEndBalance(), now);
+
+        return mapToTransactionResponseDTO(savingDetail);
     }
 
     @Override
     @Transactional
-    public SavingTransactionResponseDTO recordDeposit(DepositRequestDTO request) {
-        validateDepositRequest(request);
-        String transactionReference = generateTransactionReference("DEP");
-
-        SavingAccount savingAccount = savingAccountRepository.findWithLockByAccountNumber(request.getSavingAccountNumber())
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
-
-        EscrowAccount sourceEscrowAccount = escrowAccountRepository.findWithLockByAccountNumber(request.getSourceEscrowAccountNumber())
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM.code,
-                        formatErrorMessage(GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM, "Source Escrow Account " + request.getSourceEscrowAccountNumber()),
-                        formatErrorMessage(GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM, "Source Escrow Account " + request.getSourceEscrowAccountNumber())));
-
-        SavingTypeConfig config = savingAccount.getSavingTypeConfig();
-        if (config == null) {
-            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, GlobalErrorMapping.SAVING_CONFIG_NOT_FOUND);
-        }
-
-        if (savingAccount.getAccountStatus() != SavingAccountStatus.ACTIVE) {
-            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.ACCOUNT_NOT_ACTIVE);
-        }
-
-        if (sourceEscrowAccount.getAccountStatus() != EscrowAccountStatus.PENDING_FUNDING) {
-            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FUNDED);
-        }
-        if (sourceEscrowAccount.getCurrentBalance().compareTo(request.getAmount()) < 0) {
-            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.ESCROW_INSUFFICIENT_BALANCE);
-        }
-
-        BigDecimal beginBalance = savingAccount.getCurrentBalance();
-        BigDecimal endBalance = beginBalance.add(request.getAmount());
-
-        if (config.getMaxBalanceLimit() != null && endBalance.compareTo(config.getMaxBalanceLimit()) > 0) {
-            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.MAX_BALANCE_EXCEEDED);
-        }
-
-        validateDailyTransactionLimit(savingAccount, request.getAmount(), MutationType.CREDIT, config.getDailyTransactionLimit());
-
+    public SavingTransactionResponseDTO performInitialDeposit(InitialDepositRequestDTO request, UserMetaData userMetaData) {
+        validateInitialDepositRequest(request);
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
-        sourceEscrowAccount.setCurrentBalance(sourceEscrowAccount.getCurrentBalance().subtract(request.getAmount()));
-        sourceEscrowAccount.setUpdatedAt(now);
-        escrowAccountRepository.save(sourceEscrowAccount);
+        SavingAccount savingAccount = findAndLockSavingAccount(request.getSavingAccountNumber());
+        SavingTypeConfig config = getActiveSavingConfig(savingAccount);
+        validateInitialDepositState(savingAccount);
+        validateInitialDepositRules(request.getAmount(), config);
 
-        savingAccount.setCurrentBalance(endBalance);
-        savingAccount.setLastTransactionAt(now);
-        savingAccount.setUpdatedAt(now);
-        savingAccountRepository.save(savingAccount);
+        EscrowAccount sourceEscrowAccount = findAndLockEscrowAccount(request.getSourceEscrowAccountNumber());
 
-        SavingAccountDetail detail = SavingAccountDetail.builder()
-                .savingAccount(savingAccount)
-                .transactionType(SavingTransactionType.DEPOSIT)
-                .mutationType(MutationType.CREDIT)
-                .nominalTransaction(request.getAmount())
-                .beginBalance(beginBalance)
-                .endBalance(endBalance)
-                .description(request.getDescription())
-                .transactionReference(transactionReference)
-                .channel(request.getChannel())
-                .transactionAt(now)
-                .createdAt(now)
-                .build();
-        SavingAccountDetail savedDetail = savingAccountDetailRepository.save(detail);
+        String escrowRef = processTwoStepEscrowDeposit(sourceEscrowAccount, savingAccount.getAccountNumber(), request.getAmount(), userMetaData);
+        String savingRef = generateSavingTransactionReference(PREFIX_INITIAL, savingAccount, SavingTransactionType.INITIAL_DEPOSIT, escrowRef);
 
-        return mapToTransactionResponseDTO(savedDetail, savingAccount.getAccountNumber());
+        SavingAccountDetail initialDepositDetail = createAndSaveSavingDetail(savingAccount, SavingTransactionType.INITIAL_DEPOSIT, MutationType.CREDIT, request.getAmount(), DESC_INITIAL_DEPOSIT_TELLER, savingRef, request.getChannel(), now);
+        updateSavingAccountBalance(savingAccount, initialDepositDetail.getEndBalance(), now);
+
+        processOpeningFee(savingAccount, config, savingRef, now);
+        activateAccount(savingAccount, now);
+
+        return mapToTransactionResponseDTO(initialDepositDetail);
     }
-
 
     @Override
-    @Transactional(isolation = Isolation.SERIALIZABLE)
-    public SavingTransactionResponseDTO recordWithdrawal(WithdrawalRequestDTO request) {
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public SavingTransactionResponseDTO recordWithdrawal(WithdrawalRequestDTO request, UserMetaData userMetaData) {
         validateWithdrawalRequest(request);
-        String transactionReference = generateTransactionReference("WD");
-
-        SavingAccount savingAccount = savingAccountRepository.findWithLockByAccountNumber(request.getSavingAccountNumber())
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
-
-        EscrowAccount destinationEscrowAccount = escrowAccountRepository.findWithLockByAccountNumber(request.getDestinationEscrowAccountNumber())
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM.code,
-                        formatErrorMessage(GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM, "Destination Escrow Account " + request.getDestinationEscrowAccountNumber()),
-                        formatErrorMessage(GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM, "Destination Escrow Account " + request.getDestinationEscrowAccountNumber())));
-
-        SavingTypeConfig config = savingAccount.getSavingTypeConfig();
-        if (config == null) {
-            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, GlobalErrorMapping.SAVING_CONFIG_NOT_FOUND);
-        }
-
-        if (savingAccount.getAccountStatus() != SavingAccountStatus.ACTIVE) {
-            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.ACCOUNT_NOT_ACTIVE);
-        }
-
-        if (destinationEscrowAccount.getAccountStatus() != EscrowAccountStatus.PENDING_FUNDING) {
-            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FUNDED);
-        }
-
-        BigDecimal beginBalance = savingAccount.getCurrentBalance();
-        if (beginBalance.compareTo(request.getAmount()) < 0) {
-            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.INSUFFICIENT_BALANCE);
-        }
-        BigDecimal endBalance = beginBalance.subtract(request.getAmount());
-
-        if (config.getMinBalanceLimit() != null && endBalance.compareTo(config.getMinBalanceLimit()) < 0) {
-            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.MIN_BALANCE_VIOLATED);
-        }
-
-        validateDailyTransactionLimit(savingAccount, request.getAmount(), MutationType.DEBIT, config.getDailyTransactionLimit());
-
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
 
-        destinationEscrowAccount.setCurrentBalance(destinationEscrowAccount.getCurrentBalance().add(request.getAmount()));
-        destinationEscrowAccount.setUpdatedAt(now);
-        escrowAccountRepository.save(destinationEscrowAccount);
+        SavingAccount savingAccount = findAndLockSavingAccount(request.getSavingAccountNumber());
+        SavingTypeConfig config = getActiveSavingConfig(savingAccount);
+        validateAccountIsActive(savingAccount);
 
-        savingAccount.setCurrentBalance(endBalance);
-        savingAccount.setLastTransactionAt(now);
-        savingAccount.setUpdatedAt(now);
-        savingAccountRepository.save(savingAccount);
+        EscrowAccount destinationEscrowAccount = findAndLockEscrowAccount(request.getDestinationEscrowAccountNumber());
 
-        SavingAccountDetail detail = SavingAccountDetail.builder()
-                .savingAccount(savingAccount)
-                .transactionType(SavingTransactionType.WITHDRAWAL)
-                .mutationType(MutationType.DEBIT)
-                .nominalTransaction(request.getAmount())
-                .beginBalance(beginBalance)
-                .endBalance(endBalance)
-                .description(request.getDescription())
-                .transactionReference(transactionReference)
-                .channel(request.getChannel())
-                .transactionAt(now)
-                .createdAt(now)
-                .build();
-        SavingAccountDetail savedDetail = savingAccountDetailRepository.save(detail);
+        if (savingAccount.getCurrentBalance().compareTo(request.getAmount()) < 0) {
+            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.INSUFFICIENT_BALANCE);
+        }
+        BigDecimal endBalanceSaving = savingAccount.getCurrentBalance().subtract(request.getAmount());
+        validateTransactionRules(savingAccount, config, request.getAmount(), MutationType.DEBIT, endBalanceSaving);
 
-        return mapToTransactionResponseDTO(savedDetail, savingAccount.getAccountNumber());
+        processSingleStepEscrowWithdrawal(destinationEscrowAccount, savingAccount.getAccountNumber(), request.getAmount(), userMetaData);
+        String escrowRef = getLatestTransactionReference(destinationEscrowAccount);
+
+        String savingRef = generateSavingTransactionReference(PREFIX_WITHDRAWAL, savingAccount, SavingTransactionType.WITHDRAWAL, escrowRef);
+
+        SavingAccountDetail savingDetail = createAndSaveSavingDetail(savingAccount, SavingTransactionType.WITHDRAWAL, MutationType.DEBIT, request.getAmount(), request.getDescription(), savingRef, request.getChannel(), now);
+        updateSavingAccountBalance(savingAccount, savingDetail.getEndBalance(), now);
+
+        return mapToTransactionResponseDTO(savingDetail);
     }
-
 
     @Override
     @Transactional(readOnly = true)
-    public PaginatedResponseDTO<SavingTransactionResponseDTO> getAccountStatement(
-            String savingAccountNumber,
-            LocalDate startDate,
-            LocalDate endDate,
-            int page,
-            int size) {
+    public PaginatedResponseDTO<SavingTransactionResponseDTO> getAccountStatement(String savingAccountNumber, LocalDate startDate, LocalDate endDate, int page, int size) {
+        validateAccountStatementParams(savingAccountNumber, page, size);
 
-        Timestamp startTimestamp = null;
-        if (startDate != null) {
-            startTimestamp = Timestamp.valueOf(startDate.atStartOfDay());
-        }
+        Timestamp startTimestamp = (startDate != null) ? Timestamp.valueOf(startDate.atStartOfDay()) : null;
+        Timestamp endTimestamp = (endDate != null) ? Timestamp.valueOf(endDate.atTime(LocalTime.MAX)) : null;
 
-        Timestamp endTimestamp = null;
-        if (endDate != null) {
-
-            endTimestamp = Timestamp.valueOf(endDate.atTime(LocalTime.MAX));
-        }
-
-
-        AccountStatementRequestDTO internalRequestDTO = AccountStatementRequestDTO.builder()
-                .savingAccountNumber(savingAccountNumber)
-                .startDate(startTimestamp)
-                .endDate(endTimestamp)
-                .page(page)
-                .size(size)
-                .build();
-
-
-        validateAccountStatementRequest(internalRequestDTO);
-
-        SavingAccount savingAccount = savingAccountRepository.findByAccountNumber(internalRequestDTO.getSavingAccountNumber())
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
-
-        Timestamp effectiveStartDateTime = internalRequestDTO.getStartDate();
-        Timestamp effectiveEndDateTime = internalRequestDTO.getEndDate();
-
-        if (effectiveStartDateTime != null && effectiveEndDateTime != null && effectiveEndDateTime.before(effectiveStartDateTime)) {
+        if (startTimestamp != null && endTimestamp != null && endTimestamp.before(startTimestamp)) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DATE_RANGE);
         }
 
-        Pageable pageable = PageRequest.of(internalRequestDTO.getPage(), internalRequestDTO.getSize(), Sort.by("transactionAt").descending());
+        SavingAccount savingAccount = savingAccountRepository.findByAccountNumber(savingAccountNumber)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
 
-        Page<SavingAccountDetail> pageResult = savingAccountDetailRepository.findBySavingAccountAndDateRange(
-                savingAccount.getSavingAccountId(),
-                effectiveStartDateTime,
-                effectiveEndDateTime,
-                pageable
-        );
+        Pageable pageable = PageRequest.of(page, size, Sort.by("transactionAt").descending());
+        Page<SavingAccountDetail> pageResult = savingAccountDetailRepository.findBySavingAccountAndDateRange(savingAccount.getSavingAccountId(), startTimestamp, endTimestamp, pageable);
 
         List<SavingTransactionResponseDTO> transactionDTOs = pageResult.getContent().stream()
-                .map(detail -> mapToTransactionResponseDTO(detail, savingAccount.getAccountNumber()))
+                .map(this::mapToTransactionResponseDTO)
                 .collect(Collectors.toList());
 
         return PaginatedResponseDTO.<SavingTransactionResponseDTO>builder()
@@ -292,79 +177,214 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
                 .build();
     }
 
-    private void validateDailyTransactionLimit(SavingAccount account, BigDecimal currentTransactionAmount, MutationType mutationType, BigDecimal dailyLimitConfig) {
-        if (dailyLimitConfig == null || dailyLimitConfig.compareTo(BigDecimal.ZERO) <= 0) {
-            return;
+    private SavingAccount findAndLockSavingAccount(String accountNumber) {
+        return savingAccountRepository.findWithLockByAccountNumber(accountNumber)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
+    }
+
+    private EscrowAccount findAndLockEscrowAccount(String accountNumber) {
+        return escrowAccountRepository.findWithLockByAccountNumber(accountNumber)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
+    }
+
+    private String processTwoStepEscrowDeposit(EscrowAccount escrow, String savingAccNum, BigDecimal amount, UserMetaData user) {
+        escrowAccountDetailService.createEscrowAccountDetail(
+                /*EscrowAccountDetailRequest.builder().escrowAccount(escrow.getId()).nominalTransaction(amount)
+                        .transactionType(EscrowTransactionType.description("Penerimaan dana tunai untuk Rek. " + savingAccNum).build(), user);
+        escrowAccountDetailService.createEscrowAccountDetail(*/
+
+                EscrowAccountDetailRequest.builder().escrowAccount(escrow.getId()).nominalTransaction(amount)
+                        .transactionType(EscrowTransactionType.RELEASE_TO_BENEFICIARY).description("Pelepasan dana ke Rek. " + savingAccNum)
+                        .releaseAccountNumber(savingAccNum).build(), user);
+        return getLatestTransactionReference(escrow);
+    }
+
+    private void processSingleStepEscrowWithdrawal(EscrowAccount escrow, String savingAccNum, BigDecimal amount, UserMetaData user) {
+        escrowAccountDetailService.createEscrowAccountDetail(
+                EscrowAccountDetailRequest.builder().escrowAccount(escrow.getId()).nominalTransaction(amount)
+                        .transactionType(EscrowTransactionType.RELEASE_TO_BENEFICIARY).description("Pendanaan escrow tujuan dari penarikan Rek. Tabungan " + savingAccNum).build(), user);
+    }
+
+    private String generateSavingTransactionReference(String prefix, SavingAccount account, SavingTransactionType type, String escrowRef) {
+        if (type == SavingTransactionType.INITIAL_DEPOSIT) {
+            return String.format("%s-1-%s", prefix, escrowRef);
         }
+        long count = savingAccountDetailRepository.countBySavingAccountAndTransactionType(account, type);
+        return String.format("%s-%d-%s", prefix, count + 1, escrowRef);
+    }
 
-        LocalDate today = LocalDate.now();
-        Timestamp todayStart = Timestamp.valueOf(today.atStartOfDay());
-        Timestamp todayEnd = Timestamp.valueOf(today.atTime(LocalTime.MAX));
+    private SavingAccountDetail createAndSaveSavingDetail(SavingAccount account, SavingTransactionType trxType, MutationType mutation, BigDecimal amount, String desc, String ref, String channel, Timestamp trxAt) {
+        BigDecimal beginBalance = account.getCurrentBalance();
+        BigDecimal endBalance = (mutation == MutationType.CREDIT) ? beginBalance.add(amount) : beginBalance.subtract(amount);
+        SavingAccountDetail detail = SavingAccountDetail.builder()
+                .savingAccount(account).transactionType(trxType).mutationType(mutation)
+                .nominalTransaction(amount).beginBalance(beginBalance).endBalance(endBalance)
+                .description(desc).transactionReference(ref).channel(channel != null ? channel : CHANNEL_SYSTEM)
+                .transactionAt(trxAt).createdAt(trxAt).build();
+        return savingAccountDetailRepository.save(detail);
+    }
 
-        BigDecimal sumToday = savingAccountDetailRepository.sumTransactionsByAccountAndMutationTypeAndDate(
-                account, mutationType, todayStart, todayEnd
-        );
-        BigDecimal totalExistingToday = (sumToday == null) ? BigDecimal.ZERO : sumToday;
+    private void updateSavingAccountBalance(SavingAccount account, BigDecimal newBalance, Timestamp now) {
+        account.setCurrentBalance(newBalance);
+        account.setLastTransactionAt(now);
+        account.setUpdatedAt(now);
+        savingAccountRepository.save(account);
+    }
 
-        if (totalExistingToday.add(currentTransactionAmount).compareTo(dailyLimitConfig) > 0) {
+    private void activateAccount(SavingAccount account, Timestamp now) {
+        if (account.getAccountStatus() != SavingAccountStatus.ACTIVE) {
+            account.setAccountStatus(SavingAccountStatus.ACTIVE);
+            account.setUpdatedAt(now);
+            savingAccountRepository.save(account);
+        }
+    }
+
+    private void processOpeningFee(SavingAccount account, SavingTypeConfig config, String relatedReference, Timestamp now) {
+        BigDecimal openingFee = Optional.ofNullable(config.getMonthlyMaintenanceFee()).orElse(BigDecimal.ZERO);
+        if (openingFee.compareTo(BigDecimal.ZERO) > 0) {
+            String feeTransactionReference = PREFIX_FEE + relatedReference;
+            SavingAccountDetail feeDetail = createAndSaveSavingDetail(account, SavingTransactionType.FEE_DEBIT, MutationType.DEBIT, openingFee, DESC_OPENING_FEE, feeTransactionReference, CHANNEL_SYSTEM, now);
+            updateSavingAccountBalance(account, feeDetail.getEndBalance(), now);
+        }
+    }
+
+    private SavingTransactionResponseDTO mapToTransactionResponseDTO(SavingAccountDetail detail) {
+        return SavingTransactionResponseDTO.builder()
+                .transactionId(detail.getSavingAccountDetailId()).savingAccountNumber(detail.getSavingAccount().getAccountNumber())
+                .transactionType(detail.getTransactionType()).mutationType(detail.getMutationType()).amount(detail.getNominalTransaction())
+                .balanceBefore(detail.getBeginBalance()).balanceAfter(detail.getEndBalance()).description(detail.getDescription())
+                .transactionReference(detail.getTransactionReference()).channel(detail.getChannel()).transactionTimestamp(detail.getTransactionAt())
+                .createdAt(detail.getCreatedAt()).build();
+    }
+
+    private void validateAccountIsActive(SavingAccount account) {
+        if (account.getAccountStatus() != SavingAccountStatus.ACTIVE) {
+            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.ACCOUNT_NOT_ACTIVE);
+        }
+    }
+
+    private SavingTypeConfig getActiveSavingConfig(SavingAccount account) {
+        SavingTypeConfig config = account.getSavingTypeConfig();
+        if (config == null || !config.getIsActive()) {
+            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, GlobalErrorMapping.SAVING_CONFIG_NOT_FOUND);
+        }
+        return config;
+    }
+
+    private void validateInitialDepositState(SavingAccount account) {
+        if (account.getAccountStatus() == SavingAccountStatus.CLOSED || account.getAccountStatus() == SavingAccountStatus.DORMANT) {
+            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.ACCOUNT_NOT_ACTIVE);
+        }
+        if (account.getCurrentBalance().compareTo(BigDecimal.ZERO) != 0) {
+            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.NEGATIVE_INITIAL_DEPOSIT);
+        }
+    }
+
+    private void validateTransactionRules(SavingAccount account, SavingTypeConfig config, BigDecimal amount, MutationType mutationType, BigDecimal endBalance) {
+        if (mutationType == MutationType.CREDIT && config.getMaxBalanceLimit() != null && endBalance.compareTo(config.getMaxBalanceLimit()) > 0) {
+            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.MAX_BALANCE_EXCEEDED);
+        }
+        if (mutationType == MutationType.DEBIT && config.getMinBalanceLimit() != null && endBalance.compareTo(config.getMinBalanceLimit()) < 0) {
+            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.MIN_BALANCE_VIOLATED);
+        }
+        validateDailyTransactionLimit(account, amount, mutationType, config.getDailyTransactionLimit());
+        validateDailyTransactionCount(account, config.getDailyTransactionCountLimit());
+    }
+
+    private void validateInitialDepositRules(BigDecimal amount, SavingTypeConfig config) {
+        if (config.getMinInitialDeposit() != null && amount.compareTo(config.getMinInitialDeposit()) < 0) {
+            String errorMessage = formatErrorMessage(GlobalErrorMapping.MINIMUM_INITIAL_DEPOSIT, config.getMinInitialDeposit().toPlainString());
+            throw new BusinessException(HttpStatus.BAD_REQUEST, errorMessage, GlobalErrorMapping.MINIMUM_INITIAL_DEPOSIT.code);
+        }
+    }
+
+    private String getLatestTransactionReference(EscrowAccount escrowAccount) {
+        return escrowAccountDetailRepository.findFirstByEscrowAccountOrderByCreatedAtDesc(escrowAccount)
+                .map(EscrowAccountDetail::getTransactionReference)
+                .orElseThrow(() -> new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, GlobalErrorMapping.TRANSACTION_RECORD_NOT_FOUND));
+    }
+
+    private void validateDailyTransactionCount(SavingAccount account, Integer dailyCountLimit) {
+        if (dailyCountLimit == null || dailyCountLimit <= 0) return;
+        long todayTransactionCount = countTransactionsToday(account);
+        if (todayTransactionCount >= dailyCountLimit) {
+            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.DAILY_COUNT_LIMIT_EXCEEDED);
+        }
+    }
+
+    private void validateDailyTransactionLimit(SavingAccount account, BigDecimal amount, MutationType type, BigDecimal limit) {
+        if (limit == null || limit.compareTo(BigDecimal.ZERO) <= 0) return;
+        BigDecimal sumToday = sumTransactionsToday(account, type);
+        if (sumToday.add(amount).compareTo(limit) > 0) {
             throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.DAILY_NOMINAL_LIMIT_EXCEEDED);
         }
     }
 
-    private SavingTransactionResponseDTO mapToTransactionResponseDTO(SavingAccountDetail detail, String accountNumber) {
-        return SavingTransactionResponseDTO.builder()
-                .transactionId(detail.getSavingAccountDetailId())
-                .savingAccountNumber(accountNumber)
-                .transactionType(detail.getTransactionType())
-                .mutationType(detail.getMutationType())
-                .amount(detail.getNominalTransaction())
-                .balanceBefore(detail.getBeginBalance())
-                .balanceAfter(detail.getEndBalance())
-                .description(detail.getDescription())
-                .transactionReference(detail.getTransactionReference())
-                .channel(detail.getChannel())
-                .transactionTimestamp(detail.getTransactionAt())
-                .createdAt(detail.getCreatedAt())
-                .build();
+    private long countTransactionsToday(SavingAccount account) {
+        LocalDate today = LocalDate.now();
+        return savingAccountDetailRepository.countBySavingAccountAndTransactionAtBetween(account, Timestamp.valueOf(today.atStartOfDay()), Timestamp.valueOf(today.atTime(LocalTime.MAX)));
+    }
+
+    private BigDecimal sumTransactionsToday(SavingAccount account, MutationType type) {
+        LocalDate today = LocalDate.now();
+        return Optional.ofNullable(savingAccountDetailRepository.sumTransactionsByAccountAndMutationTypeAndDate(account, type, Timestamp.valueOf(today.atStartOfDay()), Timestamp.valueOf(today.atTime(LocalTime.MAX)))).orElse(BigDecimal.ZERO);
+    }
+
+    private String formatErrorMessage(GlobalErrorMapping mapping, String... params) {
+        String message = mapping.message;
+        if (params != null) {
+            for (int i = 0; i < params.length; i++) {
+                message = message.replace("${" + (i + 1) + "}", params[i]);
+            }
+        }
+        return message;
     }
 
     private void validateDepositRequest(DepositRequestDTO request) {
         if (request.getSavingAccountNumber() == null || request.getSavingAccountNumber().isBlank()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND.code);
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND);
         }
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DEPOSIT_AMOUNT);
         }
         if (request.getSourceEscrowAccountNumber() == null || request.getSourceEscrowAccountNumber().isBlank()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM.code,
-                    formatErrorMessage(GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM, "Source Escrow Account Number"),
-                    "Source Escrow account number is required for deposit.");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND);
+        }
+    }
+
+    private void validateInitialDepositRequest(InitialDepositRequestDTO request) {
+        if (request.getSavingAccountNumber() == null || request.getSavingAccountNumber().isBlank()) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND);
+        }
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DEPOSIT_AMOUNT);
+        }
+        if (request.getSourceEscrowAccountNumber() == null || request.getSourceEscrowAccountNumber().isBlank()) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND);
         }
     }
 
     private void validateWithdrawalRequest(WithdrawalRequestDTO request) {
         if (request.getSavingAccountNumber() == null || request.getSavingAccountNumber().isBlank()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND.code);
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND);
         }
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_WITHDRAWAL_AMOUNT);
         }
         if (request.getDestinationEscrowAccountNumber() == null || request.getDestinationEscrowAccountNumber().isBlank()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM.code,
-                    formatErrorMessage(GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM, "Destination Escrow Account Number"),
-                    "Destination Escrow account number is required for withdrawal.");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND);
         }
     }
 
-    private void validateAccountStatementRequest(AccountStatementRequestDTO request) {
-        if (request.getSavingAccountNumber() == null || request.getSavingAccountNumber().isBlank()) {
+    private void validateAccountStatementParams(String savingAccountNumber, int page, int size) {
+        if (savingAccountNumber == null || savingAccountNumber.isBlank()) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.MISSING_ACCOUNT_ID);
         }
-        if (request.getPage() < 0) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST,GlobalErrorMapping.INVALID_PAGE_PARAM);
+        if (page < 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_PAGE_PARAM);
         }
-        if (request.getSize() <= 0 || request.getSize() > 100) { // Batas atas 100 seperti di controller
-            throw new BusinessException(HttpStatus.BAD_REQUEST, INVALID_PAGE_SIZE_PARAM);
+        if (size <= 0 || size > 100) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_PAGE_SIZE_PARAM);
         }
     }
 }
