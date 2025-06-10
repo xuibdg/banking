@@ -2,14 +2,14 @@ package com.core.banking.service.impl;
 
 import com.core.banking.dto.EscrowAccountDetailRequest;
 import com.core.banking.dto.EscrowAccountDetailResponse;
+import com.core.banking.dto.EscrowAccountRequest;
 import com.core.banking.dto.UserMetaData;
-import com.core.banking.entity.EscrowAccount;
-import com.core.banking.entity.EscrowAccountDetail;
+import com.core.banking.entity.*;
 import com.core.banking.enums.EscrowAccountStatus;
 import com.core.banking.enums.EscrowTransactionType;
 import com.core.banking.enums.MutationType;
-import com.core.banking.repository.EscrowAccountDetailRepository;
-import com.core.banking.repository.EscrowAccountRepository;
+import com.core.banking.enums.TransactionTypeStatus;
+import com.core.banking.repository.*;
 import com.core.banking.service.EscrowAccountDetailService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -26,9 +26,14 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
+
+import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -40,6 +45,24 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
 
     @Autowired
     private EscrowAccountRepository escrowAccountRepository;
+
+    @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
+    private SavingAccountRepository savingAccountRepository;
+
+    @Autowired
+    private LoanAccountRepository loanAccountRepository;
+
+    @Autowired
+    private DepositAccountRepository depositAccountRepository;
+
+    @Autowired
+    private EscrowAccountServiceImpl escrowAccountServiceImpl;
+
+    private static final DateTimeFormatter TRX_REF_DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
+    private static final Random random = new Random();
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
@@ -119,6 +142,113 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
     }
 
     @Override
+    @Transactional
+    public String createAndReleaseEscrowAccount(EscrowAccountRequest escrowRequest, BigDecimal nominalTransaction, String releaseAccountNumber, String description, UserMetaData userMetaData) {
+        // Validasi customer
+        Customer payer = customerRepository.findById(escrowRequest.getPayerCustomer())
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.PAYER_CUSTOMER_NOT_FOUND));
+        Customer beneficiary = customerRepository.findById(escrowRequest.getBeneficiaryCustomer())
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.BENEFICIARY_CUSTOMER_NOT_FOUND));
+
+        // Validasi akun tujuan
+        SavingAccount savingAccount = null;
+        LoanAccount loanAccount = null;
+        DepositAccount depositAccount = null;
+
+        TransactionTypeStatus transactionType = escrowRequest.getTransactionTypeStatus();
+        if (transactionType == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_TYPE_INVALID_OR_NULL);
+        }
+
+        switch (transactionType) {
+            case SAVING_PAYMENT:
+                if (escrowRequest.getSavingAccount() == null) {
+                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND);
+                }
+                savingAccount = savingAccountRepository.findById(escrowRequest.getSavingAccount())
+                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
+                break;
+            case LOAN_PAYMENT:
+                if (escrowRequest.getLoanAccount() == null) {
+                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.LOAN_ACCOUNT_NOT_FOUND);
+                }
+                loanAccount = loanAccountRepository.findById(escrowRequest.getLoanAccount())
+                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.LOAN_ACCOUNT_NOT_FOUND));
+                break;
+            case DEPOSIT_PAYMENT:
+                if (escrowRequest.getDepositAccount() == null) {
+                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND);
+                }
+                depositAccount = depositAccountRepository.findById(escrowRequest.getDepositAccount())
+                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
+                break;
+            default:
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_TYPE_INVALID_OR_NULL);
+        }
+
+        // Validasi nominal
+        if (nominalTransaction == null || nominalTransaction.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_NOMINAL_INVALID);
+        }
+
+        // Buat escrow account langsung status RELEASED
+        EscrowAccount escrowAccount = EscrowAccount.builder()
+                .accountNumber(escrowAccountServiceImpl.generateAccountNumber())
+                .purpose(escrowRequest.getPurpose())
+                .payerCustomer(payer)
+                .beneficiaryCustomer(beneficiary)
+                .savingAccount(savingAccount)
+                .loanAccount(loanAccount)
+                .depositAccount(depositAccount)
+                .transactionTypeStatus(transactionType)
+                .accountStatus(EscrowAccountStatus.RELEASED)
+                .currentBalance(nominalTransaction) // langsung diset ke nominal
+                .isDeleted(false)
+                .createdAt(Timestamp.from(Instant.now()))
+                .createdBy(userMetaData.getUserId())
+                .build();
+        escrowAccountRepository.save(escrowAccount);
+
+        // Buat detail funding
+        EscrowAccountDetail escrowDetail = EscrowAccountDetail.builder()
+                .escrowAccount(escrowAccount)
+                .transactionType(EscrowTransactionType.FUNDING)
+                .mutationType(MutationType.CREDIT)
+                .nominalTransaction(nominalTransaction)
+                .beginBalance(BigDecimal.ZERO)
+                .endBalance(nominalTransaction)
+                .description(description != null ? description : "AUTO GENERATE FUNDING ")
+                .transactionReference(generateTrxCode())
+                .releaseAccountNumber(releaseAccountNumber) // optional
+                .transactionAt(Timestamp.from(Instant.now()))
+                .createdAt(Timestamp.from(Instant.now()))
+                .createBy(userMetaData.getUserId())
+                .isDeleted(false)
+                .build();
+        escrowAccountDetailRepository.save(escrowDetail);
+
+        EscrowAccountDetail escrowDetailRelease = EscrowAccountDetail.builder()
+                .escrowAccount(escrowAccount)
+                .transactionType(EscrowTransactionType.RELEASE_TO_BENEFICIARY)
+                .mutationType(MutationType.DEBIT)
+                .nominalTransaction(nominalTransaction)
+                .beginBalance(nominalTransaction)
+                .endBalance(BigDecimal.ZERO)
+                .description(description != null ? description : "AUTO GENERATE RELEASE")
+                .transactionReference(generateTrxCode())
+                .releaseAccountNumber(releaseAccountNumber) // optional
+                .transactionAt(Timestamp.from(Instant.now()))
+                .createdAt(Timestamp.from(Instant.now()))
+                .createBy(userMetaData.getUserId())
+                .isDeleted(false)
+                .build();
+        escrowAccountDetailRepository.save(escrowDetailRelease);
+
+        return escrowDetail.getTransactionReference();
+
+    }
+
+    @Override
     public List<EscrowAccountDetailResponse> getAll() {
         List<EscrowAccountDetailResponse> list = escrowAccountDetailRepository.findAll().stream().map(data -> {
             return EscrowAccountDetailResponse.builder()
@@ -184,12 +314,12 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 " ID : " + deleteEscrowAccountDetail.getId() + " |";
     }
 
+
     private String generateTrxCode() {
-        String prefix = "TRX-";
-        long count = escrowAccountRepository.countByAccountNumberStartingWith(prefix);
-        long nextCode =  count + 1;
-        String suffix = String.format("%03d", nextCode);
-        return prefix + suffix;
+        LocalDateTime ldt = LocalDateTime.now();
+        String dateTimeStr = ldt.format(TRX_REF_DATETIME_FORMATTER);
+        String randomSuffix = String.format("%04d", random.nextInt(10000));
+        return "TRX-" + dateTimeStr + "-" + randomSuffix;
     }
 
 
