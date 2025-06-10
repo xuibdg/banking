@@ -238,10 +238,16 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                 "| ID : " + deleteEscrowAccount.getId() + " |";
     }
 
-    private String generateAccountNumber() {
+    public String generateAccountNumber() {
+        Long count = escrowAccountRepository.countAccountNumber();
+        if (count != null || count != 0) {
+            Long finalAccountNumber = count + 1;
+            return String.valueOf(finalAccountNumber);
+        }
+
         String prefix = "2358";
-        long count = escrowAccountRepository.countByAccountNumberStartingWith(prefix);
-        String suffix = String.format("%06d", count + 1);
+        long counting = escrowAccountRepository.countByAccountNumberStartingWith(prefix);
+        String suffix = String.format("%06d", counting + 1);
         return prefix + suffix;
     }
 }
