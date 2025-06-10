@@ -21,6 +21,9 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
 
     long countByAccountNumberStartingWith(String prefix);
 
+    @Query(value = "select cast(account_number as integer) as account_number  from escrow_accounts ea order by cast(account_number as int) desc limit 1", nativeQuery = true)
+    Long countAccountNumber();
+
     @EntityGraph(attributePaths = {"payerCustomer", "beneficiaryCustomer"})
     List<EscrowAccount> findAll();
 
