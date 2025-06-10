@@ -1,6 +1,7 @@
 package com.core.banking.controller;
 
 import com.core.banking.config.CurrentUser;
+import com.core.banking.dto.DepositAccountRequest;
 import com.core.banking.dto.EarlyWithdrawalRequest;
 import com.core.banking.dto.EarlyWithdrawalResponse;
 import com.core.banking.dto.UserMetaData;
@@ -23,7 +24,9 @@ public class EarlyWithdrawalController {
 
     @PostMapping("/{depositAccountId}/early-withdrawal/{savingAccountId}")
     BaseResponse<EarlyWithdrawalResponse> processEarlyWithdrawal(@PathVariable("depositAccountId") Long depositAccountId, @PathVariable("savingAccountId") String savingAccountId, @RequestBody(required = false)EarlyWithdrawalRequest earlyWithdrawalRequest, @CurrentUser UserMetaData userMetaData) {
-        EarlyWithdrawalResponse earlyWithdrawalResponse = earlyWithdrawalService.processEarlyWithdrawal(depositAccountId, savingAccountId,userMetaData);
+//        DepositAccountRequest depositAccountRequest = new DepositAccountRequest();
+//        EarlyWithdrawalResponse earlyWithdrawalResponse = earlyWithdrawalService.processEarlyWithdrawal(depositAccountRequest, depositAccountId, savingAccountId, userMetaData);
+        EarlyWithdrawalResponse earlyWithdrawalResponse = earlyWithdrawalService.processEarlyWithdrawal(depositAccountId, savingAccountId, userMetaData);
         return buildSuccessResponse(earlyWithdrawalResponse);
     }
 

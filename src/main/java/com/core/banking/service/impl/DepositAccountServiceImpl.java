@@ -90,6 +90,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                 .accountStatus(DepositAccountStatus.ACTIVE)
                 .rolloverOption(RolloverOption.valueOf(DepositAccountRequest.getRolloverOption()))
                 .openedAt(LocalDateTime.now())
+                .createdBy(userMetaData.getUserId())
                 .build();
 
         DepositAccount savedAccount = depositAccountRepository.save(depositAccount);
@@ -104,6 +105,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                 .createdBy(userMetaData.getUserId())
                 .description("Setoran awal deposito")
                 .transactionAt(LocalDateTime.now())
+                .createdBy(userMetaData.getUserId())
                 .build();
 
         depositAccountDetailRepository.save(depositAccountDetail);

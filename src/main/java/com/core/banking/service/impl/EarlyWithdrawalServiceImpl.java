@@ -46,12 +46,14 @@ public class EarlyWithdrawalServiceImpl implements EarlyWithdrawalService {
     CustomerRepository customerRepository;
 
     @Override
-    public EarlyWithdrawalResponse processEarlyWithdrawal(DepositAccountRequest DepositAccountRequest, Long depositAccountId, String savingAccountId, UserMetaData userMetaData) {
+    public EarlyWithdrawalResponse processEarlyWithdrawal(Long depositAccountId, String savingAccountId, UserMetaData userMetaData) {
         DepositAccount depositAccount = depositAccountRepository.findById(depositAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
         SavingAccount savingAccount = savingAccountRepository.findById(savingAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
 
-        Customer customer = customerRepository.findById(DepositAccountRequest.getCustomerId())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
+        Customer customer = depositAccount.getCustomer();
+
+//        Customer customer = customerRepository.findById(DepositAccountRequest.getCustomerId())
+//                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
 
         if (customer.getCustomerStatus() != CustomerStatus.ACTIVE) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_ACTIVE);
@@ -62,7 +64,7 @@ public class EarlyWithdrawalServiceImpl implements EarlyWithdrawalService {
         }
 
         if (!depositAccount.getCustomer().getId().equals(savingAccount.getCustomer().getId())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR); //TODO: MAXIMIZE GLOBALERRORMAPPING
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_CUSTOMER_INEQUAL); //TODO: MAXIMIZE GLOBALERRORMAPPING
         }
 
         if (depositAccount.getAccountStatus() != DepositAccountStatus.ACTIVE) {
