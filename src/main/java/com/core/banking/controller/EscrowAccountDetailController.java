@@ -39,7 +39,7 @@ public class EscrowAccountDetailController {
         return buildSuccessResponse(escrowAccountDetailService.createEscrowAccountDetail(request, userMetaData));
     }
 
-    @PostMapping("/add-escrow")
+    @PostMapping("/create-release-escrow-account")
     BaseResponse<String> createAndReleaseEscrowAccount(@RequestBody EscrowAccountRequest request,
                                                        @RequestParam BigDecimal nominalTransaction,
                                                        @RequestParam String releaseAccountNumber,
