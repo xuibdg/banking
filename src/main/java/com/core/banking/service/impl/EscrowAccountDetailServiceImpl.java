@@ -18,6 +18,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -63,7 +65,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
     private static final Random random = new Random();
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
     public String createEscrowAccountDetail (EscrowAccountDetailRequest request, UserMetaData userMetaData) {
         EscrowAccount escrowAccount = escrowAccountRepository.findById(request.getEscrowAccount())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
@@ -134,8 +136,8 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
         escrowAccountDetailRepository.save(escrowAccountDetail);
         escrowAccount.setCurrentBalance(endBalance);
         escrowAccountRepository.save(escrowAccount);
-        return "SUCCESS CREATE NEW ESCROW ACCOUNT DETAIL : TRANSACTION SUCCESS " +
-                "| ID : " + escrowAccountDetail + " |";
+        return escrowAccountDetail.getTransactionReference() +
+                "|" + escrowAccountDetail.getId();
 
     }
 

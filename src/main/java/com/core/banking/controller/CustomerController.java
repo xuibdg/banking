@@ -39,13 +39,16 @@ public class CustomerController {
     @PutMapping("/update-info")
     BaseResponse <String> updateCustomerInformation(@RequestParam(required = false) String id,
                                                     @RequestParam(required = false) String nik,
-                                                    @RequestBody CustomerRequest request) {
-        return buildSuccessResponse(customerService.updateCustomerInformation(id,nik, request));
+                                                    @RequestBody CustomerRequest request,
+                                                    @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(customerService.updateCustomerInformation(id,nik, request, userMetaData));
     }
 
     @PutMapping("/change-status/{id}")
-    BaseResponse<String> changeCustomerStatus(@PathVariable String id, @RequestParam CustomerStatus newStatus){
-        return buildSuccessResponse(customerService.changeCustomerStatus(id, newStatus));
+    BaseResponse<String> changeCustomerStatus(@PathVariable String id,
+                                              @RequestParam CustomerStatus newStatus,
+                                              @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(customerService.changeCustomerStatus(id, newStatus, userMetaData));
     }
 }
 

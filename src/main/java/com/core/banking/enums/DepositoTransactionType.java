@@ -1,0 +1,5 @@
+package com.core.banking.enums;
+
+public enum DepositoTransactionType {
+    INITIAL_DEPOSIT, PROFIT_PAYOUT, MATURITY_WITHDRAWAL, EARLY_WITHDRAWAL, PENALTY_DEBIT, ROLLOVER_PRINCIPAL, ROLLOVER_PROFIT
+}

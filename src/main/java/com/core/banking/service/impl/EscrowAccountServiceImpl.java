@@ -23,6 +23,9 @@ import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -54,6 +57,7 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
     private DepositAccountRepository depositAccountRepository;
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
     public String createEscrowAccount(EscrowAccountRequest request, UserMetaData userMetaData) {
         Customer payerId = customerRepository.findById(request.getPayerCustomer())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.PAYER_CUSTOMER_NOT_FOUND));
@@ -131,7 +135,7 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                             .map(Object::toString)
                             .orElse("NOT USED"))
                     .depositAccount(Optional.ofNullable(data.getDepositAccount())
-                            .map(DepositAccount::getId)
+                            .map(DepositAccount::getDepositoAccountId)
                             .map(Object::toString)
                             .orElse("NOT USED"))
                     .transactionType(data.getTransactionTypeStatus())
@@ -165,7 +169,7 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                         .map(Object::toString)
                         .orElse("NOT USED"))
                 .depositAccount(Optional.ofNullable(data.getDepositAccount())
-                        .map(DepositAccount::getId)
+                        .map(DepositAccount::getDepositoAccountId)
                         .map(Object::toString)
                         .orElse("NOT USED"))
                 .transactionType(data.getTransactionTypeStatus())

@@ -18,7 +18,7 @@ public class EscrowAccountRequest {
     private String beneficiaryCustomer;
     private String savingAccount;
     private String loanAccount;
-    private String depositAccount;
+    private Long depositAccount;
     private TransactionTypeStatus transactionTypeStatus;
 
 }
