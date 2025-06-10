@@ -6,6 +6,7 @@ import com.core.banking.dto.UserMetaData;
 import com.core.banking.entity.Customer;
 import com.core.banking.entity.SavingAccount;
 import com.core.banking.entity.SavingTypeConfig;
+import com.core.banking.enums.CustomerStatus;
 import com.core.banking.enums.SavingAccountStatus;
 import com.core.banking.repository.CustomerRepository;
 import com.core.banking.repository.SavingAccountDetailRepository;
@@ -46,7 +47,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
 
     @Override
     public String create(SavingAccountRequest request, UserMetaData userMetaData) {
-        Customer customer = customerRepository.findById(request.getCustomerId())
+        Customer customer = customerRepository.findByIdEligible(request.getCustomerId(), CustomerStatus.ACTIVE.name())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
 
         SavingAccount savingAccount = savingAccountRepository.findByCustomerId(request.getCustomerId());
@@ -54,17 +55,8 @@ public class SavingAccountServiceImpl implements SavingAccountService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_ALREADY_EXIST);
         }
 
-        SavingTypeConfig config = savingTypeConfigRepository.findById(request.getSavingTypeConfig())
+        SavingTypeConfig config = savingTypeConfigRepository.findById(request.getSavingTypeConfigId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND));
-
-        BigDecimal deposit = request.getInitialDeposit() != null ? request.getInitialDeposit() : BigDecimal.ZERO;
-
-        if (deposit.compareTo(BigDecimal.ZERO) < 0) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NEGATIVE_INITIAL_DEPOSIT);
-        }
-        if (config.getMinInitialDeposit() != null && deposit.compareTo(config.getMinInitialDeposit()) < 0) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.MINIMUM_INITIAL_DEPOSIT);
-        }
 
         String accountNumber = generateUniqueAccountNumber();
         Timestamp now = new Timestamp(System.currentTimeMillis());
@@ -73,7 +65,8 @@ public class SavingAccountServiceImpl implements SavingAccountService {
                 .accountNumber(accountNumber)
                 .customer(customer)
                 .savingTypeConfig(config)
-                .currentBalance(deposit)
+                .currentBalance(BigDecimal.ZERO)
+                .accruedInterest(BigDecimal.ZERO)
                 .accountStatus(SavingAccountStatus.ACTIVE)
                 .createdAt(now)
                 .createBy(userMetaData.getUserId())
@@ -92,9 +85,11 @@ public class SavingAccountServiceImpl implements SavingAccountService {
                     .accountNumber(data.getAccountNumber())
                     .customerId(data.getCustomer().getId())
                     .customerName(data.getCustomer().getFullName())
-                    .savingTypeConfig(data.getSavingTypeConfig().getSavingTypeConfigId())
+                    .nik(data.getCustomer().getNik())
+                    .savingTypeConfigId(data.getSavingTypeConfig().getSavingTypeConfigId())
                     .savingTypeName(String.valueOf(data.getSavingTypeConfig().getSavingType().getTypeName()))
-                    .balance(data.getCurrentBalance())
+                    .currentBalance(data.getCurrentBalance())
+                    .accruedInterest(data.getAccruedInterest())
                     .status(data.getAccountStatus())
                     .isDeleted(data.getIsDeleted())
                     .build();
@@ -126,6 +121,9 @@ public class SavingAccountServiceImpl implements SavingAccountService {
         savingAccount.setAccountStatus(status);
         savingAccount.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         savingAccount.setUpdateBy(userMetaData.getUserId());
+        if (SavingAccountStatus.CLOSED.equals(status)){
+            savingAccount.setClosedAt(Timestamp.valueOf(LocalDateTime.now()));
+        } else { savingAccount.setClosedAt(null); }
 
         savingAccountRepository.save(savingAccount);
         return toResponse(savingAccount);
@@ -144,7 +142,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
     private String generateUniqueAccountNumber() {
         String number;
         do {
-            number = "3232" + String.format("%06d", new Random().nextInt(100000));
+            number = "3232" + String.format("%06d", new Random().nextInt(10000));
         } while (savingAccountRepository.existsByAccountNumber(number));
         return number;
     }
@@ -154,9 +152,11 @@ public class SavingAccountServiceImpl implements SavingAccountService {
                 .accountNumber(savingAccount.getAccountNumber())
                 .customerId(savingAccount.getCustomer().getId())
                 .customerName(savingAccount.getCustomer().getFullName())
-                .savingTypeConfig(savingAccount.getSavingTypeConfig().getSavingTypeConfigId())
+                .nik(savingAccount.getCustomer().getNik())
+                .savingTypeConfigId(savingAccount.getSavingTypeConfig().getSavingTypeConfigId())
                 .savingTypeName(String.valueOf(savingAccount.getSavingTypeConfig().getSavingType().getTypeName()))
-                .balance(savingAccount.getCurrentBalance())
+                .currentBalance(savingAccount.getCurrentBalance())
+                .accruedInterest(savingAccount.getAccruedInterest())
                 .status(savingAccount.getAccountStatus())
                 .build();
     }
