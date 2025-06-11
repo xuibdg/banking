@@ -3,15 +3,9 @@ package com.core.banking.service.impl;
 import com.core.banking.dto.UserMetaData;
 import com.core.banking.dto.LoanRepaymentScheduleRequest;
 import com.core.banking.dto.LoanRepaymentScheduleResponse;
-import com.core.banking.entity.LoanAccount;
-import com.core.banking.entity.LoanRepaymentSchedule;
-import com.core.banking.entity.LoanTransaction;
-import com.core.banking.enums.LoanAccountStatus;
-import com.core.banking.enums.LoanRepaymentStatus;
-import com.core.banking.enums.LoanTransactionType;
-import com.core.banking.repository.LoanAccountRepository;
-import com.core.banking.repository.LoanRepaymentScheduleRepository;
-import com.core.banking.repository.LoanTransactionRepository;
+import com.core.banking.entity.*;
+import com.core.banking.enums.*;
+import com.core.banking.repository.*;
 import com.core.banking.service.LoanRepaymentScheduleService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -44,6 +38,18 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
 
     @Autowired
     private LoanTransactionRepository loanTransactionRepository;
+
+    @Autowired
+    private SavingAccountRepository savingAccountRepository;
+
+    @Autowired
+    private SavingAccountDetailRepository savingAccountDetailRepository;
+
+    @Autowired
+    private EscrowAccountRepository escrowAccountRepository;
+
+    @Autowired
+    private EscrowAccountDetailRepository escrowAccountDetailRepository;
 
     @Override
     public List<LoanRepaymentScheduleResponse> findAll() {
@@ -127,7 +133,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
 
         LoanRepaymentSchedule repaymentSchedule = loanRepaymentScheduleRepository
                 .findByLoanAccount_LoanAccountIdAndInstallmentNumber(request.getLoanAccountId(), request.getInstallmentNumber())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENTNOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENT_NOT_FOUND));
 
         if (repaymentSchedule.getPaymentStatus() != LoanRepaymentStatus.PENDING){
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NOT_PENDING);
@@ -137,7 +143,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NOT_ACTIVE);
         }
 
-        BigDecimal fixedFee = new BigDecimal("10000");
+        BigDecimal fixedFee = new BigDecimal("2000");
 
         Timestamp paymentDate = request.getPaymentDate() != null
                 ? request.getPaymentDate()
@@ -158,15 +164,71 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
 
         BigDecimal expectedInterest = repaymentSchedule.getInterestDue();
         BigDecimal expectedPrincipal = repaymentSchedule.getPrincipalDue();
-
         BigDecimal totalDue = expectedPrincipal.add(expectedInterest).add(fixedFee).add(lateFee);
+        BigDecimal paymentAmount = totalDue;
 
-        BigDecimal paymentAmount = request.getAmountPaid();
+        SavingAccount savingAccount = savingAccountRepository
+                .findByCustomerId(loanAccount.getCustomer().getId());
 
-        if (paymentAmount.compareTo(totalDue) != 0) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST,
-                    String.format(GlobalErrorMapping.PAYMENT_AMOUNT_MISMATCH.message, totalDue));
+        if (savingAccount == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND);
         }
+
+        if (savingAccount.getCurrentBalance().compareTo(paymentAmount) < 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Insufficient balance in saving account");
+        }
+
+        BigDecimal beginBalance = savingAccount.getCurrentBalance();
+        BigDecimal endBalance = beginBalance.subtract(paymentAmount);
+
+        savingAccount.setCurrentBalance(endBalance);
+        savingAccount.setLastTransactionAt(Timestamp.valueOf(LocalDateTime.now()));
+        savingAccountRepository.save(savingAccount);
+
+        SavingAccountDetail savingAccountDetail = SavingAccountDetail.builder()
+                .savingAccount(savingAccount)
+                .transactionType(SavingTransactionType.FEE_DEBIT)
+                .mutationType(MutationType.DEBIT)
+                .nominalTransaction(paymentAmount)
+                .beginBalance(beginBalance)
+                .endBalance(endBalance)
+                .description("Pembayaran pinjaman dipotong dari rekening tabungan")
+                .transactionReference(repaymentSchedule.getLoanRepaymentScheduleId())
+                .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
+                .createdAt(Timestamp.valueOf(LocalDateTime.now()))
+                .channel("SYSTEM")
+                .build();
+
+        savingAccountDetailRepository.save(savingAccountDetail);
+
+        EscrowAccount escrowAccount = escrowAccountRepository
+                .findByLoanAccount_LoanAccountId(loanAccount.getLoanAccountId())
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
+
+        BigDecimal escrowBeginBalance = escrowAccount.getCurrentBalance();
+        BigDecimal escrowEndBalance = escrowBeginBalance.add(paymentAmount);
+
+        escrowAccount.setCurrentBalance(escrowEndBalance);
+        escrowAccount.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
+        escrowAccountRepository.save(escrowAccount);
+
+        EscrowAccountDetail escrowDetail = EscrowAccountDetail.builder()
+                .escrowAccount(escrowAccount)
+                .transactionType(EscrowTransactionType.FEE_DEBIT)
+                .mutationType(MutationType.CREDIT)
+                .nominalTransaction(paymentAmount)
+                .beginBalance(escrowBeginBalance)
+                .endBalance(escrowEndBalance)
+                .description("masuk pembayaran pinjaman ke escrow")
+                .transactionReference(repaymentSchedule.getLoanRepaymentScheduleId())
+                .releaseAccountNumber(savingAccount.getAccountNumber())
+                .createdAt(Timestamp.valueOf(LocalDateTime.now()))
+                .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
+                .createBy(userMetaData.getUserId())
+                .isDeleted(false)
+                .build();
+
+        escrowAccountDetailRepository.save(escrowDetail);
 
         LoanTransaction payment = new LoanTransaction();
         payment.setLoanTransactionId(UUID.randomUUID().toString());
@@ -178,7 +240,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         payment.setFeeComponent(fixedFee);
         payment.setLatePaymentFeeComponent(lateFee);
         payment.setReferenceNumber(generateReferenceNumber());
-        payment.setTransactionDate(request.getPaymentDate() != null ? request.getPaymentDate() : Timestamp.valueOf(LocalDateTime.now()));
+        payment.setTransactionDate(paymentDate);
         payment.setDescription("Loan repayment");
         payment.setLoanRepaymentSchedule(repaymentSchedule);
         payment.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
@@ -198,6 +260,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
             loanAccount.setAccountStatus(LoanAccountStatus.PAID_OFF);
             loanAccount.setClosedAt(Timestamp.valueOf(LocalDateTime.now()));
         }
+
         loanAccountRepository.save(loanAccount);
 
         return LoanRepaymentScheduleResponse.builder()
@@ -207,7 +270,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
                 .interestPaid(expectedInterest)
                 .feePaid(fixedFee)
                 .status(loanAccount.getAccountStatus().name())
-                .message("Repayment recorded successfully including fixed fee")
+                .message("Pembayaran per bulan sukses sebanyak :" + paymentAmount)
                 .build();
     }
 
@@ -217,10 +280,11 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         return "LOAN-" + datePart + "-" + randomPart;
     }
 
+
     @Override
     public String updateLoanRepaymentSchedule(String loanRepaymentScheduleId, LoanRepaymentScheduleRequest request, UserMetaData userMetaData) {
         LoanRepaymentSchedule schedule = loanRepaymentScheduleRepository.findById(loanRepaymentScheduleId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENTNOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENT_NOT_FOUND));
 
         if (request.getLoanAccountId() != null) {
             LoanAccount loanAccount = loanAccountRepository.findById(valueOf(request.getLoanAccountId()))
@@ -252,7 +316,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
     @Override
     public String deleteLoanRepaymentSchedule(String loanRepaymentScheduleId, UserMetaData userMetaData) {
         LoanRepaymentSchedule schedule = loanRepaymentScheduleRepository.findById(loanRepaymentScheduleId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENTNOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_REPAYMENT_NOT_FOUND));
 
         schedule.setIsDeleted(true);
         loanRepaymentScheduleRepository.save(schedule);

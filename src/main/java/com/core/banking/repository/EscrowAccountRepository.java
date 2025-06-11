@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Optional;
 
 public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, String> {
 
@@ -30,6 +31,10 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
             @Param("endDate") Timestamp endDate,
             @Param("accountStatus")EscrowAccountStatus accountStatus
             );
+
+    Optional<EscrowAccount> findByPayerCustomer_Id(String customerId);
+
+    Optional<EscrowAccount> findByLoanAccount_LoanAccountId(String loanAccountId);
 
 
 }
