@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "saving_account_details")
@@ -66,8 +66,9 @@ public class SavingAccountDetail {
     private String channel;
 
     @Column(name = "transaction_at")
-    private Timestamp transactionAt;
+    private OffsetDateTime transactionAt;
 
     @Column(name = "created_at")
-    private Timestamp createdAt;
+    private OffsetDateTime createdAt;
+
 }

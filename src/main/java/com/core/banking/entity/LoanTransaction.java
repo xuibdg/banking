@@ -55,7 +55,6 @@ public class LoanTransaction {
     @Column(name = "fee_component")
     private BigDecimal feeComponent;
 
-    // tambahan
     @Column(name = "late_payment_fee_component")
     private BigDecimal latePaymentFeeComponent;
 

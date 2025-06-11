@@ -3,15 +3,10 @@ package com.core.banking.service.impl;
 import com.core.banking.dto.UserMetaData;
 import com.core.banking.dto.LoanAccountRequest;
 import com.core.banking.dto.LoanAccountResponse;
-import com.core.banking.entity.Customer;
-import com.core.banking.entity.LoanAccount;
-import com.core.banking.entity.LoanTypeConfig;
+import com.core.banking.entity.*;
 import com.core.banking.enums.LoanAccountStatus;
-import com.core.banking.repository.CustomerRepository;
-import com.core.banking.repository.LoanAccountRepository;
-import com.core.banking.repository.LoanRepaymentScheduleRepository;
-import com.core.banking.repository.LoanTransactionRepository;
-import com.core.banking.repository.LoanTypeConfigRepository;
+import com.core.banking.enums.TransactionTypeStatus;
+import com.core.banking.repository.*;
 import com.core.banking.service.LoanAccountService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -25,6 +20,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -48,6 +45,12 @@ public class LoanAccountServiceImpl implements LoanAccountService {
 
     @Autowired
     private LoanRepaymentScheduleRepository loanRepaymentScheduleRepository;
+
+    @Autowired
+    private SavingAccountRepository savingAccountRepository;
+
+    @Autowired
+    private EscrowAccountRepository escrowAccountRepository;
 
     @Override
     public List<LoanAccountResponse> findAll() {
@@ -77,6 +80,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
     }
 
     @Override
+    @Transactional
     public String createLoanAccount(LoanAccountRequest request, UserMetaData userMetaData) {
         String customerId = request.getCustomerId();
         String loanTypeConfigId = request.getLoanTypeConfigId();
@@ -89,6 +93,17 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         if (!"ACTIVE".equalsIgnoreCase(customer.getCustomerStatus().toString())) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_ACTIVE);
         }
+
+        SavingAccount savingAccount = savingAccountRepository.findByCustomerId(customerId);
+        if (savingAccount == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND);
+        }
+
+        if (!"ACTIVE".equalsIgnoreCase(savingAccount.getAccountStatus().toString())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_ACTIVE);
+        }
+
+        SavingAccount managedSavingAccount = savingAccountRepository.getReferenceById(savingAccount.getSavingAccountId());
 
         List<LoanAccountStatus> activeStatuses = List.of(
                 LoanAccountStatus.PENDING_APPROVAL,
@@ -159,8 +174,28 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         loanAccount.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
         loanAccountRepository.save(loanAccount);
+        loanAccountRepository.flush();
 
-        return "Succes membuat loan account dengan ID : " + loanAccount.getLoanAccountId();
+        EscrowAccount escrowAccount = new EscrowAccount();
+        escrowAccount.setPurpose("Escrow untuk Loan Account " + loanAccount.getAccountNumber());
+        escrowAccount.setPayerCustomer(customer);
+        escrowAccount.setBeneficiaryCustomer(customer);
+        escrowAccount.setSavingAccount(managedSavingAccount);
+        escrowAccount.setLoanAccount(loanAccount);
+        escrowAccount.setAccountNumber(generateReferenceNumber());
+        escrowAccount.setDepositAccount(null);
+        escrowAccount.setTransactionTypeStatus(TransactionTypeStatus.LOAN_PAYMENT);
+
+        escrowAccountRepository.save(escrowAccount);
+
+        return "Success membuat loan account dengan ID : " + loanAccount.getLoanAccountId()
+                + " dan escrow account dengan ID: " + escrowAccount.getId();
+    }
+
+    private String generateReferenceNumber() {
+        String datePart = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        int randomPart = new Random().nextInt(9000) + 1000;
+        return "ESC-" + datePart + "-" + randomPart;
     }
 
     @Override
