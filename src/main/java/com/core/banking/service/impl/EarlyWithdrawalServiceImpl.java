@@ -1,9 +1,6 @@
 package com.core.banking.service.impl;
 
-import com.core.banking.dto.DepositAccountRequest;
-import com.core.banking.dto.DepositAccountResponse;
-import com.core.banking.dto.EarlyWithdrawalResponse;
-import com.core.banking.dto.UserMetaData;
+import com.core.banking.dto.*;
 import com.core.banking.entity.Customer;
 import com.core.banking.entity.DepositAccount;
 import com.core.banking.entity.DepositAccountDetail;
@@ -14,6 +11,7 @@ import com.core.banking.repository.DepositAccountDetailRepository;
 import com.core.banking.repository.DepositAccountRepository;
 import com.core.banking.repository.SavingAccountRepository;
 import com.core.banking.service.EarlyWithdrawalService;
+import com.core.banking.service.EscrowAccountDetailService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
 import lombok.AllArgsConstructor;
@@ -44,6 +42,9 @@ public class EarlyWithdrawalServiceImpl implements EarlyWithdrawalService {
 
     @Autowired
     CustomerRepository customerRepository;
+
+    @Autowired
+    EscrowAccountDetailService escrowAccountDetailService;
 
     @Override
     public EarlyWithdrawalResponse processEarlyWithdrawal(Long depositAccountId, String savingAccountId, UserMetaData userMetaData) {
@@ -99,6 +100,18 @@ public class EarlyWithdrawalServiceImpl implements EarlyWithdrawalService {
                 .transactionAt(LocalDateTime.now())
                 .createdBy(userMetaData.getUserId())
                 .build();
+        depositAccountDetailRepository.save(withdrawalTransaction);
+
+        EscrowAccountRequest escrowRequest = new EscrowAccountRequest();
+        escrowRequest.setPayerCustomer(depositAccount.getCustomer().getId());
+        escrowRequest.setBeneficiaryCustomer(savingAccount.getCustomer().getId());
+        escrowRequest.setTransactionTypeStatus(TransactionTypeStatus.DEPOSIT_PAYMENT);
+        escrowRequest.setDepositAccount(depositAccountId);
+        escrowRequest.setPurpose("Pencairan Dini Deposito");
+
+        String transactionReference = escrowAccountDetailService.createAndReleaseEscrowAccount(escrowRequest, amountToReturn, savingAccountId, "Pencairan Dini Deposito " + depositAccount.getAccountNumber(), userMetaData);
+
+        withdrawalTransaction.setTransactionReference(transactionReference);
         depositAccountDetailRepository.save(withdrawalTransaction);
 
         depositAccount.setAccountStatus(DepositAccountStatus.CLOSED_PREMATURELY);

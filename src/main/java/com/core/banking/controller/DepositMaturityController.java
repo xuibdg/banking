@@ -22,7 +22,7 @@ public class DepositMaturityController {
 
     @PostMapping("/{depositoAccountId}/process-deposit/{savingAccountId}")
     BaseResponse<DepositMaturityResponse> processMaturity(@PathVariable ("depositoAccountId") Long depositoAccountId, @PathVariable ("savingAccountId") String id, @CurrentUser UserMetaData userMetaData) {
-        return buildSuccessResponse(depositMaturityService.processMaturity(depositoAccountId, id));
+        return buildSuccessResponse(depositMaturityService.processMaturity(depositoAccountId, id, userMetaData));
     }
 
     @GetMapping("/get-list")

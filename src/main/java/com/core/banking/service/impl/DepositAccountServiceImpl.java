@@ -3,11 +3,13 @@ package com.core.banking.service.impl;
 import com.core.banking.config.CurrentUser;
 import com.core.banking.dto.DepositAccountRequest;
 import com.core.banking.dto.DepositAccountResponse;
+import com.core.banking.dto.EscrowAccountRequest;
 import com.core.banking.dto.UserMetaData;
 import com.core.banking.entity.*;
 import com.core.banking.enums.*;
 import com.core.banking.repository.*;
 import com.core.banking.service.DepositAccountService;
+import com.core.banking.service.EscrowAccountDetailService;
 import com.core.banking.utils.DepositAccountNumberGenerator;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -43,6 +45,12 @@ public class DepositAccountServiceImpl implements DepositAccountService {
     @Autowired
     SavingAccountRepository savingAccountRepository;
 
+    @Autowired
+    EscrowAccountRepository escrowAccountRepository;
+
+    @Autowired
+    EscrowAccountDetailService escrowAccountDetailService;
+
     @Override
     public List<DepositAccount> findAll() {
         return depositAccountRepository.findAll();
@@ -75,6 +83,13 @@ public class DepositAccountServiceImpl implements DepositAccountService {
         if (DepositAccountRequest.getNominalDeposit().compareTo(depositTypeConfig.getMinDepositAmount()) < 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_AMOUNT_BELOW_MINIMUM);
         }
+
+//        SavingAccount savingAccount = savingAccountRepository.findById(savingAccountId)
+//                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
+//
+//        if (savingAccount.getCurrentBalance().compareTo(DepositAccountRequest.getNominalDeposit()) < 0) {
+//            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR);
+//        }
 
         LocalDate maturityDate = LocalDate.now().plusMonths(depositTypeConfig.getTermInMonths());
 
@@ -110,6 +125,15 @@ public class DepositAccountServiceImpl implements DepositAccountService {
 
         depositAccountDetailRepository.save(depositAccountDetail);
 
+        EscrowAccountRequest escrowRequest = new EscrowAccountRequest();
+        escrowRequest.setPayerCustomer(savingAccount.getCustomer().getId());
+        escrowRequest.setBeneficiaryCustomer(customer.getId());
+        escrowRequest.setTransactionTypeStatus(TransactionTypeStatus.DEPOSIT_PAYMENT);
+        escrowRequest.setDepositAccount(savedAccount.getDepositoAccountId());
+        escrowRequest.setPurpose("Pembukaan Deposito");
+
+        String transactionReference = escrowAccountDetailService.createAndReleaseEscrowAccount( escrowRequest, DepositAccountRequest.getNominalDeposit(), savingAccountId, "Pembukaan Deposito " + savedAccount.getAccountNumber(), userMetaData);
+
         DepositAccountResponse depositAccountResponse = new DepositAccountResponse();
         depositAccountResponse.setCustomerName(customer.getFullName());
 
@@ -127,6 +151,9 @@ public class DepositAccountServiceImpl implements DepositAccountService {
         depositAccountResponse.setRolloverOption(savedAccount.getRolloverOption().name());
         depositAccountResponse.setOpenedAt(savedAccount.getOpenedAt());
         depositAccountResponse.setCreatedAt(savedAccount.getCreatedAt());
+
+        depositAccountDetail.setTransactionReference(transactionReference);
+        depositAccountDetailRepository.save(depositAccountDetail);
 
         return depositAccountResponse;
     }

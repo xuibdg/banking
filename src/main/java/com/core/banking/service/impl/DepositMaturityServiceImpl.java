@@ -1,12 +1,15 @@
 package com.core.banking.service.impl;
 
 import com.core.banking.dto.DepositMaturityResponse;
+import com.core.banking.dto.EscrowAccountRequest;
+import com.core.banking.dto.UserMetaData;
 import com.core.banking.entity.*;
 import com.core.banking.enums.*;
 import com.core.banking.repository.DepositAccountDetailRepository;
 import com.core.banking.repository.DepositAccountRepository;
 import com.core.banking.repository.SavingAccountRepository;
 import com.core.banking.service.DepositMaturityService;
+import com.core.banking.service.EscrowAccountDetailService;
 import com.core.banking.utils.DepositAccountNumberGenerator;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -41,9 +44,12 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
     @Autowired
     SavingAccountRepository savingAccountRepository;
 
+    @Autowired
+    EscrowAccountDetailService escrowAccountDetailService;
+
     @Override
     @Transactional
-    public DepositMaturityResponse processMaturity(Long depositoAccountId, String savingAccountId) {
+    public DepositMaturityResponse processMaturity(Long depositoAccountId, String savingAccountId, UserMetaData userMetaData) {
         DepositAccount depositAccount = depositAccountRepository.findById(depositoAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
         SavingAccount savingAccount = savingAccountRepository.findById(savingAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
         //TODO: TAMBAH VALIDASI SAVING ACCOUNT ID
@@ -85,7 +91,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
 
         switch (rolloverOption) {
             case NO_ROLLOVER:
-                depositPayout(depositAccount, profit, savingAccount);
+                depositPayout(depositAccount, profit, savingAccount, userMetaData);
                 depositMaturityResponse.setAfterStatus(DepositAccountStatus.MATURED_PAID);
                 depositMaturityResponse.setMessage("Akun Deposito Mudharabah telah sukses dibayar");
                 break;
@@ -178,7 +184,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
         return expectedProfit;
     }
 
-    private void depositPayout(DepositAccount depositAccount, BigDecimal profit, SavingAccount savingAccount) {
+    private void depositPayout(DepositAccount depositAccount, BigDecimal profit, SavingAccount savingAccount, UserMetaData userMetaData) {
         DepositAccountDetail profitDetail = DepositAccountDetail.builder()
                 .depositAccount(depositAccount)
                 .transactionType(DepositoTransactionType.PROFIT_PAYOUT)
@@ -201,6 +207,20 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
                 .description("Penarikan dana pokok Mudharabah pada saat jatuh tempo")
                 .transactionAt(LocalDateTime.now())
                 .build();
+        depositAccountDetailRepository.save(principalDetail);
+
+        BigDecimal totalPayout = depositAccount.getPrincipalAmount().add(profit);
+
+        EscrowAccountRequest escrowRequest = new EscrowAccountRequest();
+        escrowRequest.setPayerCustomer(depositAccount.getCustomer().getId());
+        escrowRequest.setBeneficiaryCustomer(depositAccount.getCustomer().getId());
+        escrowRequest.setTransactionTypeStatus(TransactionTypeStatus.DEPOSIT_PAYMENT);
+        escrowRequest.setDepositAccount(depositAccount.getDepositoAccountId());
+        escrowRequest.setPurpose("Pencairan Jatuh Tempo Deposito");
+
+        String transactionReference = escrowAccountDetailService.createAndReleaseEscrowAccount(escrowRequest, totalPayout, savingAccount.getAccountNumber(), "Pencairan Jatuh Tempo Deposito " + depositAccount.getAccountNumber(), userMetaData);
+
+        principalDetail.setTransactionReference(transactionReference);
         depositAccountDetailRepository.save(principalDetail);
 
         depositAccount.setAccountStatus(DepositAccountStatus.MATURED_PAID);

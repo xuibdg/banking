@@ -73,6 +73,9 @@ public class DepositTypeConfig {
     @Column(name = "profit_sharing_ratio_customer")
     private BigDecimal profitSharingRatioCustomer;
 
+    @Column(name = "chart_of_account_id")
+    private Long chartOfAccountId;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
