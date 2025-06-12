@@ -5,14 +5,11 @@ import com.core.banking.dto.DepositProfitSharingRequest;
 import com.core.banking.dto.DepositProfitSharingResponse;
 import com.core.banking.dto.UserMetaData;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 public interface DepositProfitSharingService {
 
-    DepositProfitSharingResponse createProcessDepositSharing(DepositProfitSharingRequest depositProfitSharingRequest, @CurrentUser UserMetaData userMetaData);
-
-    BigDecimal totalProfitBank();
+    List<DepositProfitSharingResponse> createCalculateDepositSharing(DepositProfitSharingRequest depositProfitSharingRequest, @CurrentUser UserMetaData userMetaData);
 
     String updateDepositProfitSharing(Long id, DepositProfitSharingRequest request, UserMetaData userMetaData);
 

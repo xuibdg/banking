@@ -13,15 +13,16 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/deposit-profit-sharings")
+@RequestMapping("/api/deposit-profit-sharing")
 public class DepositProfitSharingController extends BaseCRUDController {
 
     @Autowired
     private DepositProfitSharingService depositProfitSharingService;
 
-    @PostMapping("/process")
-    BaseResponse<DepositProfitSharingResponse> createProcessProfitSharring(@RequestBody @Validated DepositProfitSharingRequest request, @CurrentUser UserMetaData userMetaData) {
-        return buildSuccessResponse(depositProfitSharingService.createProcessDepositSharing(request, userMetaData));
+    @PostMapping("/monthly")
+    BaseResponse<DepositProfitSharingResponse> calculateProfitSharing(@RequestBody @Validated DepositProfitSharingRequest request, @CurrentUser UserMetaData userMetaData) {
+        List<DepositProfitSharingResponse> responses = depositProfitSharingService.createCalculateDepositSharing(request, userMetaData);
+        return buildSuccessResponse(responses);
     }
 
     @GetMapping

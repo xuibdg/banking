@@ -65,7 +65,7 @@ public enum GlobalErrorMapping {
     DATA_ACOUNT_NOT_FOUND("DEP-011", "Data tidak ditemukan. Hint:Harap Masukan Data Account Yang benar"),
     ID_DEPOSIT_SHARING_NOT_FOUND("DEP-012", "ID Deposit Profit Sharing Tidak Ditemukan"),
     NO_PRROFIT_SHARING_PROCESSED("DEP-013", "Tidak ada proses pembagian profit yang dilakukan pada akun deposito ini. Pastikan akun deposito sudah memenuhi syarat untuk pembagian profit."),
-    ;
+    INVALID_PROFIT_PERIOD("DEP-014", "Periode profit tidak valid. Pastikan periode profit dimulai sebelum periode berakhir dan tidak ada tumpang tindih dengan periode sebelumnya.");
 
 
     public final String code;

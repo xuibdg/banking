@@ -18,15 +18,14 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class DepositProfitSharingServiceImpl implements DepositProfitSharingService {
+
 
     @Autowired
     private DepositProfitSharingRepository depositProfitSharingRepository;
@@ -39,77 +38,139 @@ public class DepositProfitSharingServiceImpl implements DepositProfitSharingServ
 
 
     @Override
-    public DepositProfitSharingResponse createProcessDepositSharing(DepositProfitSharingRequest depositProfitSharingRequest, UserMetaData userMetaData) {
-        List<DepositAccount> accounts = depositAccountRepository.findByAccountStatus(DepositAccountStatus.ACTIVE);
-        if (accounts.isEmpty()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND);
-        }
-        BigDecimal totalProfitBank = totalProfitBank();
-        BigDecimal totalDailyBalance = BigDecimal.ZERO;
-        Map<Long, BigDecimal> accountDailyBalances = new HashMap<>();
+    public List<DepositProfitSharingResponse> createCalculateDepositSharing(DepositProfitSharingRequest request, UserMetaData userMetaData) {
+        LocalDate start = request.getProfitPeriodStartDate();
+        LocalDate end = request.getProfitPeriodEndDate();
 
-        for (DepositAccount account : accounts) {
-            LocalDateTime start = account.getOpenedAt();
-            LocalDateTime end = account.getMaturityDate().atStartOfDay();
-            long daysActive = Duration.between(start, end).toDays();
-            if (daysActive <= 0) continue;
-            BigDecimal dailyBalance = account.getPrincipalAmount().multiply(BigDecimal.valueOf(daysActive));
-            accountDailyBalances.put(account.getDepositoAccountId(), dailyBalance);
-            totalDailyBalance = totalDailyBalance.add(dailyBalance);
-        }
-        DepositProfitSharing lastSharing = null;
-        for (DepositAccount account : accounts) {
-            BigDecimal accountDailyBalance = accountDailyBalances.get(account.getDepositoAccountId());
-            if (accountDailyBalance == null || accountDailyBalance.compareTo(BigDecimal.ZERO) == 0) {
-                continue;
-            }
-            BigDecimal nasabahRatio = account.getDepositTypeConfig().getProfitSharingRatioCustomer();
-            if (nasabahRatio == null) nasabahRatio = BigDecimal.ZERO;
-
-            BigDecimal portion = accountDailyBalance.divide(totalDailyBalance, 10, RoundingMode.HALF_UP);
-            BigDecimal profitShared = totalProfitBank.multiply(portion).multiply(nasabahRatio).setScale(2, RoundingMode.HALF_UP);
-
-            DepositProfitSharing sharing = new DepositProfitSharing();
-            sharing.setDepositAccount(account);
-            sharing.setProfitPeriodStartDate(account.getOpenedAt().toLocalDate());
-            sharing.setProfitPeriodEndDate(account.getMaturityDate());
-            sharing.setNominalProfitShared(profitShared);
-            sharing.setPayoutDate(LocalDateTime.now());
-            sharing.setCreatedAt(LocalDateTime.now());
-
-            lastSharing = depositProfitSharingRepository.save(sharing);
+        if (start == null || end == null || start.isAfter(end)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_PROFIT_PERIOD);
         }
 
-        if (lastSharing == null) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NO_PRROFIT_SHARING_PROCESSED);
-        }
-        return mapToResponse(lastSharing);
-    }
+        List<DepositAccount> accounts;
 
-    @Override
-    public BigDecimal totalProfitBank() {
-        return new BigDecimal("10000000.00");
-    }
-
-    @Override
-    public String updateDepositProfitSharing(Long id, DepositProfitSharingRequest request, UserMetaData userMetaData) {
-        DepositProfitSharing entity = depositProfitSharingRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_DEPOSIT_SHARING_NOT_FOUND));
         if (request.getDepositAccountId() != null) {
             DepositAccount account = depositAccountRepository.findById(request.getDepositAccountId())
                     .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
+
+            if (account.getAccountStatus() != DepositAccountStatus.ACTIVE) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_ACTIVE);
+            }
+
+            accounts = List.of(account);
+        } else {
+            accounts = depositAccountRepository.findByAccountStatus(DepositAccountStatus.ACTIVE);
+        }
+
+        List<DepositProfitSharingResponse> result = new ArrayList<>();
+        LocalDate current = start.withDayOfMonth(1);
+
+        while (!current.isAfter(end)) {
+            LocalDate monthStart = current;
+            LocalDate monthEnd = current.withDayOfMonth(current.lengthOfMonth());
+            if (monthEnd.isAfter(end)) {
+                monthEnd = end;
+            }
+
+            for (DepositAccount account : accounts) {
+                LocalDate openedAt = account.getOpenedAt().toLocalDate();
+                LocalDate maturityDate = account.getMaturityDate();
+                
+                if (monthStart.isBefore(openedAt) || monthEnd.isAfter(maturityDate)) {
+                    continue;
+                }
+
+                boolean alreadyExists = depositProfitSharingRepository.existsByDepositAccountAndProfitPeriodStartDateAndProfitPeriodEndDate(
+                        account, monthStart, monthEnd
+                );
+                if (alreadyExists) {
+                    continue;
+                }
+
+
+                BigDecimal principal = account.getPrincipalAmount();
+                BigDecimal percenPa = account.getDepositTypeConfig().getProfitSharePercentagePa();
+                BigDecimal monthlyProfit = principal
+                        .multiply(percenPa)
+                        .divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP)
+                        .divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
+
+                DepositProfitSharing entity = new DepositProfitSharing();
+                entity.setDepositAccount(account);
+                entity.setProfitPeriodStartDate(monthStart);
+                entity.setProfitPeriodEndDate(monthEnd);
+                entity.setNominalProfitShared(monthlyProfit);
+                entity.setPayoutDate(LocalDateTime.now());
+                entity.setCreatedAt(LocalDateTime.now());
+
+                depositProfitSharingRepository.save(entity);
+
+                DepositProfitSharingResponse response = new DepositProfitSharingResponse();
+                response.setDepositAccountId(account.getDepositoAccountId());
+                response.setProfitPeriodStartDate(monthStart);
+                response.setProfitPeriodEndDate(monthEnd);
+                response.setNominalProfitShared(monthlyProfit);
+                response.setPayoutDate(entity.getPayoutDate());
+                response.setCreatedAt(entity.getCreatedAt());
+
+                result.add(response);
+            }
+
+            current = current.plusMonths(1);
+        }
+
+        return result;
+    }
+
+
+    @Override
+    public String updateDepositProfitSharing(Long id, DepositProfitSharingRequest request, UserMetaData userMetaData) {
+        DepositProfitSharing entity = depositProfitSharingRepository.findById(id).orElse(null);
+
+        if (entity == null) {
+            DepositAccount account = depositAccountRepository.findById(request.getDepositAccountId())
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
+
+            LocalDate openedAt = account.getOpenedAt().toLocalDate();
+            LocalDate maturityDate = account.getMaturityDate();
+            LocalDate start = request.getProfitPeriodStartDate();
+            LocalDate end = request.getProfitPeriodEndDate();
+            if (start.isBefore(openedAt) || end.isAfter(maturityDate)) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_PROFIT_PERIOD);
+            }
+
+            BigDecimal principal = account.getPrincipalAmount();
+            BigDecimal percenPa = account.getDepositTypeConfig().getProfitSharePercentagePa();
+            BigDecimal monthlyProfit = principal
+                    .multiply(percenPa)
+                    .divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP)
+                    .divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
+
+            entity = new DepositProfitSharing();
             entity.setDepositAccount(account);
+            entity.setProfitPeriodStartDate(start);
+            entity.setProfitPeriodEndDate(end);
+            entity.setNominalProfitShared(monthlyProfit);
+            entity.setPayoutDate(LocalDateTime.now());
+            entity.setCreatedAt(LocalDateTime.now());
+            depositProfitSharingRepository.save(entity);
+            return "New Deposit Profit Sharing created successfully";
+        } else {
+            if (request.getDepositAccountId() != null) {
+                DepositAccount account = depositAccountRepository.findById(request.getDepositAccountId())
+                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
+                entity.setDepositAccount(account);
+            }
+            if (request.getProfitPeriodStartDate() != null) {
+                entity.setProfitPeriodStartDate(request.getProfitPeriodStartDate());
+            }
+            if (request.getProfitPeriodEndDate() != null) {
+                entity.setProfitPeriodEndDate(request.getProfitPeriodEndDate());
+            }
+            entity.setPayoutDate(LocalDateTime.now());
+            entity.setCreatedAt(LocalDateTime.now());
+            depositProfitSharingRepository.save(entity);
+            return "Deposit Profit Sharing updated successfully";
         }
-        if (request.getProfitPeriodStartDate() != null) {
-            entity.setProfitPeriodStartDate(request.getProfitPeriodStartDate());
-        }
-        if (request.getProfitPeriodEndDate() != null) {
-            entity.setProfitPeriodEndDate(request.getProfitPeriodEndDate());
-        }
-        entity.setPayoutDate(LocalDateTime.now());
-        entity.setCreatedAt(LocalDateTime.now());
-        depositProfitSharingRepository.save(entity);
-        return "Deposit Profit Sharing updated successfully";
     }
 
     @Override
@@ -117,7 +178,7 @@ public class DepositProfitSharingServiceImpl implements DepositProfitSharingServ
         DepositProfitSharing entity = depositProfitSharingRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_DEPOSIT_SHARING_NOT_FOUND));
         depositProfitSharingRepository.delete(entity);
-        return "Deposit Profit Sharing deleted successfully";
+        return "Deposit Profit Sharing deleted successfully coba ";
     }
 
 
@@ -137,9 +198,9 @@ public class DepositProfitSharingServiceImpl implements DepositProfitSharingServ
         response.setProfitPeriodStartDate(entity.getProfitPeriodStartDate());
         response.setProfitPeriodEndDate(entity.getProfitPeriodEndDate());
         response.setNominalProfitShared(entity.getNominalProfitShared());
-        response.setTotalProfitBank(new BigDecimal("10000000.00"));
         response.setPayoutDate(entity.getPayoutDate());
         response.setCreatedAt(entity.getCreatedAt());
         return response;
     }
+
 }
