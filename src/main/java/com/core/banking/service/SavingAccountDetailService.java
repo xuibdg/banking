@@ -1,11 +1,10 @@
 package com.core.banking.service;
 
-import com.core.banking.dto.SavingAccountDetail.DepositRequestDTO;
-import com.core.banking.dto.SavingAccountDetail.InitialDepositRequestDTO; // Jika DTO baru dibuat
-import com.core.banking.dto.SavingAccountDetail.PaginatedResponseDTO;
-import com.core.banking.dto.SavingAccountDetail.SavingTransactionResponseDTO;
-import com.core.banking.dto.SavingAccountDetail.WithdrawalRequestDTO;
+import com.core.banking.dto.SavingAccountDetail.*;
 import com.core.banking.dto.UserMetaData;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 
 public interface SavingAccountDetailService {
@@ -14,8 +13,6 @@ public interface SavingAccountDetailService {
 
     SavingTransactionResponseDTO recordWithdrawal(WithdrawalRequestDTO request, UserMetaData userMetaData);
 
-    SavingTransactionResponseDTO performInitialDeposit(InitialDepositRequestDTO request, UserMetaData userMetaData);
-
     PaginatedResponseDTO<SavingTransactionResponseDTO> getAccountStatement(
             String savingAccountNumber,
             LocalDate startDate,
@@ -23,4 +20,5 @@ public interface SavingAccountDetailService {
             int page,
             int size
     );
+    SavingTransactionResponseDTO performInternalTransfer(InterBankTransferRequestDTO request, UserMetaData userMetaData);
 }

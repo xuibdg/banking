@@ -31,6 +31,5 @@ public interface EscrowAccountDetailRepository extends JpaRepository<EscrowAccou
             @Param("transactionType")EscrowTransactionType transactionType
     );
 
-    Optional<EscrowAccountDetail> findFirstByEscrowAccountOrderByCreatedAtDesc(EscrowAccount escrowAccount);
 
 }

@@ -78,7 +78,10 @@ public enum GlobalErrorMapping {
     TRX_REF_GENERATION_FAILED ("IEG-0115", "gagal generate code"),
     ESCROW_ACCOUNT_NOT_FUNDED ("IEG-0116", "Escrow account harus dalam status funded"),
     ESCROW_INSUFFICIENT_BALANCE ("IEG-0117","Dana di escrow akun tidak memadai"),
-    TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan");
+    TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan"),
+    SAVING_ACCOUNT_HAS_TRANSACTION("IEG-0119","Account Sudah Ada Melakukan Transaksi"),
+    SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120","Rekening Pengirim dan Penerima Tidak Boleh sama");
+
 
 
 

@@ -1,14 +1,18 @@
 package com.core.banking.controller;
 
 import com.core.banking.config.CurrentUser;
-import com.core.banking.dto.UserMetaData;
 import com.core.banking.dto.SavingAccountDetail.DepositRequestDTO;
-import com.core.banking.dto.SavingAccountDetail.InitialDepositRequestDTO;
+import com.core.banking.dto.SavingAccountDetail.InterBankTransferRequestDTO;
 import com.core.banking.dto.SavingAccountDetail.PaginatedResponseDTO;
 import com.core.banking.dto.SavingAccountDetail.SavingTransactionResponseDTO;
 import com.core.banking.dto.SavingAccountDetail.WithdrawalRequestDTO;
+import com.core.banking.dto.UserMetaData;
 import com.core.banking.service.SavingAccountDetailService;
 import com.core.banking.utils.exception.BaseResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -20,17 +24,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
+
 import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/saving-account-details")
 @RequiredArgsConstructor
 @Validated
-
 public class SavingAccountDetailController {
 
     private final SavingAccountDetailService savingAccountDetailService;
@@ -41,7 +41,7 @@ public class SavingAccountDetailController {
             @Valid @RequestBody DepositRequestDTO request,
             @CurrentUser UserMetaData userMetaData) {
         SavingTransactionResponseDTO responseData = savingAccountDetailService.recordDeposit(request, userMetaData);
-        return BaseCRUDController.buildCreatedResponse(responseData);
+        return BaseCRUDController.buildSuccessResponse(responseData);
     }
 
     @PostMapping("/withdrawal")
@@ -50,21 +50,21 @@ public class SavingAccountDetailController {
             @Valid @RequestBody WithdrawalRequestDTO request,
             @CurrentUser UserMetaData userMetaData) {
         SavingTransactionResponseDTO responseData = savingAccountDetailService.recordWithdrawal(request, userMetaData);
-        return BaseCRUDController.buildCreatedResponse(responseData);
+        return BaseCRUDController.buildSuccessResponse(responseData);
     }
 
-    @PostMapping("/initial-deposit")
+    @PostMapping("/transfer-internal")
     @ResponseStatus(HttpStatus.CREATED)
-    public BaseResponse<SavingTransactionResponseDTO> performInitialDeposit(
-            @Valid @RequestBody InitialDepositRequestDTO request,
+    public BaseResponse<SavingTransactionResponseDTO> performInternalTransfer(
+            @Valid @RequestBody InterBankTransferRequestDTO request,
             @CurrentUser UserMetaData userMetaData) {
-        SavingTransactionResponseDTO responseData = savingAccountDetailService.performInitialDeposit(request, userMetaData);
-        return BaseCRUDController.buildCreatedResponse(responseData);
+        SavingTransactionResponseDTO responseData = savingAccountDetailService.performInternalTransfer(request, userMetaData);
+        return BaseCRUDController.buildSuccessResponse(responseData);
     }
+
 
     @GetMapping("/statement")
     @ResponseStatus(HttpStatus.OK)
-
     public PaginatedResponseDTO<SavingTransactionResponseDTO> getAccountStatement(
             @RequestParam(name = "savingAccountNumber")
             @NotBlank(message = "Saving account number is required.") String savingAccountNumber,
@@ -82,14 +82,12 @@ public class SavingAccountDetailController {
             @Min(value = 1, message = "Page size must be at least 1.")
             @Max(value = 100, message = "Page size must not exceed 100.") int size
     ) {
-        PaginatedResponseDTO<SavingTransactionResponseDTO> responseData =
-                savingAccountDetailService.getAccountStatement(
-                        savingAccountNumber,
-                        startDate,
-                        endDate,
-                        page,
-                        size
-                );
-        return responseData;
+        return savingAccountDetailService.getAccountStatement(
+                savingAccountNumber,
+                startDate,
+                endDate,
+                page,
+                size
+        );
     }
-    }
+}
