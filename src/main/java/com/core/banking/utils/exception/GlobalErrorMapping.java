@@ -22,6 +22,8 @@ public enum GlobalErrorMapping {
     EMAIL_ALREADY_EXIST("IEG-0026", "Email ditemukan. Pastikan email yang anda masukan belum terdaftar"),
     PHONE_ALREADY_EXIST("IEG-0027", "Nomor Telepon ditemukan. Pastikan nomor yang anda masukan belum terdaftar"),
     NOT_FOUND_ID("IEG-0028", "Data ID Tidak Ditemukan"),
+    ACCOUNT_CLOSE_RESTRICTED("IEG-0029", "Rekening tidak dapat ditutup karena masih terdapat data tabungan atau pinjaman yang aktif"),
+    ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND("IEG-0030", "ID Escrow account detail tidak ditemukan"),
     PAYER_CUSTOMER_NOT_FOUND("IEG-0031", "Payer customer tidak ditemukan"),
     BENEFICIARY_CUSTOMER_NOT_FOUND("IEG-0032", "Beneficiary customer tidak ditemukan"),
     TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033","Transaction type tidak valid atau tidak tersedia"),
@@ -85,9 +87,14 @@ public enum GlobalErrorMapping {
     TRX_REF_GENERATION_FAILED ("IEG-0115", "gagal generate code"),
     ESCROW_ACCOUNT_NOT_FUNDED ("IEG-0116", "Escrow account harus dalam status funded"),
     ESCROW_INSUFFICIENT_BALANCE ("IEG-0117","Dana di escrow akun tidak memadai"),
-    TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan")
+    TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan"),
+    TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan"),
+    SAVING_ACCOUNT_HAS_TRANSACTION("IEG-0119","Account Sudah Ada Melakukan Transaksi"),
+    SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120","Rekening Pengirim dan Penerima Tidak Boleh sama");
 
-    ;
+
+
+
 
 
     public final String code;

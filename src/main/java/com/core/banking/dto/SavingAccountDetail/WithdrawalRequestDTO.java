@@ -16,6 +16,5 @@ public class WithdrawalRequestDTO {
     private String savingAccountNumber;
     private BigDecimal amount;
     private String description;
-    private String destinationEscrowAccountNumber;
     private String channel;
 }

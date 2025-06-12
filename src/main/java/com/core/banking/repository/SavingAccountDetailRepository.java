@@ -44,7 +44,12 @@ public interface SavingAccountDetailRepository extends JpaRepository<SavingAccou
             Pageable pageable
     );
 
+
     long countBySavingAccountAndTransactionAtBetween(SavingAccount savingAccount, Timestamp start, Timestamp end);
 
     long countBySavingAccountAndTransactionType(SavingAccount savingAccount, SavingTransactionType transactionType);
+
+    boolean existsBySavingAccount(SavingAccount savingAccount);
+
+
 }
