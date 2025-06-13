@@ -98,8 +98,11 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RELEASE_ACCOUNT_NUMBER_REQUIRED);
             }
 
-            if (!escrowAccount.getAccountStatus().equals(EscrowAccountStatus.FUNDED)) {
-                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_STATUS_NOT_FUNDED);
+            boolean isAllowedStatus = escrowAccount.getAccountStatus().equals(EscrowAccountStatus.FUNDED)
+                    || escrowAccount.getAccountStatus().equals(EscrowAccountStatus.RELEASED);
+
+            if (!isAllowedStatus) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, "Status escrow account harus FUNDED atau RELEASED untuk transaksi ini");
             }
 
             if (beginBalance.compareTo(request.getNominalTransaction()) < 0) {
