@@ -37,7 +37,7 @@ public class LoanTransactionController {
     @PostMapping("/{loanAccountId}")
     BaseResponse<LoanTransactionResponse> approveAndDisburseLoan(@PathVariable String loanAccountId,
                                                                  @CurrentUser UserMetaData userMetaData) {
-        return buildSuccessResponse(loanTransactionService.approveAndDIsburseLoan(loanAccountId, userMetaData));
+        return buildSuccessResponse(loanTransactionService.approveAndDisburseLoan(loanAccountId, userMetaData));
     }
 
     @PutMapping("/{loanTransactionId}")

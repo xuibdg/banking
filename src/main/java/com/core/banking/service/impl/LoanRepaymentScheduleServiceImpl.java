@@ -18,11 +18,8 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 import static java.lang.String.valueOf;
@@ -40,6 +37,9 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
     private LoanTransactionRepository loanTransactionRepository;
 
     @Autowired
+    private LoanTypeConfigRepository loanTypeConfigRepository;
+
+    @Autowired
     private SavingAccountRepository savingAccountRepository;
 
     @Autowired
@@ -50,6 +50,9 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
 
     @Autowired
     private EscrowAccountDetailRepository escrowAccountDetailRepository;
+
+    @Autowired
+    private EscrowAccountDetailServiceImpl escrowAccountDetailServiceImpl;
 
     @Override
     public List<LoanRepaymentScheduleResponse> findAll() {
@@ -157,7 +160,17 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
 
             if (paidDate.isAfter(dueDate)) {
                 long daysLate = ChronoUnit.DAYS.between(dueDate, paidDate);
-                BigDecimal dailyLateFee = new BigDecimal("5000");
+
+                LoanTypeConfig loanTypeConfig = repaymentSchedule.getLoanAccount().getLoanTypeConfig();
+                if (loanTypeConfig == null) {
+                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_CONFIG_NOT_FOUND); // Buat error mapping ini jika belum ada
+                }
+
+                BigDecimal dailyLateFee = loanTypeConfig.getLatePaymentFee();
+                if (dailyLateFee == null) {
+                    dailyLateFee = BigDecimal.ZERO;
+                }
+
                 lateFee = dailyLateFee.multiply(BigDecimal.valueOf(daysLate));
             }
         }
@@ -175,7 +188,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         }
 
         if (savingAccount.getCurrentBalance().compareTo(paymentAmount) < 0) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Insufficient balance in saving account");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_ENOUGH);
         }
 
         BigDecimal beginBalance = savingAccount.getCurrentBalance();
@@ -193,7 +206,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
                 .beginBalance(beginBalance)
                 .endBalance(endBalance)
                 .description("Pembayaran pinjaman dipotong dari rekening tabungan")
-                .transactionReference(repaymentSchedule.getLoanRepaymentScheduleId())
+                .transactionReference(escrowAccountDetailServiceImpl.generateTrxCode())
                 .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .channel("SYSTEM")
@@ -206,7 +219,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
 
         BigDecimal escrowBeginBalance = escrowAccount.getCurrentBalance();
-        BigDecimal escrowEndBalance = escrowBeginBalance.add(paymentAmount);
+        BigDecimal escrowEndBalance = escrowBeginBalance.subtract(expectedPrincipal);
 
         escrowAccount.setCurrentBalance(escrowEndBalance);
         escrowAccount.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
@@ -216,11 +229,11 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
                 .escrowAccount(escrowAccount)
                 .transactionType(EscrowTransactionType.FEE_DEBIT)
                 .mutationType(MutationType.CREDIT)
-                .nominalTransaction(paymentAmount)
+                .nominalTransaction(expectedPrincipal)
                 .beginBalance(escrowBeginBalance)
                 .endBalance(escrowEndBalance)
                 .description("masuk pembayaran pinjaman ke escrow")
-                .transactionReference(repaymentSchedule.getLoanRepaymentScheduleId())
+                .transactionReference(escrowAccountDetailServiceImpl.generateTrxCode())
                 .releaseAccountNumber(savingAccount.getAccountNumber())
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
@@ -239,7 +252,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         payment.setPrincipalComponent(expectedPrincipal);
         payment.setFeeComponent(fixedFee);
         payment.setLatePaymentFeeComponent(lateFee);
-        payment.setReferenceNumber(generateReferenceNumber());
+        payment.setReferenceNumber(escrowDetail.getTransactionReference());
         payment.setTransactionDate(paymentDate);
         payment.setDescription("Loan repayment");
         payment.setLoanRepaymentSchedule(repaymentSchedule);
@@ -273,13 +286,6 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
                 .message("Pembayaran per bulan sukses sebanyak :" + paymentAmount)
                 .build();
     }
-
-    private String generateReferenceNumber() {
-        String datePart = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        int randomPart = new Random().nextInt(9000) + 1000;
-        return "LOAN-" + datePart + "-" + randomPart;
-    }
-
 
     @Override
     public String updateLoanRepaymentSchedule(String loanRepaymentScheduleId, LoanRepaymentScheduleRequest request, UserMetaData userMetaData) {

@@ -41,16 +41,13 @@ public class LoanAccountServiceImpl implements LoanAccountService {
     private LoanTypeConfigRepository loanTypeConfigRepository;
 
     @Autowired
-    private LoanTransactionRepository loanTransactionRepository;
-
-    @Autowired
-    private LoanRepaymentScheduleRepository loanRepaymentScheduleRepository;
-
-    @Autowired
     private SavingAccountRepository savingAccountRepository;
 
     @Autowired
     private EscrowAccountRepository escrowAccountRepository;
+
+    @Autowired
+    private EscrowAccountServiceImpl escrowAccountServiceImpl;
 
     @Override
     public List<LoanAccountResponse> findAll() {
@@ -137,16 +134,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
 
         LoanAccount loanAccount = new LoanAccount();
 
-        String prefix = "1291";
-        int lengthRandomDigits = 6;
-        StringBuilder sb = new StringBuilder(prefix);
-        Random random = new Random();
-
-        for (int i = 0; i < lengthRandomDigits; i++) {
-            sb.append(random.nextInt(10));
-        }
-        String accountNumber = sb.toString();
-        loanAccount.setAccountNumber(accountNumber);
+        loanAccount.setAccountNumber(generateCode());
 
         loanAccount.setLoanAccountId(UUID.randomUUID().toString());
         loanAccount.setCustomer(customer);
@@ -182,7 +170,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         escrowAccount.setBeneficiaryCustomer(customer);
         escrowAccount.setSavingAccount(managedSavingAccount);
         escrowAccount.setLoanAccount(loanAccount);
-        escrowAccount.setAccountNumber(generateReferenceNumber());
+        escrowAccount.setAccountNumber(escrowAccountServiceImpl.generateAccountNumber());
         escrowAccount.setDepositAccount(null);
         escrowAccount.setTransactionTypeStatus(TransactionTypeStatus.LOAN_PAYMENT);
 
@@ -190,12 +178,6 @@ public class LoanAccountServiceImpl implements LoanAccountService {
 
         return "Success membuat loan account dengan ID : " + loanAccount.getLoanAccountId()
                 + " dan escrow account dengan ID: " + escrowAccount.getId();
-    }
-
-    private String generateReferenceNumber() {
-        String datePart = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        int randomPart = new Random().nextInt(9000) + 1000;
-        return "ESC-" + datePart + "-" + randomPart;
     }
 
     @Override
@@ -235,4 +217,14 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         loanAccount.setIsDeleted(true);
         return "SUCCES DELETE ACCOUNT";
     }
+
+    private static int counter = 1;
+    private String generateCode() {
+        String prefix = "1291";
+        int lengthNumberPart = 6;
+
+        String numberPart = String.format("%0" + lengthNumberPart + "d", counter++);
+        return prefix + numberPart;
+    }
+
 }

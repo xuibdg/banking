@@ -10,8 +10,8 @@ import java.util.List;
 
 public interface LoanTransactionService {
     String createLoanTransaction (LoanTransactionRequest request, UserMetaData userMetaData);
-    LoanTransactionResponse approveAndDIsburseLoan (String loanAccountId, UserMetaData userMetaData);
     List<LoanTransactionResponse> findAll();
+    LoanTransactionResponse approveAndDisburseLoan(String loanAccountId, UserMetaData userMetaData);
     String updateLoanTransaction (String loanTransactionId, LoanTransactionRequest request, UserMetaData userMetaData);
     String deleteLoanTransaction (String loanTransactionId, UserMetaData userMetaData);
 }
