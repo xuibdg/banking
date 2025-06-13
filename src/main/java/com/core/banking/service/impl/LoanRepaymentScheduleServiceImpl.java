@@ -3,9 +3,28 @@ package com.core.banking.service.impl;
 import com.core.banking.dto.UserMetaData;
 import com.core.banking.dto.LoanRepaymentScheduleRequest;
 import com.core.banking.dto.LoanRepaymentScheduleResponse;
-import com.core.banking.entity.*;
-import com.core.banking.enums.*;
-import com.core.banking.repository.*;
+import com.core.banking.entity.EscrowAccount;
+import com.core.banking.entity.EscrowAccountDetail;
+import com.core.banking.entity.LoanAccount;
+import com.core.banking.entity.LoanRepaymentSchedule;
+import com.core.banking.entity.LoanTransaction;
+import com.core.banking.entity.LoanTypeConfig;
+import com.core.banking.entity.SavingAccount;
+import com.core.banking.entity.SavingAccountDetail;
+import com.core.banking.enums.EscrowTransactionType;
+import com.core.banking.enums.LoanAccountStatus;
+import com.core.banking.enums.LoanRepaymentStatus;
+import com.core.banking.enums.LoanTransactionType;
+import com.core.banking.enums.MutationType;
+import com.core.banking.enums.SavingTransactionType;
+import com.core.banking.repository.EscrowAccountDetailRepository;
+import com.core.banking.repository.EscrowAccountRepository;
+import com.core.banking.repository.LoanAccountRepository;
+import com.core.banking.repository.LoanRepaymentScheduleRepository;
+import com.core.banking.repository.LoanTransactionRepository;
+import com.core.banking.repository.LoanTypeConfigRepository;
+import com.core.banking.repository.SavingAccountDetailRepository;
+import com.core.banking.repository.SavingAccountRepository;
 import com.core.banking.service.LoanRepaymentScheduleService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -35,9 +54,6 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
 
     @Autowired
     private LoanTransactionRepository loanTransactionRepository;
-
-    @Autowired
-    private LoanTypeConfigRepository loanTypeConfigRepository;
 
     @Autowired
     private SavingAccountRepository savingAccountRepository;
