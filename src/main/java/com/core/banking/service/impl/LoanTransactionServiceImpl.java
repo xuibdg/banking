@@ -3,9 +3,27 @@ package com.core.banking.service.impl;
 import com.core.banking.dto.UserMetaData;
 import com.core.banking.dto.LoanTransactionRequest;
 import com.core.banking.dto.LoanTransactionResponse;
-import com.core.banking.entity.*;
-import com.core.banking.enums.*;
-import com.core.banking.repository.*;
+import com.core.banking.entity.EscrowAccount;
+import com.core.banking.entity.EscrowAccountDetail;
+import com.core.banking.entity.LoanAccount;
+import com.core.banking.entity.LoanRepaymentSchedule;
+import com.core.banking.entity.LoanTransaction;
+import com.core.banking.entity.SavingAccount;
+import com.core.banking.entity.SavingAccountDetail;
+import com.core.banking.enums.EscrowAccountStatus;
+import com.core.banking.enums.EscrowTransactionType;
+import com.core.banking.enums.LoanAccountStatus;
+import com.core.banking.enums.LoanRepaymentStatus;
+import com.core.banking.enums.LoanTransactionType;
+import com.core.banking.enums.MutationType;
+import com.core.banking.enums.SavingTransactionType;
+import com.core.banking.repository.EscrowAccountDetailRepository;
+import com.core.banking.repository.EscrowAccountRepository;
+import com.core.banking.repository.LoanAccountRepository;
+import com.core.banking.repository.LoanRepaymentScheduleRepository;
+import com.core.banking.repository.LoanTransactionRepository;
+import com.core.banking.repository.SavingAccountDetailRepository;
+import com.core.banking.repository.SavingAccountRepository;
 import com.core.banking.service.LoanTransactionService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -121,8 +139,8 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
                 .description("Loan disbursed ke saving account")
                 .transactionReference(escrowAccountDetailServiceImpl.generateTrxCode())
                 .releaseAccountNumber(savingAccount.getAccountNumber())
-                .transactionAt(new Timestamp(System.currentTimeMillis()))
-                .createdAt(new Timestamp(System.currentTimeMillis()))
+                .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
+                .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createBy(userMetaData.getUsername())
                 .isDeleted(false)
                 .build();
@@ -141,8 +159,8 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
                 .description(escrowDetail.getDescription())
                 .transactionReference(escrowDetail.getTransactionReference())
                 .releaseAccountNumber(savingAccount.getAccountNumber())
-                .transactionAt(Timestamp.from(Instant.now()))
-                .createdAt(Timestamp.from(Instant.now()))
+                .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
+                .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createBy(userMetaData.getUserId())
                 .isDeleted(false)
                 .build();
