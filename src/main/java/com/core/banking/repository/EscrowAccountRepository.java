@@ -9,10 +9,20 @@ import org.springframework.data.repository.query.Param;
 
 import java.sql.Timestamp;
 import java.util.List;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.stereotype.Repository;
 
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
+
+@Repository
 public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, String> {
+    Optional<EscrowAccount> findByAccountNumber(String accountNumber);
 
     long countByAccountNumberStartingWith(String prefix);
+
+    @Query(value = "select cast(account_number as integer) as account_number  from escrow_accounts ea order by cast(account_number as int) desc limit 1", nativeQuery = true)
+    Long countAccountNumber();
 
     @EntityGraph(attributePaths = {"payerCustomer", "beneficiaryCustomer"})
     List<EscrowAccount> findAll();
@@ -31,5 +41,6 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
             @Param("accountStatus")EscrowAccountStatus accountStatus
             );
 
-
+    @Query("SELECT ea FROM EscrowAccount ea WHERE ea.accountNumber = :accountNumber")
+    Optional<EscrowAccount> findWithLockByAccountNumber(@Param("accountNumber") String accountNumber);
 }

@@ -61,7 +61,28 @@ public enum GlobalErrorMapping {
     DEPOSIT_ACCOUNT_NOT_ACTIVE("DEP-007", "Akun deposito tersebut tidak aktif. Hint: Pastikan akun deposito tersebut berstatus aktif"),
     DEPOSIT_MATURITY_DATE_NOT_REACHED("DEP-008", "Akun deposito tersebut, tanggal jatuh temponya belum memenuhi. Hint: Cek teliti tanggal jatuh tempo vs tanggal saat ini"),
     INVALID_ROLLOVER_OPTION("DEP-009", "Opsi perpanjangan tidak valid. Hint: Cek teliti opsi perpanjangan yang tersedia."),
-    MATURITY_DATE_NOT_REACHED("DEP-010", "Tanggal jatuh tempo belum tercapai. Hint: Periksa kembali tanggal pada opened at dan maturity date.");
+    MATURITY_DATE_NOT_REACHED("DEP-010", "Tanggal jatuh tempo belum tercapai. Hint: Periksa kembali tanggal pada opened at dan maturity date."),
+    INVALID_DEPOSIT_AMOUNT("IEG-0102", "Jumlah deposit tidak valid. Harus lebih besar dari nol."),
+    INVALID_WITHDRAWAL_AMOUNT("IEG-0103", "Jumlah penarikan tidak valid. Harus lebih besar dari nol."),
+    INSUFFICIENT_BALANCE("IEG-0104", "Saldo tabungan tidak cukup untuk melakukan penarikan."),
+    MAX_BALANCE_EXCEEDED("IEG-0105", "limit transaksi yang telah ditetapkan telah terlampaui"),
+    INVALID_DATE_RANGE("IEG-0106", "Tanggal mulai tidak boleh setelah tanggal akhir pernyataan"),
+    MISSING_ACCOUNT_ID("IEG-0107", "Saving account ID Diperlukan Untuk Laporan"),
+    DAILY_NOMINAL_LIMIT_EXCEEDED("IEG-0108", "melebihi batas nominal transaksi harian"),
+    DAILY_COUNT_LIMIT_EXCEEDED("IEG-0109", "melebihi batas pengambilan"),
+    ACCOUNT_NOT_ACTIVE("IEG-0110", "Akun tidak aktif"),
+    MIN_BALANCE_VIOLATED("IEG-0111", "Kurang dari Saldo Minimal"),
+    INVALID_PAGE_PARAM("IEG-0112", "Nomer Page tidak Boleh Negatif"),
+    INVALID_PAGE_SIZE_PARAM("IEG-0113","halaman harus 1-100 Halaman"),
+    SAVING_CONFIG_NOT_FOUND ("IEG-0114", "Saving Config tidak ditemukan"),
+    TRX_REF_GENERATION_FAILED ("IEG-0115", "gagal generate code"),
+    ESCROW_ACCOUNT_NOT_FUNDED ("IEG-0116", "Escrow account harus dalam status funded"),
+    ESCROW_INSUFFICIENT_BALANCE ("IEG-0117","Dana di escrow akun tidak memadai"),
+    TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan"),
+    SAVING_ACCOUNT_HAS_TRANSACTION("IEG-0119","Account Sudah Ada Melakukan Transaksi"),
+    SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120","Rekening Pengirim dan Penerima Tidak Boleh sama");
+
+
 
 
 

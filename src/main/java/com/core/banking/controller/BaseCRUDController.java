@@ -15,5 +15,7 @@ public abstract class BaseCRUDController {
                 .data(data)
                 .build();
     }
+
+
 }
 
