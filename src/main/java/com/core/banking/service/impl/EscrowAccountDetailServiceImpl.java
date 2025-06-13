@@ -315,7 +315,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
     }
 
 
-    private String generateTrxCode() {
+    public String generateTrxCode() {
         LocalDateTime ldt = LocalDateTime.now();
         String dateTimeStr = ldt.format(TRX_REF_DATETIME_FORMATTER);
         String randomSuffix = String.format("%04d", random.nextInt(10000));

@@ -67,7 +67,8 @@ public enum GlobalErrorMapping {
     DEPOSIT_ACCOUNT_NOT_ACTIVE("DEP-007", "Akun deposito tersebut tidak aktif. Hint: Pastikan akun deposito tersebut berstatus aktif"),
     DEPOSIT_MATURITY_DATE_NOT_REACHED("DEP-008", "Akun deposito tersebut, tanggal jatuh temponya belum memenuhi. Hint: Cek teliti tanggal jatuh tempo vs tanggal saat ini"),
     INVALID_ROLLOVER_OPTION("DEP-009", "Opsi perpanjangan tidak valid. Hint: Cek teliti opsi perpanjangan yang tersedia."),
-    MATURITY_DATE_NOT_REACHED("DEP-010", "Tanggal jatuh tempo belum tercapai. Hint: Periksa kembali tanggal pada opened at dan maturity date.");
+    MATURITY_DATE_NOT_REACHED("DEP-010", "Tanggal jatuh tempo belum tercapai. Hint: Periksa kembali tanggal pada opened at dan maturity date."),
+    SAVING_ACCOUNT_NOT_ENOUGH("IEG-070", "Saldo tabungan tidak mencukupi.");
 
 
 

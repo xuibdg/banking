@@ -1,6 +1,5 @@
 package com.core.banking.service.impl;
 
-import com.core.banking.dto.EscrowAccountRequest;
 import com.core.banking.dto.UserMetaData;
 import com.core.banking.dto.LoanTransactionRequest;
 import com.core.banking.dto.LoanTransactionResponse;
@@ -49,11 +48,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
     private EscrowAccountRepository escrowAccountRepository;
 
     @Autowired
-    private CustomerRepository customerRepository;
-
-    @Autowired
-    private DepositAccountRepository depositAccountRepository;
-
+    private EscrowAccountDetailServiceImpl escrowAccountDetailServiceImpl;
 
     @Override
     public String createLoanTransaction(LoanTransactionRequest request, UserMetaData userMetaData) {
@@ -86,7 +81,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
 
     @Override
     @Transactional
-    public LoanTransactionResponse approveAndDIsburseLoan(String loanAccountId, UserMetaData userMetaData) {
+    public LoanTransactionResponse approveAndDisburseLoan(String loanAccountId, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(loanAccountId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
 
@@ -101,23 +96,12 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         BigDecimal disbursementAmount = loanAccount.getPrincipalAmount();
         BigDecimal fixedFee = new BigDecimal("10000");
 
-        LoanTransaction transaction = new LoanTransaction();
-        transaction.setLoanTransactionId(UUID.randomUUID().toString());
-        transaction.setLoanAccount(loanAccount);
-        transaction.setTransactionType(LoanTransactionType.DISBURSEMENT);
-        transaction.setAmount(disbursementAmount);
-        transaction.setPrincipalComponent(disbursementAmount);
-        transaction.setInterestComponent(BigDecimal.ZERO);
-        transaction.setFeeComponent(fixedFee);
-        transaction.setDescription("Loan disbursed");
-        transaction.setTransactionDate(Timestamp.valueOf(LocalDateTime.now()));
-        transaction.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
-        loanTransactionRepository.save(transaction);
-
-        SavingAccount savingAccount = savingAccountRepository.findByCustomerId(loanAccount.getCustomer().getId());
-        if (savingAccount == null) {
+        List<SavingAccount> savingAccounts = savingAccountRepository.findByCustomer_Id(loanAccount.getCustomer().getId());
+        if (savingAccounts.isEmpty()) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_ALREADY_EXIST);
         }
+        SavingAccount savingAccount = savingAccounts.get(0);
+
 
         EscrowAccount escrowAccount = escrowAccountRepository.findByPayerCustomer_Id(loanAccount.getCustomer().getId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
@@ -130,13 +114,13 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         EscrowAccountDetail escrowDetail = EscrowAccountDetail.builder()
                 .escrowAccount(escrowAccount)
                 .transactionType(EscrowTransactionType.RELEASE_TO_BENEFICIARY)
-                .mutationType(MutationType.DEBIT)
+                .mutationType(MutationType.CREDIT)
                 .nominalTransaction(disbursementAmount)
                 .beginBalance(escrowBegin)
                 .endBalance(escrowEnd)
                 .description("Loan disbursed ke saving account")
-                .transactionReference(transaction.getLoanTransactionId())
-                .releaseAccountNumber(savingAccount.getAccountNumber()) //-----------------------------------------------------
+                .transactionReference(escrowAccountDetailServiceImpl.generateTrxCode())
+                .releaseAccountNumber(savingAccount.getAccountNumber())
                 .transactionAt(new Timestamp(System.currentTimeMillis()))
                 .createdAt(new Timestamp(System.currentTimeMillis()))
                 .createBy(userMetaData.getUsername())
@@ -147,6 +131,39 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         escrowAccountRepository.save(escrowAccount);
         escrowAccountDetailRepository.save(escrowDetail);
 
+        EscrowAccountDetail escrowDetailRelease = EscrowAccountDetail.builder()
+                .escrowAccount(escrowAccount)
+                .transactionType(EscrowTransactionType.RELEASE_TO_BENEFICIARY)
+                .mutationType(MutationType.DEBIT)
+                .nominalTransaction(disbursementAmount)
+                .beginBalance(disbursementAmount)
+                .endBalance(BigDecimal.ZERO)
+                .description(escrowDetail.getDescription())
+                .transactionReference(escrowDetail.getTransactionReference())
+                .releaseAccountNumber(savingAccount.getAccountNumber())
+                .transactionAt(Timestamp.from(Instant.now()))
+                .createdAt(Timestamp.from(Instant.now()))
+                .createBy(userMetaData.getUserId())
+                .isDeleted(false)
+                .build();
+        escrowAccountDetailRepository.save(escrowDetailRelease);
+
+        LoanTransaction transaction = new LoanTransaction();
+        transaction.setLoanTransactionId(UUID.randomUUID().toString());
+        transaction.setLoanAccount(loanAccount);
+        transaction.setTransactionType(LoanTransactionType.DISBURSEMENT);
+        transaction.setAmount(disbursementAmount);
+        transaction.setPrincipalComponent(disbursementAmount);
+        transaction.setInterestComponent(BigDecimal.ZERO);
+        transaction.setFeeComponent(fixedFee);
+
+        transaction.setReferenceNumber(escrowDetail.getTransactionReference());
+
+        transaction.setDescription("Loan disbursed");
+        transaction.setTransactionDate(Timestamp.valueOf(LocalDateTime.now()));
+        transaction.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
+        loanTransactionRepository.save(transaction);
+
         BigDecimal savingBegin = savingAccount.getCurrentBalance();
         BigDecimal savingEnd = savingBegin.add(disbursementAmount);
 
@@ -155,16 +172,17 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
                 .transactionType(SavingTransactionType.DEPOSIT)
                 .mutationType(MutationType.CREDIT)
                 .nominalTransaction(disbursementAmount)
+                .transactionReference(escrowDetail.getTransactionReference())
                 .beginBalance(savingBegin)
                 .endBalance(savingEnd)
                 .description("Loan disbursed dari escrow")
                 .channel("SYSTEM")
-                .transactionReference(transaction.getLoanTransactionId())
                 .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .build();
 
         savingAccount.setCurrentBalance(savingEnd);
+        savingAccount.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         savingAccountRepository.save(savingAccount);
         savingAccountDetailRepository.save(savingDetail);
 
@@ -193,7 +211,10 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
             loanRepaymentScheduleRepository.save(schedule);
         }
 
-        loanAccount.setOutstandingPrincipal(disbursementAmount);
+        BigDecimal totalInterest = monthlyInterest.multiply(BigDecimal.valueOf(loanAccount.getDurationMonths()));
+        BigDecimal totalOutstanding = disbursementAmount.add(totalInterest);
+
+        loanAccount.setOutstandingPrincipal(totalOutstanding);
         loanAccount.setInstallmentAmount(monthlyPrincipal.add(monthlyInterest));
         loanAccount.setFirstRepaymentDate(firstDueDate);
         loanAccount.setLastRepaymentDate(firstDueDate.plusMonths(loanAccount.getDurationMonths() - 1));
@@ -207,8 +228,6 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
                 .message("loan sukses aprove dan pencairan ke saving account.")
                 .build();
     }
-
-
 
     @Override
     public List<LoanTransactionResponse> findAll() {
@@ -274,4 +293,5 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         transaction.setIsDeleted(true);
         return "Sukses delete loan transaction";
     }
+
 }
