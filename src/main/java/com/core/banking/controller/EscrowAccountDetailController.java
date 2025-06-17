@@ -1,10 +1,7 @@
 package com.core.banking.controller;
 
 import com.core.banking.config.CurrentUser;
-import com.core.banking.dto.EscrowAccountDetailRequest;
-import com.core.banking.dto.EscrowAccountDetailResponse;
-import com.core.banking.dto.EscrowAccountRequest;
-import com.core.banking.dto.UserMetaData;
+import com.core.banking.dto.*;
 import com.core.banking.enums.EscrowTransactionType;
 import com.core.banking.service.EscrowAccountDetailService;
 import com.core.banking.utils.exception.BaseResponse;
@@ -34,7 +31,7 @@ public class EscrowAccountDetailController {
     private EscrowAccountDetailService escrowAccountDetailService;
 
     @PostMapping("/add")
-    BaseResponse<String> createEscrowAccountDetail(@RequestBody EscrowAccountDetailRequest request,
+    Object createEscrowAccountDetail(@RequestBody EscrowAccountDetailRequest request,
                                            @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(escrowAccountDetailService.createEscrowAccountDetail(request, userMetaData));
     }

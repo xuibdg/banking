@@ -20,3 +20,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+flip:
+  token: ${TOKEN_ID}
+  payment-gateway-id: ${PAYMENT_GATEWAY_ID}
+
+pg:
+  transaction:
+    url: http://localhost:8083

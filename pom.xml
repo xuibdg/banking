@@ -94,11 +94,14 @@
 				<groupId>com.mysql</groupId>
 				<artifactId>mysql-connector-j</artifactId>
 			</dependency>
-<!--		<dependency>-->
-<!--			<groupId>org.postgresql</groupId>-->
-<!--			<artifactId>postgresql</artifactId>-->
-<!--			<version>42.7.3</version> &lt;!&ndash; versi terbaru bisa dicek di mvnrepository &ndash;&gt;-->
-<!--		</dependency>-->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
+<!--			<dependency>-->
+<!--				<groupId>com.mysql</groupId>-->
+<!--				<artifactId>mysql-connector-j</artifactId>-->
+<!--			</dependency>-->
 
 	</dependencies>
 
