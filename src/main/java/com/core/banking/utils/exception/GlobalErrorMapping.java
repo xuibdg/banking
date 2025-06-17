@@ -43,18 +43,24 @@ public enum GlobalErrorMapping {
     NEGATIVE_INITIAL_DEPOSIT("IEG-0049", "Initial deposit cannot be negative."),
     MINIMUM_INITIAL_DEPOSIT("IEG-0050", "Initial deposit less than minimum."),
     ACCOUNT_NUMBER_NOT_FOUND("IEG-0051", "Account number not found. Make sure the value you entered is correct."),
-    ID_NOT_FOUND("IEG-0052", "ID Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
-    AMOUNT_NOT_ENOUGH("IEG-0053", "Amount tidak sesuai dengan yang telah ditentukan!."),
-    CUSTOMER_NOT_ACTIVE("IEG-0054", "Customer tersebut tidak active!."),
-    NOMINAL_NOT_ENOUGHT("IEG-0055", "Nominal tidak sesuai dengan yang telah ditentukan!."),
-    DURATION_NOT_ENOUGHT("IEG-0056", "Durasi tidak sesuai dengan yang telah ditentukan!."),
-    NOT_PENDING_APPROVAL("IEG-0057", "Status bukan PENDING_APPROVAL!."),
-    NOT_PENDING("IEG-0058", "Status pembayaran bukan PENDING!."),
-    NOT_ACTIVE("IEG-0059", "Status akun tidak ACTIVE!."),
-    CUSTOMER_BORROW("IEG-0060", "Customer sudah memiliki pinjaman aktif!."),
-    UNAUTHORIZED_ACCESS("IEG-0022", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
-    ACC_NUMBER_REQ("IEG-0028", "Account number diperlukan. Hint: Pastikan account number ada"),
-    ACC_NUMBER_EXIST("IEG-0029", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),
+    ID_CUSTOMER_NOT_FOUND("IEG-0052", "ID Customer Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
+    ID_LOAN_ACCOUNT_NOT_FOUND("IEG-0053", "ID Loan Account Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
+    ID_LOAN_TYPE_NOT_FOUND("IEG-0054", "ID Loan Type Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
+    ID_LOAN_CONFIG_NOT_FOUND("IEG-0055", "ID Loan Type Config Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
+    ID_LOAN_TRANSACITON_NOT_FOUND("IEG-0056", "ID Loan Transaction Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
+    ID_LOAN_REPAYMENT_NOT_FOUND("IEG-0057", "ID Loan Repayment Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
+    AMOUNT_NOT_ENOUGH("IEG-0058", "Amount tidak sesuai dengan yang telah ditentukan!."),
+    CUSTOMER_NOT_ACTIVE("IEG-0059", "Customer tersebut tidak active!."),
+    NOMINAL_NOT_ENOUGHT("IEG-0060", "Nominal tidak sesuai dengan yang telah ditentukan!."),
+    DURATION_NOT_ENOUGHT("IEG-0061", "Durasi tidak sesuai dengan yang telah ditentukan!."),
+    NOT_PENDING_APPROVAL("IEG-0062", "Status bukan PENDING_APPROVAL!."),
+    NOT_PENDING("IEG-0063", "Status pembayaran bukan PENDING!."),
+    NOT_ACTIVE("IEG-0064", "Status akun tidak ACTIVE!."),
+    CUSTOMER_BORROW("IEG-0065", "Customer sudah memiliki pinjaman aktif!."),
+    PAYMENT_AMOUNT_MISMATCH("IEG-0066", "Yang harus dibayar adalah: pokok + bunga + biaya admin + denda keterlambatan jika ada = %s"),
+    UNAUTHORIZED_ACCESS("IEG-0067", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
+    ACC_NUMBER_REQ("IEG-0068", "Account number diperlukan. Hint: Pastikan account number ada"),
+    ACC_NUMBER_EXIST("IEG-0069", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),
     DEPOSIT_TYPE_CONFIG_NOT_FOUND("DEP-0003", "Konfigurasi jenis deposito tidak ditemukan. Hint: Cek teliti deposit type config id."),
     DEPOSIT_TYPE_CONFIG_NOT_ACTIVE("DEP-0004", "Konfigurasi jenis deposito tersebut tidak aktif. Hint: Pastikan konfigurasi jenis deposito tersebut berstatus aktif."),
     DEPOSIT_AMOUNT_BELOW_MINIMUM("DEP-0005", "Jumlah setoran/nominal deposit tidak memenuhi nominal dari minimum deposit, juga tidak boleh minus. Hint: Pastikan jumlah setoran/nominal deposit lebih dari minimum deposit."),
@@ -80,9 +86,8 @@ public enum GlobalErrorMapping {
     ESCROW_INSUFFICIENT_BALANCE ("IEG-0117","Dana di escrow akun tidak memadai"),
     TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan"),
     SAVING_ACCOUNT_HAS_TRANSACTION("IEG-0119","Account Sudah Ada Melakukan Transaksi"),
-    SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120","Rekening Pengirim dan Penerima Tidak Boleh sama");
-
-
+    SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120","Rekening Pengirim dan Penerima Tidak Boleh sama"),
+    SAVING_ACCOUNT_NOT_ENOUGH("IEG-070", "Saldo tabungan tidak mencukupi.");
 
 
 
