@@ -10,7 +10,10 @@ import com.core.banking.repository.JournalLedgerDetailRepository;
 import com.core.banking.repository.JournalLedgerRepository;
 import com.core.banking.repository.MChartOfAccountRepository;
 import com.core.banking.service.JournalLedgerService;
+import com.core.banking.utils.exception.BusinessException;
+import com.core.banking.utils.exception.GlobalErrorMapping;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.core.banking.dto.JournalRequest;
@@ -51,12 +54,12 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
         long creditCount = request.getDetails().stream()
                 .filter(d -> d.getMutationType().equalsIgnoreCase("CREDIT")).count();
         if (debitCount == 0 || creditCount == 0) {
-            throw new IllegalArgumentException("Jika ada DEBIT wajib ada CREDIT");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEBIT_CREDIT_PAIR_REQUIRED);
         }
 
         for (JournalDetailRequest dto : request.getDetails()) {
             MChartOfAccount coa = mChartOfAccountRepository.findById(dto.getCoaId())
-                    .orElseThrow(() -> new IllegalArgumentException("COA tidak ditemukan: " + dto.getCoaId()));
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.COA_NOT_FOUND));
 
             BigDecimal amount = dto.getAmount();
             String mutationType = dto.getMutationType().toUpperCase();
@@ -77,14 +80,14 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
                 totalCredit = totalCredit.add(amount);
                 detail.setCredit(amount);
             } else {
-                throw new IllegalArgumentException("Mutasi hanya boleh DEBIT atau CREDIT");
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_MUTATION_TYPE);
             }
 
             detailEntities.add(detail);
         }
 
         if (totalDebit.compareTo(totalCredit) != 0) {
-            throw new IllegalArgumentException("Total DEBIT (" + totalDebit + ") dan CREDIT (" + totalCredit + ") tidak seimbang.");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.UNBALANCED_DEBIT_CREDIT);
         }
 
         JournalLedger header = JournalLedger.builder()

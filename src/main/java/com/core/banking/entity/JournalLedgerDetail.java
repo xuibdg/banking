@@ -40,9 +40,6 @@ public class JournalLedgerDetail {
     @Column(name = "credit", precision = 18, scale = 2)
     private BigDecimal credit;
 
-//    @Column(name = "amount", nullable = false, precision = 18, scale = 2)
-//    private BigDecimal amount;
-
     @Column(name = "description")
     private String description;
 
