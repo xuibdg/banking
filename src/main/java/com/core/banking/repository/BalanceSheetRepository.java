@@ -7,6 +7,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface BalanceSheetRepository extends JpaRepository<BalanceSheet, String> {
-    List<BalanceSheet> findByReportDate(LocalDate reportDate);
-    void deleteByReportDate(LocalDate reportDate);
+    List<BalanceSheet> findBySystemAt(LocalDate systemAt);
+    void deleteBySystemAt(LocalDate systemAt);
 }

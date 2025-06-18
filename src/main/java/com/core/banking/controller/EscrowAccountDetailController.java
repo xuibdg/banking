@@ -31,7 +31,7 @@ public class EscrowAccountDetailController {
     private EscrowAccountDetailService escrowAccountDetailService;
 
     @PostMapping("/add")
-    Object createEscrowAccountDetail(@RequestBody EscrowAccountDetailRequest request,
+    BaseResponse<String> createEscrowAccountDetail(@RequestBody EscrowAccountDetailRequest request,
                                            @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(escrowAccountDetailService.createEscrowAccountDetail(request, userMetaData));
     }

@@ -21,6 +21,7 @@ public enum GlobalErrorMapping {
     EMAIL_ALREADY_EXIST("IEG-0026", "Email ditemukan. Pastikan email yang anda masukan belum terdaftar"),
     PHONE_ALREADY_EXIST("IEG-0027", "Nomor Telepon ditemukan. Pastikan nomor yang anda masukan belum terdaftar"),
     NOT_FOUND_ID("IEG-0028", "Data ID Tidak Ditemukan"),
+    ACCOUNT_CLOSE_RESTRICTED("IEG-0029", "Penutupan akun tidak diizinkan"),
     ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND("IEG-0030", "ID Escrow account detail tidak ditemukan"),
     PAYER_CUSTOMER_NOT_FOUND("IEG-0031", "Payer customer tidak ditemukan"),
     BENEFICIARY_CUSTOMER_NOT_FOUND("IEG-0032", "Beneficiary customer tidak ditemukan"),
@@ -58,20 +59,9 @@ public enum GlobalErrorMapping {
     NOT_ACTIVE("IEG-0064", "Status akun tidak ACTIVE!."),
     CUSTOMER_BORROW("IEG-0065", "Customer sudah memiliki pinjaman aktif!."),
     PAYMENT_AMOUNT_MISMATCH("IEG-0066", "Yang harus dibayar adalah: pokok + bunga + biaya admin + denda keterlambatan jika ada = %s"),
-    UNAUTHORIZED_ACCESS("IEG-0067", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
     ACC_NUMBER_REQ("IEG-0068", "Account number diperlukan. Hint: Pastikan account number ada"),
     ACC_NUMBER_EXIST("IEG-0069", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),
     ID_NOT_FOUND("IEG-0052", "ID Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
-    AMOUNT_NOT_ENOUGH("IEG-0053", "Amount tidak sesuai dengan yang telah ditentukan!."),
-    CUSTOMER_NOT_ACTIVE("IEG-0054", "Customer tersebut tidak active!."),
-    NOMINAL_NOT_ENOUGHT("IEG-0055", "Nominal tidak sesuai dengan yang telah ditentukan!."),
-    DURATION_NOT_ENOUGHT("IEG-0056", "Durasi tidak sesuai dengan yang telah ditentukan!."),
-    NOT_PENDING_APPROVAL("IEG-0057", "Status bukan PENDING_APPROVAL!."),
-    NOT_PENDING("IEG-0058", "Status pembayaran bukan PENDING!."),
-    NOT_ACTIVE("IEG-0059", "Status akun tidak ACTIVE!."),
-    CUSTOMER_BORROW("IEG-0060", "Customer sudah memiliki pinjaman aktif!."),
-    ACC_NUMBER_REQ("IEG-0028", "Account number diperlukan. Hint: Pastikan account number ada"),
-    ACC_NUMBER_EXIST("IEG-0029", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),
     DEPOSIT_TYPE_CONFIG_NOT_FOUND("DEP-0003", "Konfigurasi jenis deposito tidak ditemukan. Hint: Cek teliti deposit type config id."),
     DEPOSIT_TYPE_CONFIG_NOT_ACTIVE("DEP-0004", "Konfigurasi jenis deposito tersebut tidak aktif. Hint: Pastikan konfigurasi jenis deposito tersebut berstatus aktif."),
     DEPOSIT_AMOUNT_BELOW_MINIMUM("DEP-0005", "Jumlah setoran/nominal deposit tidak memenuhi nominal dari minimum deposit, juga tidak boleh minus. Hint: Pastikan jumlah setoran/nominal deposit lebih dari minimum deposit."),
@@ -98,7 +88,8 @@ public enum GlobalErrorMapping {
     TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan"),
     SAVING_ACCOUNT_HAS_TRANSACTION("IEG-0119","Account Sudah Ada Melakukan Transaksi"),
     SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120","Rekening Pengirim dan Penerima Tidak Boleh sama"),
-    SAVING_ACCOUNT_NOT_ENOUGH("IEG-070", "Saldo tabungan tidak mencukupi.");
+    SAVING_ACCOUNT_NOT_ENOUGH("IEG-070", "Saldo tabungan tidak mencukupi."),
+    FAILED_TO_SEND_PG_TRANSACTION("IEG-071", "Gagal mengirim request kepada Payment Gateway");
 
 
 

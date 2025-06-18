@@ -12,6 +12,8 @@ import com.core.banking.service.EscrowAccountDetailService;
 import com.core.banking.utils.exception.BaseResponse;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -117,7 +119,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
 
                 //create EscrowAccountDetail
                 EscrowAccountDetail escrowAccountDetail = validateAndSaveEscrowAccountAndDetail(request, userMetaData, escrowAccount, transactionType, mutationType, beginBalance, endBalance, responsePg.getData(), true, trxCode);
-                return "SUCCESS" + escrowAccountDetail.getTransactionReference();
+                return "SUCCESS | " + escrowAccountDetail.getTransactionReference();
             } else {
                 throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, GlobalErrorMapping.FAILED_TO_SEND_PG_TRANSACTION);
             }
@@ -148,7 +150,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
 
             //create EscrowAccountDetail
             EscrowAccountDetail escrowAccountDetail = validateAndSaveEscrowAccountAndDetail(request, userMetaData, escrowAccount, transactionType, mutationType, beginBalance, endBalance, "",false, trxCode);
-            return "SUCCESS" + escrowAccountDetail.getTransactionReference();
+            return "SUCCESS | " + escrowAccountDetail.getTransactionReference();
 
         } else {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_TRANSACTION_TYPE_INVALID);
@@ -188,7 +190,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
 
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
     public String createAndReleaseEscrowAccount(EscrowAccountRequest escrowRequest, BigDecimal nominalTransaction, String releaseAccountNumber, String description, UserMetaData userMetaData) {
         // Validasi customer
         Customer payer = customerRepository.findById(escrowRequest.getPayerCustomer())
@@ -255,7 +257,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 .depositAccount(depositAccount)
                 .transactionTypeStatus(transactionType)
                 .releaseAccountNumber(releaseAccountNumber)
-                .accountStatus(EscrowAccountStatus.RELEASED)
+                .accountStatus(EscrowAccountStatus.PENDING_FUNDING)
                 .currentBalance(nominalTransaction) // langsung diset ke nominal
                 .isDeleted(false)
                 .createdAt(Timestamp.from(Instant.now()))
@@ -263,10 +265,10 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 .build();
         escrowAccountRepository.save(escrowAccount);
 
+
         //kirim ke payment gateway
         EscrowRequestToPGRequest pgRequest = EscrowRequestToPGRequest.builder()
-                .escrowAccountId(escrowAccount.getId())
-                .title(escrowRequest.getDescription())
+                .title(description)
                 .type("SINGLE") //"SINGLE" , "MULTIPLY" kebutuhan 1 transaksi atau banyak
                 .step(3)
                 .senderBank(escrowRequest.getSenderBank().toLowerCase())
@@ -303,6 +305,8 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 .isDeleted(false)
                 .build();
         escrowAccountDetailRepository.save(escrowDetail);
+        escrowAccount.setAccountStatus(EscrowAccountStatus.FUNDED);
+        escrowAccountRepository.save(escrowAccount);
 
         EscrowAccountDetail escrowDetailRelease = EscrowAccountDetail.builder()
                 .escrowAccount(escrowAccount)
@@ -319,8 +323,11 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 .isDeleted(false)
                 .build();
         escrowAccountDetailRepository.save(escrowDetailRelease);
+        escrowAccount.setAccountStatus(EscrowAccountStatus.RELEASED);
+        escrowAccount.setCurrentBalance(escrowDetailRelease.getEndBalance());
+        escrowAccountRepository.save(escrowAccount);
 
-        return escrowDetail.getTransactionReference();
+        return escrowDetailRelease.getTransactionReference();
 
     }
 

@@ -7,6 +7,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface ProfitLossRepository extends JpaRepository<ProfitLoss, String> {
-    List<ProfitLoss> findByReportDate(LocalDate reportDate);
-    void deleteByReportDate(LocalDate reportDate);
+    List<ProfitLoss> findBySystemAt(LocalDate systemAt);
+    void deleteBySystemAt(LocalDate systemAt);
 }

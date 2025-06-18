@@ -17,19 +17,18 @@ public interface JournalLedgerDetailRepository extends JpaRepository<JournalLedg
     List<JournalLedgerDetail> findAllByLedgerId(@Param("id") String id);
     List<JournalLedgerDetail> findByCoaIdIn(List<String> coaCodes);
 
-    @Query("""
-SELECT new com.core.banking.dto.EodReporting(
-        d.coaCode,
-        c.coaName,
-        c.category,
-        SUM(COALESCE(d.debit, 0) - COALESCE(d.credit, 0))
-    )
-    FROM JournalLedgerDetail d
-    JOIN Coa c ON d.coaCode = c.coaCode
-    WHERE d.journalLedger.createdAt BETWEEN :startDate AND :endDate
-      AND c.category IN :categories
-    GROUP BY d.coaCode, c.coaName, c.category
-""")
+    @Query(value = """
+    SELECT 
+        d.coa_code as coaCode, 
+        c.name as coaName, 
+        c.type as type,
+        SUM(COALESCE(d.debit, 0) - COALESCE(d.credit, 0)) as amount
+    FROM journal_ledger_detail d
+    JOIN m_chart_of_account c ON d.coa_code = c.code
+    WHERE d.created_at BETWEEN :startDate AND :endDate
+      AND c.type IN :categories
+    GROUP BY d.coa_code, c.name, c.type
+""", nativeQuery = true)
     List<EodReporting> findEodReport(@Param("startDate")LocalDateTime start,
                                      @Param("endDate") LocalDateTime end,
                                      @Param ("categories") List<String> categories);
