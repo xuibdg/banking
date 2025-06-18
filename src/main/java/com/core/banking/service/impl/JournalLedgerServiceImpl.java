@@ -92,7 +92,7 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
 
         JournalLedger header = JournalLedger.builder()
                 .journalCode(generateJournalCode())
-                .referenceNumber(request.getReferenceNumber())
+                .referenceNumber(generateReferenceNumber())
                 .referenceType(request.getReferenceType())
                 .status(JournalStatus.POSTED)
                 .description(request.getDescription())
@@ -101,7 +101,7 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
                 .totalCredit(totalCredit)
                 .isPosted(true)
                 .createdAt(LocalDateTime.now())
-                .createdBy("SYSTEM")
+                .createdBy(userMetaData.getUserId())
                 .build();
 
         JournalLedger savedHeader = journalLedgerRepository.save(header);
@@ -145,5 +145,12 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
         String prefix = "JRN-" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String random = String.valueOf((int)(Math.random() * 10000));
         return prefix + "-" + String.format("%04d", Integer.parseInt(random));
+    }
+    private String generateReferenceNumber() {
+        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String prefix = "REF-" + datePart + "-TRX";
+        long countToday = journalLedgerRepository.countBySystemDate(LocalDate.now());
+        String sequence = String.format("%04d", countToday + 1);
+        return prefix + sequence;
     }
 }
