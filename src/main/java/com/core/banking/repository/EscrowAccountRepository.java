@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 import java.util.List;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
@@ -41,8 +42,8 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
             @Param("accountStatus")EscrowAccountStatus accountStatus
             );
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    Optional<EscrowAccount> findWithLockByAccountNumber(String accountNumber);
+    @Query("SELECT ea FROM EscrowAccount ea WHERE ea.accountNumber = :accountNumber")
+    Optional<EscrowAccount> findWithLockByAccountNumber(@Param("accountNumber") String accountNumber);
     Optional<EscrowAccount> findByPayerCustomer_Id(String customerId);
 
     Optional<EscrowAccount> findByLoanAccount_LoanAccountId(String loanAccountId);

@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,4 +31,9 @@ public interface SavingAccountRepository extends JpaRepository<SavingAccount, St
     Optional<SavingAccount> findById(String id);
 
     SavingAccount findByCustomerId (String customer_id);
+
+    @Query("SELECT sa FROM SavingAccount sa WHERE sa.accountNumber = :accountNumber")
+    Optional<SavingAccount> findWithLockByAccountNumber(@Param("accountNumber") String accountNumber);
+
+    List<SavingAccount> findByCustomer_Id(String customerId);
 }
