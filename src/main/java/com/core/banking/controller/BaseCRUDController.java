@@ -16,6 +16,14 @@ public abstract class BaseCRUDController {
                 .build();
     }
 
+    public static <T> BaseResponse<T> buildCreatedResponse(T data) {
+        return BaseResponse.<T>builder()
+                .httpStatus(HttpStatus.CREATED)
+                .status(0)
+                .message("created successfully")
+                .data(data)
+                .build();
 
+    }
 }
 
