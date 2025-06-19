@@ -15,6 +15,7 @@ import com.core.banking.utils.exception.GlobalErrorMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -38,6 +39,7 @@ public class DepositProfitSharingServiceImpl implements DepositProfitSharingServ
 
 
     @Override
+    @Transactional
     public List<DepositProfitSharingResponse> createCalculateDepositSharing(DepositProfitSharingRequest request, UserMetaData userMetaData) {
         LocalDate start = request.getProfitPeriodStartDate();
         LocalDate end = request.getProfitPeriodEndDate();
@@ -74,7 +76,7 @@ public class DepositProfitSharingServiceImpl implements DepositProfitSharingServ
             for (DepositAccount account : accounts) {
                 LocalDate openedAt = account.getOpenedAt().toLocalDate();
                 LocalDate maturityDate = account.getMaturityDate();
-                
+
                 if (monthStart.isBefore(openedAt) || monthEnd.isAfter(maturityDate)) {
                     continue;
                 }
