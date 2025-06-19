@@ -89,7 +89,9 @@ public enum GlobalErrorMapping {
     SAVING_ACCOUNT_HAS_TRANSACTION("IEG-0119","Account Sudah Ada Melakukan Transaksi"),
     SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120","Rekening Pengirim dan Penerima Tidak Boleh sama"),
     SAVING_ACCOUNT_NOT_ENOUGH("IEG-070", "Saldo tabungan tidak mencukupi."),
-    FAILED_TO_SEND_PG_TRANSACTION("IEG-071", "Gagal mengirim request kepada Payment Gateway");
+    FAILED_TO_SEND_PG_TRANSACTION("IEG-071", "Gagal mengirim request kepada Payment Gateway"),
+    SYSTEM_RECORD_NOT_FOUND("IEG-130", "Data sistem belum diinisialisasi"),
+    COA_MISSING("IEG-131", "Chart of Account (COA) tidak ditemukan");
 
 
 

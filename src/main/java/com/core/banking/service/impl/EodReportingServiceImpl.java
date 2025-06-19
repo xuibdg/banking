@@ -3,23 +3,20 @@ package com.core.banking.service.impl;
 import com.core.banking.dto.EodReporting;
 import com.core.banking.entity.BalanceSheet;
 import com.core.banking.entity.MChartOfAccount;
+import com.core.banking.entity.MSystem;
 import com.core.banking.entity.ProfitLoss;
-import com.core.banking.enums.ReportPeriodType;
-import com.core.banking.repository.BalanceSheetRepository;
-import com.core.banking.repository.JournalLedgerDetailRepository;
-import com.core.banking.repository.MChartOfAccountRepository;
-import com.core.banking.repository.ProfitLossRepository;
+import com.core.banking.repository.*;
 import com.core.banking.service.EodReportingService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 
 @Service
@@ -30,23 +27,61 @@ public class EodReportingServiceImpl implements EodReportingService {
     private final BalanceSheetRepository balanceSheetRepository;
     private final ProfitLossRepository profitLossRepository;
     private final MChartOfAccountRepository mChartOfAccountRepository;
+    private final MSystemRepository mSystemRepository;
 
     @Override
-    public void generateEodReporting(LocalDate systemAt) {
-        LocalDateTime start = systemAt.atStartOfDay();
-        LocalDateTime end = systemAt.plusDays(1).atStartOfDay();
-        List<EodReporting> neraca = journalLedgerDetailRepository.findEodReport(
-                start, end, List.of("ASSET", "LIABILITY", "EQUITY")
-        );
-        List<EodReporting> labaRugi = journalLedgerDetailRepository.findEodReport(
-                start, end, List.of("REVENUE", "EXPENSE")
-        );
+    @Transactional
+    public void generateEodReporting() {
+        MSystem mSystem = mSystemRepository.findFirst()
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SYSTEM_RECORD_NOT_FOUND));
 
+        LocalDate systemAt = mSystem.getSystemAt();
+        boolean isEndOfMonth = systemAt.equals(systemAt.withDayOfMonth(systemAt.lengthOfMonth()));
+        boolean isEndOfYear = systemAt.getMonth() == Month.DECEMBER && systemAt.getDayOfMonth() == 31;
 
-        List<BalanceSheet> balanceSheetList = neraca.stream()
+        if (isEndOfYear) {
+            processYearClosing(systemAt);
+        } else if (isEndOfMonth) {
+            processMonthlyClosing(systemAt);
+        } else {
+            processDailyClosing(systemAt);
+        }
+
+        mSystem.setSystemAt(systemAt.plusDays(1));
+        mSystem.setUpdateAt(LocalDateTime.now());
+        mSystemRepository.save(mSystem);
+    }
+
+    private void processDailyClosing(LocalDate systemAt) {
+        LocalDate startDay = systemAt;
+        LocalDate endDay = systemAt.plusDays(1);
+        generateProfitLossAndBalanceSheet(startDay, endDay, systemAt);
+    }
+
+    private void processMonthlyClosing(LocalDate systemAt) {
+        LocalDate startOfMonth = systemAt.withDayOfMonth(1);
+        LocalDate endOfMonth = systemAt.plusDays(1);
+        generateProfitLossAndBalanceSheet(startOfMonth, endOfMonth, systemAt);
+    }
+
+    private void processYearClosing(LocalDate systemAt) {
+        LocalDate startOfYear = systemAt.withDayOfYear(1);
+        LocalDate endOfYear = systemAt.plusDays(1);
+        generateProfitLossAndBalanceSheet(startOfYear, endOfYear, systemAt);
+    }
+
+    private void generateProfitLossAndBalanceSheet(LocalDate startDate, LocalDate endDate, LocalDate systemAt) {
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atStartOfDay();
+        List<EodReporting> balanceSheet = journalLedgerDetailRepository.findEodReport(
+                start, end, List.of("ASSET", "LIABILITY", "EQUITY"));
+        List<EodReporting> profitLoss = journalLedgerDetailRepository.findEodReport(
+                start, end, List.of("REVENUE", "EXPENSE"));
+
+        List<BalanceSheet> balanceSheetList = balanceSheet.stream()
                 .map(dto -> {
                     MChartOfAccount coa = mChartOfAccountRepository.findByCode(dto.getCoaCode())
-                            .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+                            .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.COA_MISSING));
                     return BalanceSheet.builder()
                             .systemAt(systemAt)
                             .amount(dto.getAmount())
@@ -57,10 +92,10 @@ public class EodReportingServiceImpl implements EodReportingService {
                 .toList();
         balanceSheetRepository.saveAll(balanceSheetList);
 
-        List<ProfitLoss> profitLossList = labaRugi.stream()
+        List<ProfitLoss> profitLossList = profitLoss.stream()
                 .map(dto -> {
                     MChartOfAccount coa = mChartOfAccountRepository.findByCode(dto.getCoaCode())
-                            .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND_CUSTOM));
+                            .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.COA_MISSING));
                     return ProfitLoss.builder()
                             .systemAt(systemAt)
                             .amount(dto.getAmount())
@@ -72,19 +107,4 @@ public class EodReportingServiceImpl implements EodReportingService {
                 .toList();
         profitLossRepository.saveAll(profitLossList);
     }
-
-
-//    public record DateRange(LocalDateTime start, LocalDateTime end) {}
-//
-//    private DateRange getDateRange(LocalDate baseDate, ReportPeriodType periodType) {
-//        switch (periodType) {
-//            case DAILY:
-//                return new DateRange(baseDate.atStartOfDay(), baseDate.plusDays(1).atStartOfDay());
-//            case WEEKLY:
-//                LocalDate weekStart = baseDate.with(DayOfWeek.MONDAY);
-//                LocalDate weekEnd = weekStart.plusDays(7);
-//                return new DateRange(weekStart.atStartOfDay(), weekEnd.atStartOfDay());
-//            case MONTHLY:
-//        }
-//    }
 }

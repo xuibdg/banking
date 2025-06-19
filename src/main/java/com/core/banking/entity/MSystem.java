@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "m_system")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
