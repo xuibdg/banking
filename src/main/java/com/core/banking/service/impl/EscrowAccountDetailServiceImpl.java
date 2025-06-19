@@ -188,7 +188,6 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
         return escrowAccountDetail;
     }
 
-
     @Override
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
     public String createAndReleaseEscrowAccount(EscrowAccountRequest escrowRequest, BigDecimal nominalTransaction, String releaseAccountNumber, String description, UserMetaData userMetaData) {
