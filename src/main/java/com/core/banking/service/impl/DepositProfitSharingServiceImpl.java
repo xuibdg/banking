@@ -45,7 +45,7 @@ public class DepositProfitSharingServiceImpl implements DepositProfitSharingServ
         LocalDate end = request.getProfitPeriodEndDate();
 
         if (start == null || end == null || start.isAfter(end)) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_PROFIT_PERIOD);
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DATE_RANGE);
         }
 
         List<DepositAccount> accounts;
@@ -137,7 +137,7 @@ public class DepositProfitSharingServiceImpl implements DepositProfitSharingServ
             LocalDate start = request.getProfitPeriodStartDate();
             LocalDate end = request.getProfitPeriodEndDate();
             if (start.isBefore(openedAt) || end.isAfter(maturityDate)) {
-                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_PROFIT_PERIOD);
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DATE_RANGE);
             }
 
             BigDecimal principal = account.getPrincipalAmount();

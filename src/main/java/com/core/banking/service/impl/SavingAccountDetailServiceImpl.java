@@ -32,10 +32,8 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class SavingAccountDetailServiceImpl implements SavingAccountDetailService {
@@ -202,7 +200,7 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
     }
 
     private SavingAccount findAndLockSavingAccount(String accountNumber) {
-        return savingAccountRepository.findWithLockByAccountNumber(accountNumber)
+        return savingAccountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
     }
 
