@@ -250,7 +250,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
                 .endBalance(escrowEndBalance)
                 .description("masuk pembayaran pinjaman ke escrow")
                 .transactionReference(escrowAccountDetailServiceImpl.generateTrxCode())
-                .releaseAccountNumber(savingAccount.getAccountNumber())
+//                .releaseAccountNumber(savingAccount.getAccountNumber())
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createBy(userMetaData.getUserId())

@@ -24,7 +24,7 @@ public enum GlobalErrorMapping {
     ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND("IEG-0030", "ID Escrow account detail tidak ditemukan"),
     PAYER_CUSTOMER_NOT_FOUND("IEG-0031", "Payer customer tidak ditemukan"),
     BENEFICIARY_CUSTOMER_NOT_FOUND("IEG-0032", "Beneficiary customer tidak ditemukan"),
-    TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033", "Transaction type tidak valid atau tidak tersedia"),
+    TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033","Transaction type tidak valid atau tidak tersedia"),
     SAVING_ACCOUNT_NOT_FOUND("IEG-0034", "Saving account tidak ditemukan"),
     LOAN_ACCOUNT_NOT_FOUND("IEG-0035", "Loan account tidak ditemukan"),
     DEPOSIT_ACCOUNT_NOT_FOUND("IEG-0036", "Deposit account not found"),
@@ -61,6 +61,7 @@ public enum GlobalErrorMapping {
     UNAUTHORIZED_ACCESS("IEG-0067", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
     ACC_NUMBER_REQ("IEG-0068", "Account number diperlukan. Hint: Pastikan account number ada"),
     ACC_NUMBER_EXIST("IEG-0069", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),
+    ID_NOT_FOUND("IEG-0052", "ID Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
     DEPOSIT_TYPE_CONFIG_NOT_FOUND("DEP-0003", "Konfigurasi jenis deposito tidak ditemukan. Hint: Cek teliti deposit type config id."),
     DEPOSIT_TYPE_CONFIG_NOT_ACTIVE("DEP-0004", "Konfigurasi jenis deposito tersebut tidak aktif. Hint: Pastikan konfigurasi jenis deposito tersebut berstatus aktif."),
     DEPOSIT_AMOUNT_BELOW_MINIMUM("DEP-0005", "Jumlah setoran/nominal deposit tidak memenuhi nominal dari minimum deposit, juga tidak boleh minus. Hint: Pastikan jumlah setoran/nominal deposit lebih dari minimum deposit."),
@@ -79,17 +80,20 @@ public enum GlobalErrorMapping {
     ACCOUNT_NOT_ACTIVE("IEG-0110", "Akun tidak aktif"),
     MIN_BALANCE_VIOLATED("IEG-0111", "Kurang dari Saldo Minimal"),
     INVALID_PAGE_PARAM("IEG-0112", "Nomer Page tidak Boleh Negatif"),
-    INVALID_PAGE_SIZE_PARAM("IEG-0113", "halaman harus 1-100 Halaman"),
-    SAVING_CONFIG_NOT_FOUND("IEG-0114", "Saving Config tidak ditemukan"),
-    TRX_REF_GENERATION_FAILED("IEG-0115", "gagal generate code"),
-    ESCROW_ACCOUNT_NOT_FUNDED("IEG-0116", "Escrow account harus dalam status funded"),
-    ESCROW_INSUFFICIENT_BALANCE("IEG-0117", "Dana di escrow akun tidak memadai"),
-    TRANSACTION_RECORD_NOT_FOUND("IEG-118", "code transaksi tidak ditemukan"),
-    SAVING_ACCOUNT_HAS_TRANSACTION("IEG-0119", "Account Sudah Ada Melakukan Transaksi"),
-    SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120", "Rekening Pengirim dan Penerima Tidak Boleh sama"),
+    INVALID_PAGE_SIZE_PARAM("IEG-0113","halaman harus 1-100 Halaman"),
+    SAVING_CONFIG_NOT_FOUND ("IEG-0114", "Saving Config tidak ditemukan"),
+    TRX_REF_GENERATION_FAILED ("IEG-0115", "gagal generate code"),
+    ESCROW_ACCOUNT_NOT_FUNDED ("IEG-0116", "Escrow account harus dalam status funded"),
+    ESCROW_INSUFFICIENT_BALANCE ("IEG-0117","Dana di escrow akun tidak memadai"),
+    TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan"),
+    SAVING_ACCOUNT_HAS_TRANSACTION("IEG-0119","Account Sudah Ada Melakukan Transaksi"),
+    SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120","Rekening Pengirim dan Penerima Tidak Boleh sama"),
     SAVING_ACCOUNT_NOT_ENOUGH("IEG-070", "Saldo tabungan tidak mencukupi."),
-    ID_DEPOSIT_SHARING_NOT_FOUND("IEG-071", "ID Deposit Profit Sharing Tidak ditemukan. Pastikan id yang dimasukkan sesuai!"),
-    ;
+    FAILED_TO_SEND_PG_TRANSACTION("IEG-071", "Gagal mengirim request kepada Payment Gateway"),
+    SYSTEM_RECORD_NOT_FOUND("IEG-130", "Data sistem belum diinisialisasi"),
+    COA_MISSING("IEG-131", "Chart of Account (COA) tidak ditemukan");
+
+
 
 
     public final String code;

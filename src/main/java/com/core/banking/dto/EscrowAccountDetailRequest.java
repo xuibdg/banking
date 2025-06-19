@@ -2,11 +2,9 @@ package com.core.banking.dto;
 
 import com.core.banking.enums.EscrowTransactionType;
 import com.core.banking.enums.MutationType;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.core.banking.enums.TypeSenderBank;
+import jakarta.validation.constraints.NotEmpty;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -16,11 +14,19 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @Builder
 public class EscrowAccountDetailRequest {
+    @NotEmpty
     private String escrowAccount;
+    @NotEmpty
     private EscrowTransactionType transactionType;
+    @NotEmpty
     private MutationType mutationType;
+    @NonNull
     private BigDecimal nominalTransaction;
+    @NotEmpty
     private String description;
-    private String transactionReference;
-    private String releaseAccountNumber;
+
+    //need for Payment gateway
+    @NotEmpty
+    private String senderBank;
+
 }

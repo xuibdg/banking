@@ -1,9 +1,6 @@
 package com.core.banking.service;
 
-import com.core.banking.dto.EscrowAccountDetailRequest;
-import com.core.banking.dto.EscrowAccountDetailResponse;
-import com.core.banking.dto.EscrowAccountRequest;
-import com.core.banking.dto.UserMetaData;
+import com.core.banking.dto.*;
 import com.core.banking.enums.EscrowTransactionType;
 
 import java.math.BigDecimal;
