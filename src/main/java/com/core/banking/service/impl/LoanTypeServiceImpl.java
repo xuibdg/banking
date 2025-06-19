@@ -44,7 +44,7 @@ public class LoanTypeServiceImpl implements LoanTypeService {
     @Override
     public String updateLoanType(String loanTypeId, LoanTypeRequest request, UserMetaData userMetaData) {
         LoanType type = loanTypeRepository.findById(loanTypeId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_TYPE_NOT_FOUND));
 
         type.setTypeName(request.getTypeName());
         type.setDescription(request.getDescription());
@@ -57,7 +57,7 @@ public class LoanTypeServiceImpl implements LoanTypeService {
     @Override
     public String deleteLoanType(String loanTypeId, UserMetaData userMetaData) {
         LoanType type = loanTypeRepository.findById(loanTypeId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_TYPE_NOT_FOUND));
 
         type.setIsDeleted(true);
         loanTypeRepository.save(type);

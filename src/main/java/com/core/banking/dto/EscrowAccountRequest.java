@@ -21,4 +21,9 @@ public class EscrowAccountRequest {
     private Long depositAccount;
     private TransactionTypeStatus transactionTypeStatus;
 
+    // Tambahan untuk keperluan Payment Gateway
+    private String senderBank;
+    private String paymentGatewayId;
+    private String description;
+
 }

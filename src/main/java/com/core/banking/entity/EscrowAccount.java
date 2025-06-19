@@ -72,6 +72,13 @@ public class EscrowAccount {
     @Column(name = "transaction_account_status", nullable = false)
     private TransactionTypeStatus transactionTypeStatus;
 
+    @Column(name = "release_account_number")
+    private String releaseAccountNumber;
+
+//    @Enumerated(EnumType.STRING)
+//    @Column(name = "type_fund_escrow", nullable = false)
+//    private TypeFundEscrow typeFundEscrow;
+
     @Column(name = "created_at")
     private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
 
