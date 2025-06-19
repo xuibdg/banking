@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class MSystem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String Id;
 
     @Column(name = "name")

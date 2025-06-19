@@ -21,13 +21,13 @@ public interface JournalLedgerDetailRepository extends JpaRepository<JournalLedg
     SELECT 
         d.coa_code as coaCode, 
         c.name as coaName, 
-        c.type as type,
+        c.category as category,
         SUM(COALESCE(d.debit, 0) - COALESCE(d.credit, 0)) as amount
-    FROM journal_ledger_detail d
+    FROM t_journal_ledger_detail d
     JOIN m_chart_of_account c ON d.coa_code = c.code
     WHERE d.created_at BETWEEN :startDate AND :endDate
-      AND c.type IN :categories
-    GROUP BY d.coa_code, c.name, c.type
+      AND c.category IN :categories
+    GROUP BY d.coa_code, c.name, c.type, c.category
 """, nativeQuery = true)
     List<EodReporting> findEodReport(@Param("startDate")LocalDateTime start,
                                      @Param("endDate") LocalDateTime end,

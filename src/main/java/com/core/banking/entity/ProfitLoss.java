@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public class ProfitLoss {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String Id;
 
     @ManyToOne(fetch = FetchType.LAZY)

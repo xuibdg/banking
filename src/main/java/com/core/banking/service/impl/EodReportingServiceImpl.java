@@ -74,7 +74,7 @@ public class EodReportingServiceImpl implements EodReportingService {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atStartOfDay();
         List<EodReporting> balanceSheet = journalLedgerDetailRepository.findEodReport(
-                start, end, List.of("ASSET", "LIABILITY", "EQUITY"));
+                start, end, List.of("ASET", "LIABILITY", "EQUITY"));
         List<EodReporting> profitLoss = journalLedgerDetailRepository.findEodReport(
                 start, end, List.of("REVENUE", "EXPENSE"));
 
