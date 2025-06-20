@@ -16,12 +16,17 @@ public class CsvExporter {
 
     public byte[] export(List<JournalReportDto> data) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        baos.write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
+
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
 
-            writer.println("JOURNAL REPORT");
-            writer.println();
+            writer.println("JOURNAL REPORT\n");
 
-            writer.println("Journal Code,Reference No,System Date,COA Code,COA Name,Debit,Credit,Description");
+            writer.printf(
+                    "%-15s %-18s %-12s %-5s %-18s %12s %12s %-25s%n",
+                    "Journal Code", "Ref No", "Date", "COA", "COA Name", "Debit", "Credit", "Description"
+            );
 
             BigDecimal totalDebit = BigDecimal.ZERO;
             BigDecimal totalCredit = BigDecimal.ZERO;
@@ -30,15 +35,16 @@ public class CsvExporter {
                 BigDecimal debit = item.getDebit() != null ? item.getDebit() : BigDecimal.ZERO;
                 BigDecimal credit = item.getCredit() != null ? item.getCredit() : BigDecimal.ZERO;
 
-                writer.printf("%s,%s,%s,%s,%s,%.2f,%.2f,%s%n",
-                        item.getJournalCode(),
-                        item.getReferenceNumber(),
+                writer.printf(
+                        "%-15s %-18s %-12s %-5s %-18s %12.2f %12.2f %-25s%n",
+                        trimTo(item.getJournalCode(), 15),
+                        trimTo(item.getReferenceNumber(), 18),
                         item.getSystemDate(),
                         item.getCoaCode(),
-                        item.getCoaName(),
+                        trimTo(item.getCoaName(), 18),
                         debit,
                         credit,
-                        escapeCsv(item.getDescription())
+                        trimTo(item.getDescription(), 25)
                 );
 
                 totalDebit = totalDebit.add(debit);
@@ -47,17 +53,18 @@ public class CsvExporter {
 
             writer.println();
 
-            writer.printf("TOTAL,,,,,%.2f,%.2f,%n", totalDebit, totalCredit);
+            writer.printf(
+                    "%-15s %-18s %-12s %-5s %-18s %12.2f %12.2f %-25s%n",
+                    "TOTAL", "", "", "", "", totalDebit, totalCredit, ""
+            );
         }
 
         return baos.toByteArray();
     }
 
-    private String escapeCsv(String value) {
+    private String trimTo(String value, int max) {
         if (value == null) return "";
-        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
-        }
-        return value;
+        value = value.replaceAll("[\\t\\n\\r]", " ");
+        return value.length() <= max ? value : value.substring(0, max - 1) + "…";
     }
 }

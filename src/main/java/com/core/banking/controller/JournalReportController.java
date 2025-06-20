@@ -43,7 +43,7 @@ public class JournalReportController {
         try {
             csvBytes = csvExporter.export(data);
         } catch (IOException e) {
-            return Mono.error(new RuntimeException("Failed to generate CSV", e));
+            return Mono.error(new RuntimeException("Gagal membuat CSV", e));
         }
 
         return Mono.just(ResponseEntity.ok()
@@ -52,7 +52,6 @@ public class JournalReportController {
                 .body(csvBytes));
     }
 
-
     @GetMapping(value = "/{referenceNumber}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public Mono<ResponseEntity<byte[]>> generatePdf(@PathVariable String referenceNumber) {
         List<JournalReportDto> data = journalReportService.getJournalByReference(referenceNumber);
@@ -60,7 +59,7 @@ public class JournalReportController {
         try {
             pdfBytes = pdfExporter.export(data);
         } catch (IOException e) {
-            return Mono.error(new RuntimeException("Failed to generate PDF", e));
+            return Mono.error(new RuntimeException("Gagal membuat PDF", e));
         }
 
         return Mono.just(ResponseEntity.ok()

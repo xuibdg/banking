@@ -47,7 +47,7 @@ public class PdfExporter {
                                 "System Date     : " + firstItem.getSystemDate(),
                         infoFont
                 );
-                info.setSpacingAfter(10f); // Jarak ke bawah
+                info.setSpacingAfter(10f);
                 document.add(info);
             }
 
