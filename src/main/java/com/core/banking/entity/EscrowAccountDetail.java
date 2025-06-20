@@ -68,7 +68,7 @@ public class EscrowAccountDetail {
     @Column(name = "created_at")
     private Timestamp createdAt = new Timestamp(System.currentTimeMillis());
 
-    @Column(name = "createdBy")
+    @Column(name = "created_by")
     private String createBy;
 
     @Column(name = "is_deleted")
