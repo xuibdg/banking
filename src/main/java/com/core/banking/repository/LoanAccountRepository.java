@@ -12,4 +12,6 @@ public interface LoanAccountRepository extends JpaRepository<LoanAccount, String
     List<LoanAccount> findByCustomerId(String loanAccountId);
     boolean existsByCustomerId_IdAndAccountStatusIn(String customerId, List<LoanAccountStatus> statuses);
     boolean existsByCustomer_IdAndAccountStatus(String customerId, LoanAccountStatus accountStatus);
+    boolean existsByAccountNumber(String accountNumber);
+
 }

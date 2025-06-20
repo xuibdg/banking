@@ -179,7 +179,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
 
                 LoanTypeConfig loanTypeConfig = repaymentSchedule.getLoanAccount().getLoanTypeConfig();
                 if (loanTypeConfig == null) {
-                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_CONFIG_NOT_FOUND); // Buat error mapping ini jika belum ada
+                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_CONFIG_NOT_FOUND);
                 }
 
                 BigDecimal dailyLateFee = loanTypeConfig.getLatePaymentFee();
@@ -214,7 +214,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         savingAccount.setLastTransactionAt(Timestamp.valueOf(LocalDateTime.now()));
         savingAccountRepository.save(savingAccount);
 
-        SavingAccountDetail savingAccountDetail = SavingAccountDetail.builder()
+        SavingAccountDetail savingAccountDebit = SavingAccountDetail.builder()
                 .savingAccount(savingAccount)
                 .transactionType(SavingTransactionType.FEE_DEBIT)
                 .mutationType(MutationType.DEBIT)
@@ -223,19 +223,81 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
                 .endBalance(endBalance)
                 .description("Pembayaran pinjaman dipotong dari rekening tabungan")
                 .transactionReference(escrowAccountDetailServiceImpl.generateTrxCode())
-                .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
+                .transactionAt(paymentDate)
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .channel("SYSTEM")
                 .build();
+        savingAccountDetailRepository.save(savingAccountDebit);
 
-        savingAccountDetailRepository.save(savingAccountDetail);
+        SavingAccountDetail creditPrincipal = SavingAccountDetail.builder()
+                .savingAccount(savingAccount)
+                .transactionType(SavingTransactionType.FEE_DEBIT)
+                .mutationType(MutationType.CREDIT)
+                .nominalTransaction(expectedPrincipal)
+                .beginBalance(endBalance)
+                .endBalance(endBalance)
+                .description("Pembayaran pokok pinjaman diteruskan ke escrow")
+                .transactionReference(savingAccountDebit.getTransactionReference())
+                .transactionAt(paymentDate)
+                .createdAt(Timestamp.valueOf(LocalDateTime.now()))
+                .channel("SYSTEM")
+                .build();
+        savingAccountDetailRepository.save(creditPrincipal);
+
+        SavingAccountDetail creditInterest = SavingAccountDetail.builder()
+                .savingAccount(savingAccount)
+                .transactionType(SavingTransactionType.FEE_DEBIT)
+                .mutationType(MutationType.CREDIT)
+                .nominalTransaction(expectedInterest)
+                .beginBalance(endBalance)
+                .endBalance(endBalance)
+                .description("Pembayaran bunga pinjaman")
+                .transactionReference(savingAccountDebit.getTransactionReference())
+                .transactionAt(paymentDate)
+                .createdAt(Timestamp.valueOf(LocalDateTime.now()))
+                .channel("SYSTEM")
+                .build();
+        savingAccountDetailRepository.save(creditInterest);
+
+
+        SavingAccountDetail creditFee = SavingAccountDetail.builder()
+                .savingAccount(savingAccount)
+                .transactionType(SavingTransactionType.FEE_DEBIT)
+                .mutationType(MutationType.CREDIT)
+                .nominalTransaction(fixedFee)
+                .beginBalance(endBalance)
+                .endBalance(endBalance)
+                .description("Biaya administrasi pembayaran pinjaman")
+                .transactionReference(savingAccountDebit.getTransactionReference())
+                .transactionAt(paymentDate)
+                .createdAt(Timestamp.valueOf(LocalDateTime.now()))
+                .channel("SYSTEM")
+                .build();
+        savingAccountDetailRepository.save(creditFee);
+
+        if (lateFee.compareTo(BigDecimal.ZERO) > 0) {
+            SavingAccountDetail creditLateFee = SavingAccountDetail.builder()
+                    .savingAccount(savingAccount)
+                    .transactionType(SavingTransactionType.FEE_DEBIT)
+                    .mutationType(MutationType.CREDIT)
+                    .nominalTransaction(lateFee)
+                    .beginBalance(endBalance)
+                    .endBalance(endBalance)
+                    .description("Denda keterlambatan pembayaran pinjaman")
+                    .transactionReference(savingAccountDebit.getTransactionReference())
+                    .transactionAt(paymentDate)
+                    .createdAt(Timestamp.valueOf(LocalDateTime.now()))
+                    .channel("SYSTEM")
+                    .build();
+            savingAccountDetailRepository.save(creditLateFee);
+        }
 
         EscrowAccount escrowAccount = escrowAccountRepository
                 .findByLoanAccount_LoanAccountId(loanAccount.getLoanAccountId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
 
         BigDecimal escrowBeginBalance = escrowAccount.getCurrentBalance();
-        BigDecimal escrowEndBalance = escrowBeginBalance.subtract(expectedPrincipal);
+        BigDecimal escrowEndBalance = escrowBeginBalance.add(expectedPrincipal);
 
         escrowAccount.setCurrentBalance(escrowEndBalance);
         escrowAccount.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
@@ -248,16 +310,15 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
                 .nominalTransaction(expectedPrincipal)
                 .beginBalance(escrowBeginBalance)
                 .endBalance(escrowEndBalance)
-                .description("masuk pembayaran pinjaman ke escrow")
-                .transactionReference(escrowAccountDetailServiceImpl.generateTrxCode())
-//                .releaseAccountNumber(savingAccount.getAccountNumber())
+                .description("Masuk pembayaran pokok pinjaman ke escrow")
+                .transactionReference(savingAccountDebit.getTransactionReference())
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
-                .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
+                .transactionAt(paymentDate)
                 .createBy(userMetaData.getUserId())
                 .isDeleted(false)
                 .build();
-
         escrowAccountDetailRepository.save(escrowDetail);
+
 
         LoanTransaction payment = new LoanTransaction();
         payment.setLoanTransactionId(UUID.randomUUID().toString());

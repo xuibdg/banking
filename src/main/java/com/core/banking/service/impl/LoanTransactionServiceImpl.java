@@ -112,7 +112,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         loanAccountRepository.save(loanAccount);
 
         BigDecimal disbursementAmount = loanAccount.getPrincipalAmount();
-        BigDecimal fixedFee = new BigDecimal("10000");
+        BigDecimal fixedFee = new BigDecimal("2000");
 
         List<SavingAccount> savingAccounts = savingAccountRepository.findByCustomer_Id(loanAccount.getCustomer().getId());
         if (savingAccounts.isEmpty()) {
@@ -138,7 +138,6 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
                 .endBalance(escrowEnd)
                 .description("Loan disbursed ke saving account")
                 .transactionReference(escrowAccountDetailServiceImpl.generateTrxCode())
-//                .releaseAccountNumber(savingAccount.getAccountNumber())
                 .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createBy(userMetaData.getUsername())
@@ -158,7 +157,6 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
                 .endBalance(BigDecimal.ZERO)
                 .description(escrowDetail.getDescription())
                 .transactionReference(escrowDetail.getTransactionReference())
-//                .releaseAccountNumber(savingAccount.getAccountNumber())
                 .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createBy(userMetaData.getUserId())
@@ -173,7 +171,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         transaction.setAmount(disbursementAmount);
         transaction.setPrincipalComponent(disbursementAmount);
         transaction.setInterestComponent(BigDecimal.ZERO);
-        transaction.setFeeComponent(fixedFee);
+        transaction.setFeeComponent(BigDecimal.ZERO);
 
         transaction.setReferenceNumber(escrowDetail.getTransactionReference());
 

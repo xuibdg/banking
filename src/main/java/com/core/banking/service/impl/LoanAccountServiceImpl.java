@@ -219,13 +219,18 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         return "SUCCES DELETE ACCOUNT";
     }
 
-    private static int counter = 1;
     private String generateCode() {
         String prefix = "1291";
         int lengthNumberPart = 6;
 
-        String numberPart = String.format("%0" + lengthNumberPart + "d", counter++);
-        return prefix + numberPart;
+        String code;
+        int attempt = 1;
+        do {
+            String numberPart = String.format("%0" + lengthNumberPart + "d", attempt++);
+            code = prefix + numberPart;
+        } while (loanAccountRepository.existsByAccountNumber(code));
+
+        return code;
     }
 
 }

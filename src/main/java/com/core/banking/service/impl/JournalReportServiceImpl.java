@@ -1,12 +1,12 @@
 package com.core.banking.service.impl;
 
 import com.core.banking.dto.JournalReportDto;
+import com.core.banking.entity.JournalLedger;
+import com.core.banking.entity.JournalLedgerDetail;
 import com.core.banking.entity.MChartOfAccount;
-import com.core.banking.entity.TJournalLedger;
-import com.core.banking.entity.TJournalLedgerDetail;
+import com.core.banking.repository.JournalLedgerDetailRepository;
+import com.core.banking.repository.JournalLedgerRepository;
 import com.core.banking.repository.MChartOfAccountRepository;
-import com.core.banking.repository.TJournalLedgerDetailRepository;
-import com.core.banking.repository.TJournalLedgerRepository;
 import com.core.banking.service.JournalReportService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -23,26 +23,26 @@ import java.util.stream.Collectors;
 public class JournalReportServiceImpl implements JournalReportService {
 
     @Autowired
-    private TJournalLedgerRepository tJournalLedgerRepository;
+    private JournalLedgerRepository tJournalLedgerRepository;
 
     @Autowired
-    private TJournalLedgerDetailRepository tJournalLedgerDetailRepository;
+    private JournalLedgerDetailRepository tJournalLedgerDetailRepository;
 
     @Autowired
     private MChartOfAccountRepository mChartOfAccountRepository;
 
     @Override
     public List<JournalReportDto> getJournalByReference(String referenceNumber) {
-        List<TJournalLedger> ledgers = tJournalLedgerRepository.findAllByReferenceNumber(referenceNumber);
+        List<JournalLedger> ledgers = tJournalLedgerRepository.findAllByReferenceNumber(referenceNumber);
         if (ledgers.isEmpty()) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND);
         }
 
         return ledgers.stream()
                 .flatMap(ledger -> {
-                    List<TJournalLedgerDetail> details = tJournalLedgerDetailRepository.findByJournalLedgerId(ledger.getId());
+                    List<JournalLedgerDetail> details = tJournalLedgerDetailRepository.findByJournalLedgerId(ledger.getId());
                     return details.stream().map(detail -> {
-                        MChartOfAccount coa = mChartOfAccountRepository.findById(detail.getChartOfAccount().getId())
+                        MChartOfAccount coa = mChartOfAccountRepository.findById(detail.getCoaId())
                                 .orElseThrow();
                         return JournalReportDto.builder()
                                 .journalCode(ledger.getJournalCode())
