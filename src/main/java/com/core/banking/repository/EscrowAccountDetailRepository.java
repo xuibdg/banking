@@ -1,5 +1,6 @@
 package com.core.banking.repository;
 
+import com.core.banking.entity.EscrowAccount;
 import com.core.banking.entity.EscrowAccountDetail;
 import com.core.banking.enums.EscrowTransactionType;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -9,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Optional;
 
 public interface EscrowAccountDetailRepository extends JpaRepository<EscrowAccountDetail, String> {
 
@@ -27,6 +29,7 @@ public interface EscrowAccountDetailRepository extends JpaRepository<EscrowAccou
             @Param("startDate") Timestamp startDate,
             @Param("endDate") Timestamp endDate,
             @Param("transactionType")EscrowTransactionType transactionType
-            );
+    );
+
 
 }

@@ -36,7 +36,7 @@ public class SavingAccountController {
 
     @PostMapping("/create")
     BaseResponse <SavingAccountResponse> create(@RequestBody @Validated SavingAccountRequest request,
-                                                                @CurrentUser UserMetaData userMetaData){
+                                                                @CurrentUser UserMetaData   userMetaData){
         return buildSuccessResponse(savingAccountService.create(request, userMetaData));
     }
 

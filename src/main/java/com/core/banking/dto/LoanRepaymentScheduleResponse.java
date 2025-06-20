@@ -23,6 +23,8 @@ public class LoanRepaymentScheduleResponse {
     private BigDecimal paymentAmount;
     private BigDecimal principalPaid;
     private BigDecimal interestPaid;
+    private BigDecimal feePaid;
+    private BigDecimal penaltyPaid;
     private String status;
     private String message;
     private Integer installmentNumber;
@@ -30,6 +32,7 @@ public class LoanRepaymentScheduleResponse {
     private BigDecimal principalDue;
     private BigDecimal interestDue;
     private BigDecimal amountPaid;
+    private BigDecimal latePaymentFeeComponent;
     private LoanRepaymentStatus paymentStatus;
     private Timestamp paymentDate;
 }
