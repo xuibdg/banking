@@ -9,6 +9,7 @@ import com.core.banking.enums.MutationType;
 import com.core.banking.repository.JournalLedgerDetailRepository;
 import com.core.banking.repository.JournalLedgerRepository;
 import com.core.banking.repository.MChartOfAccountRepository;
+import com.core.banking.repository.MSystemRepository;
 import com.core.banking.service.JournalLedgerService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -36,6 +37,8 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
     private JournalLedgerDetailRepository journalLedgerDetailRepository;
     @Autowired
     private MChartOfAccountRepository mChartOfAccountRepository;
+    @Autowired
+    private MSystemRepository mSystemRepository;
 
     @Override
     public String createJournalHeader(BigDecimal amount, String mutationType, String status,
@@ -152,5 +155,10 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
         long countToday = journalLedgerRepository.countBySystemDate(LocalDate.now());
         String sequence = String.format("%04d", countToday + 1);
         return prefix + sequence;
+    }
+
+    public LocalDate getSystemAt() {
+        return mSystemRepository.findSystemAt();
+
     }
 }

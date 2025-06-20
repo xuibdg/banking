@@ -61,6 +61,7 @@ public enum GlobalErrorMapping {
     UNAUTHORIZED_ACCESS("IEG-0067", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
     ACC_NUMBER_REQ("IEG-0068", "Account number diperlukan. Hint: Pastikan account number ada"),
     ACC_NUMBER_EXIST("IEG-0069", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),
+    ID_NOT_FOUND("IEG-0052", "ID Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
     DEPOSIT_TYPE_CONFIG_NOT_FOUND("DEP-0003", "Konfigurasi jenis deposito tidak ditemukan. Hint: Cek teliti deposit type config id."),
     DEPOSIT_TYPE_CONFIG_NOT_ACTIVE("DEP-0004", "Konfigurasi jenis deposito tersebut tidak aktif. Hint: Pastikan konfigurasi jenis deposito tersebut berstatus aktif."),
     DEPOSIT_AMOUNT_BELOW_MINIMUM("DEP-0005", "Jumlah setoran/nominal deposit tidak memenuhi nominal dari minimum deposit, juga tidak boleh minus. Hint: Pastikan jumlah setoran/nominal deposit lebih dari minimum deposit."),
@@ -92,7 +93,11 @@ public enum GlobalErrorMapping {
     UNBALANCED_DEBIT_CREDIT("IEG-0122","Total DEBIT dan CREDIT tidak seimbang"),
     COA_NOT_FOUND("IEG-0123","COA tidak ditemukan"),
     SAVING_ACCOUNT_NOT_ENOUGH("IEG-070", "Saldo tabungan tidak mencukupi."),
-    ID_DEPOSIT_SHARING_NOT_FOUND("IEG-071", "ID Deposit Profit Sharing Tidak ditemukan. Pastikan id yang dimasukkan sesuai!");
+    FAILED_TO_SEND_PG_TRANSACTION("IEG-071", "Gagal mengirim request kepada Payment Gateway"),
+    SYSTEM_RECORD_NOT_FOUND("IEG-130", "Data sistem belum diinisialisasi"),
+    COA_MISSING("IEG-131", "Chart of Account (COA) tidak ditemukan"),
+    ID_DEPOSIT_SHARING_NOT_FOUND("IEG-132", "ID Deposit Profit Sharing tidak ditemukan"),
+    ;
 
 
     public final String code;
