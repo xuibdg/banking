@@ -11,11 +11,13 @@ import com.core.banking.repository.JournalLedgerRepository;
 import com.core.banking.repository.MChartOfAccountRepository;
 import com.core.banking.repository.MSystemRepository;
 import com.core.banking.service.JournalLedgerService;
+import com.core.banking.utils.exception.BusinessException;
+import com.core.banking.utils.exception.GlobalErrorMapping;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.core.banking.dto.JournalRequest;
-
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -54,12 +56,12 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
         long creditCount = request.getDetails().stream()
                 .filter(d -> d.getMutationType().equalsIgnoreCase("CREDIT")).count();
         if (debitCount == 0 || creditCount == 0) {
-            throw new IllegalArgumentException("Jika ada DEBIT wajib ada CREDIT");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEBIT_CREDIT_PAIR_REQUIRED);
         }
 
         for (JournalDetailRequest dto : request.getDetails()) {
             MChartOfAccount coa = mChartOfAccountRepository.findById(dto.getCoaId())
-                    .orElseThrow(() -> new IllegalArgumentException("COA tidak ditemukan: " + dto.getCoaId()));
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.COA_NOT_FOUND));
 
             BigDecimal amount = dto.getAmount();
             String mutationType = dto.getMutationType().toUpperCase();
@@ -80,19 +82,19 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
                 totalCredit = totalCredit.add(amount);
                 detail.setCredit(amount);
             } else {
-                throw new IllegalArgumentException("Mutasi hanya boleh DEBIT atau CREDIT");
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_MUTATION_TYPE);
             }
 
             detailEntities.add(detail);
         }
 
         if (totalDebit.compareTo(totalCredit) != 0) {
-            throw new IllegalArgumentException("Total DEBIT (" + totalDebit + ") dan CREDIT (" + totalCredit + ") tidak seimbang.");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.UNBALANCED_DEBIT_CREDIT);
         }
 
         JournalLedger header = JournalLedger.builder()
                 .journalCode(generateJournalCode())
-                .referenceNumber(request.getReferenceNumber())
+                .referenceNumber(generateReferenceNumber())
                 .referenceType(request.getReferenceType())
                 .status(JournalStatus.POSTED)
                 .description(request.getDescription())
@@ -101,7 +103,7 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
                 .totalCredit(totalCredit)
                 .isPosted(true)
                 .createdAt(LocalDateTime.now())
-                .createdBy("SYSTEM")
+                .createdBy(userMetaData.getUserId())
                 .build();
 
         JournalLedger savedHeader = journalLedgerRepository.save(header);
@@ -145,6 +147,13 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
         String prefix = "JRN-" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String random = String.valueOf((int)(Math.random() * 10000));
         return prefix + "-" + String.format("%04d", Integer.parseInt(random));
+    }
+    private String generateReferenceNumber() {
+        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String prefix = "REF-" + datePart + "-TRX";
+        long countToday = journalLedgerRepository.countBySystemDate(LocalDate.now());
+        String sequence = String.format("%04d", countToday + 1);
+        return prefix + sequence;
     }
 
     public LocalDate getSystemAt() {
