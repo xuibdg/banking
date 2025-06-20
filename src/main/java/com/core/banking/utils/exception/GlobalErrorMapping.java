@@ -24,7 +24,7 @@ public enum GlobalErrorMapping {
     ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND("IEG-0030", "ID Escrow account detail tidak ditemukan"),
     PAYER_CUSTOMER_NOT_FOUND("IEG-0031", "Payer customer tidak ditemukan"),
     BENEFICIARY_CUSTOMER_NOT_FOUND("IEG-0032", "Beneficiary customer tidak ditemukan"),
-    TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033","Transaction type tidak valid atau tidak tersedia"),
+    TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033", "Transaction type tidak valid atau tidak tersedia"),
     SAVING_ACCOUNT_NOT_FOUND("IEG-0034", "Saving account tidak ditemukan"),
     LOAN_ACCOUNT_NOT_FOUND("IEG-0035", "Loan account tidak ditemukan"),
     DEPOSIT_ACCOUNT_NOT_FOUND("IEG-0036", "Deposit account not found"),
@@ -92,9 +92,8 @@ public enum GlobalErrorMapping {
     FAILED_TO_SEND_PG_TRANSACTION("IEG-071", "Gagal mengirim request kepada Payment Gateway"),
     SYSTEM_RECORD_NOT_FOUND("IEG-130", "Data sistem belum diinisialisasi"),
     COA_MISSING("IEG-131", "Chart of Account (COA) tidak ditemukan"),
-    ID_DEPOSIT_SHARING_NOT_FOUND("IEG-132", "ID profit sharing tidak ditemukan");
-
-
+    ID_DEPOSIT_SHARING_NOT_FOUND("IEG-132", "ID Deposit Profit Sharing tidak ditemukan"),
+    ;
 
 
     public final String code;
