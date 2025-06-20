@@ -1,24 +1,30 @@
 package com.core.banking.service.impl;
 
-import com.core.banking.dto.EscrowAccountRequest;
+// --- IMPORT ---
+import com.core.banking.config.AppCoaConfig;
+import com.core.banking.dto.JournalDetailRequest;
+import com.core.banking.dto.JournalRequest;
 import com.core.banking.dto.SavingAccountDetail.DepositRequestDTO;
 import com.core.banking.dto.SavingAccountDetail.InterBankTransferRequestDTO;
 import com.core.banking.dto.SavingAccountDetail.SavingTransactionResponseDTO;
 import com.core.banking.dto.SavingAccountDetail.WithdrawalRequestDTO;
 import com.core.banking.dto.UserMetaData;
+import com.core.banking.entity.MChartOfAccount;
 import com.core.banking.entity.SavingAccount;
 import com.core.banking.entity.SavingAccountDetail;
 import com.core.banking.entity.SavingTypeConfig;
 import com.core.banking.enums.MutationType;
 import com.core.banking.enums.SavingAccountStatus;
 import com.core.banking.enums.SavingTransactionType;
-import com.core.banking.enums.TransactionTypeStatus;
+import com.core.banking.repository.MChartOfAccountRepository;
 import com.core.banking.repository.SavingAccountDetailRepository;
 import com.core.banking.repository.SavingAccountRepository;
-import com.core.banking.service.EscrowAccountDetailService;
+import com.core.banking.service.JournalLedgerService;
 import com.core.banking.service.SavingAccountDetailService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,22 +38,26 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class SavingAccountDetailServiceImpl implements SavingAccountDetailService {
 
+    private static final Logger log = LoggerFactory.getLogger(SavingAccountDetailServiceImpl.class);
+
     @Autowired
     private SavingAccountRepository savingAccountRepository;
-
     @Autowired
     private SavingAccountDetailRepository savingAccountDetailRepository;
-
     @Autowired
-    private EscrowAccountDetailService escrowAccountDetailService;
+    private JournalLedgerService journalLedgerService;
+    @Autowired
+    private MChartOfAccountRepository mChartOfAccountRepository;
+    @Autowired
+    private AppCoaConfig appCoaConfig;
 
     private static final String DESC_INITIAL_DEPOSIT_TELLER = "Initial Deposit Melalui Teller";
     private static final String DESC_DEPOSIT_DEFAULT = "Deposit";
@@ -62,61 +72,96 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
     @Transactional
     public SavingTransactionResponseDTO recordDeposit(DepositRequestDTO request, UserMetaData userMetaData) {
         validateDepositRequest(request);
-        Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+
+        LocalDate transactionDate = Optional.ofNullable(request.getSystemDate()).orElse(LocalDate.now());
+        Timestamp now = Timestamp.valueOf(LocalDateTime.of(transactionDate, LocalTime.now()));
+
         SavingAccount savingAccount = findAndLockSavingAccount(request.getSavingAccountNumber());
         SavingTypeConfig config = getActiveSavingConfig(savingAccount);
 
-        String escrowRef = processOneStepEscrowCreationAndRelease(
-                savingAccount,
-                request.getPayerCustomerId(),
-                request.getAmount(),
-                userMetaData
-        );
-
         boolean isInitialDeposit = !savingAccountDetailRepository.existsBySavingAccount(savingAccount);
-        SavingTransactionResponseDTO response;
+        SavingAccountDetail lastTransaction;
 
         if (isInitialDeposit) {
             validateInitialDepositState(savingAccount);
             validateInitialDepositRules(request.getAmount(), config);
 
-            String savingRef = generateSavingTransactionReference(PREFIX_INITIAL, savingAccount, SavingTransactionType.INITIAL_DEPOSIT, escrowRef);
-            SavingAccountDetail initialDepositDetail = createAndSaveSavingDetail(savingAccount, SavingTransactionType.INITIAL_DEPOSIT, MutationType.CREDIT, request.getAmount(), DESC_INITIAL_DEPOSIT_TELLER, savingRef, request.getChannel(), now);
-            updateSavingAccountBalance(savingAccount, initialDepositDetail.getEndBalance(), now);
-            processOpeningFee(savingAccount, config, savingRef, now);
+            if (request.isJournal()) {
+                findActiveCoaByCode(config.getCoaCode());
+            }
+
+            String transactionId = UUID.randomUUID().toString();
+            String savingRef = generateSavingTransactionReference(PREFIX_INITIAL, savingAccount, SavingTransactionType.INITIAL_DEPOSIT, transactionId);
+            lastTransaction = createAndSaveSavingDetail(savingAccount, SavingTransactionType.INITIAL_DEPOSIT, MutationType.CREDIT, request.getAmount(), DESC_INITIAL_DEPOSIT_TELLER, savingRef, request.getChannel(), now);
+            updateSavingAccountBalance(savingAccount, lastTransaction.getEndBalance(), now);
+
+            log.info("DIAGNOSTIC: Nilai isJournal yang diterima dari request adalah: {}", request.isJournal());
+            if (request.isJournal()) {
+                log.info("DIAGNOSTIC: Blok 'if (isJournal)' untuk setoran awal dimasuki. Akan membuat jurnal.");
+                MChartOfAccount coaProduct = findActiveCoaByCode(config.getCoaCode());
+                postJournalEntry(savingRef, "SAVING_INITIAL_DEPOSIT", DESC_INITIAL_DEPOSIT_TELLER, transactionDate, request.getAmount(), appCoaConfig.getCashTellerId(), coaProduct.getId(), userMetaData);
+            }
+
+            processOpeningFee(savingAccount, config, lastTransaction.getTransactionReference(), now, transactionDate, request.isJournal(), userMetaData);
             activateAccount(savingAccount, now);
-            response = mapToTransactionResponseDTO(initialDepositDetail);
+
         } else {
             validateAccountIsActive(savingAccount);
             BigDecimal endBalanceSaving = savingAccount.getCurrentBalance().add(request.getAmount());
-            validateTransactionRules(savingAccount, config, request.getAmount(), MutationType.CREDIT, endBalanceSaving);
+            validateTransactionRules(savingAccount, config, request.getAmount(), MutationType.CREDIT, endBalanceSaving, transactionDate);
 
-            String savingRef = generateSavingTransactionReference(PREFIX_DEPOSIT, savingAccount, SavingTransactionType.DEPOSIT, escrowRef);
+            if (request.isJournal()) {
+                findActiveCoaByCode(config.getCoaCode());
+            }
+
+            String transactionId = UUID.randomUUID().toString();
+            String savingRef = generateSavingTransactionReference(PREFIX_DEPOSIT, savingAccount, SavingTransactionType.DEPOSIT, transactionId);
             String description = (request.getDescription() != null && !request.getDescription().isBlank()) ? request.getDescription() : DESC_DEPOSIT_DEFAULT;
-            SavingAccountDetail savingDetail = createAndSaveSavingDetail(savingAccount, SavingTransactionType.DEPOSIT, MutationType.CREDIT, request.getAmount(), description, savingRef, request.getChannel(), now);
-            updateSavingAccountBalance(savingAccount, savingDetail.getEndBalance(), now);
-            response = mapToTransactionResponseDTO(savingDetail);
+            lastTransaction = createAndSaveSavingDetail(savingAccount, SavingTransactionType.DEPOSIT, MutationType.CREDIT, request.getAmount(), description, savingRef, request.getChannel(), now);
+            updateSavingAccountBalance(savingAccount, lastTransaction.getEndBalance(), now);
+
+            log.info("DIAGNOSTIC: Nilai isJournal yang diterima dari request adalah: {}", request.isJournal());
+            if (request.isJournal()) {
+                log.info("DIAGNOSTIC: Blok 'if (isJournal)' untuk setoran normal dimasuki. Akan membuat jurnal.");
+                MChartOfAccount coaProduct = findActiveCoaByCode(config.getCoaCode());
+                postJournalEntry(savingRef, "SAVING_DEPOSIT", description, transactionDate, request.getAmount(), appCoaConfig.getCashTellerId(), coaProduct.getId(), userMetaData);
+            }
         }
-        return response;
+        return mapToTransactionResponseDTO(lastTransaction);
     }
 
     @Override
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public SavingTransactionResponseDTO recordWithdrawal(WithdrawalRequestDTO request, UserMetaData userMetaData) {
         validateWithdrawalRequest(request);
-        Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+
+        LocalDate transactionDate = Optional.ofNullable(request.getSystemDate()).orElse(LocalDate.now());
+        Timestamp now = Timestamp.valueOf(LocalDateTime.of(transactionDate, LocalTime.now()));
+
         SavingAccount savingAccount = findAndLockSavingAccount(request.getSavingAccountNumber());
         SavingTypeConfig config = getActiveSavingConfig(savingAccount);
+
         validateAccountIsActive(savingAccount);
         if (savingAccount.getCurrentBalance().compareTo(request.getAmount()) < 0) {
             throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.INSUFFICIENT_BALANCE);
         }
         BigDecimal endBalanceSaving = savingAccount.getCurrentBalance().subtract(request.getAmount());
-        validateTransactionRules(savingAccount, config, request.getAmount(), MutationType.DEBIT, endBalanceSaving);
-        String uniqueSuffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        String savingRef = generateSavingTransactionReference(PREFIX_WITHDRAWAL, savingAccount, SavingTransactionType.WITHDRAWAL, uniqueSuffix);
+        validateTransactionRules(savingAccount, config, request.getAmount(), MutationType.DEBIT, endBalanceSaving, transactionDate);
+
+        if (request.isJournal()) {
+            findActiveCoaByCode(config.getCoaCode());
+        }
+
+        String transactionId = UUID.randomUUID().toString();
+        String savingRef = generateSavingTransactionReference(PREFIX_WITHDRAWAL, savingAccount, SavingTransactionType.WITHDRAWAL, transactionId);
         SavingAccountDetail savingDetail = createAndSaveSavingDetail(savingAccount, SavingTransactionType.WITHDRAWAL, MutationType.DEBIT, request.getAmount(), request.getDescription(), savingRef, request.getChannel(), now);
         updateSavingAccountBalance(savingAccount, savingDetail.getEndBalance(), now);
+
+        if (request.isJournal()) {
+            MChartOfAccount coaProduct = findActiveCoaByCode(config.getCoaCode());
+            postJournalEntry(savingRef, "SAVING_WITHDRAWAL", request.getDescription(), transactionDate, request.getAmount(), coaProduct.getId(), appCoaConfig.getCashTellerId(), userMetaData);
+        }
+
         return mapToTransactionResponseDTO(savingDetail);
     }
 
@@ -124,16 +169,16 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public SavingTransactionResponseDTO performInternalTransfer(InterBankTransferRequestDTO request, UserMetaData userMetaData) {
         validateInternalTransferRequest(request);
-
-        Timestamp now = Timestamp.valueOf(LocalDateTime.now());
-        String internalTransferReference = "TRF-" + UUID.randomUUID().toString();
+        LocalDate transactionDate = Optional.ofNullable(request.getSystemDate()).orElse(LocalDate.now());
+        Timestamp now = Timestamp.valueOf(LocalDateTime.of(transactionDate, LocalTime.now()));
 
         SavingAccount sourceAccount = findAndLockSavingAccount(request.getSourceAccountNumber());
-        validateAccountIsActive(sourceAccount);
-        SavingTypeConfig sourceConfig = getActiveSavingConfig(sourceAccount);
-
         SavingAccount destinationAccount = findAndLockSavingAccount(request.getDestinationAccountNumber());
+
+        validateAccountIsActive(sourceAccount);
         validateAccountIsActive(destinationAccount);
+
+        SavingTypeConfig sourceConfig = getActiveSavingConfig(sourceAccount);
         SavingTypeConfig destinationConfig = getActiveSavingConfig(destinationAccount);
 
         if (sourceAccount.getCurrentBalance().compareTo(request.getAmount()) < 0) {
@@ -141,44 +186,69 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         }
 
         BigDecimal finalSourceBalance = sourceAccount.getCurrentBalance().subtract(request.getAmount());
-        validateTransactionRules(sourceAccount, sourceConfig, request.getAmount(), MutationType.DEBIT, finalSourceBalance);
+        validateTransactionRules(sourceAccount, sourceConfig, request.getAmount(), MutationType.DEBIT, finalSourceBalance, transactionDate);
 
         BigDecimal finalDestinationBalance = destinationAccount.getCurrentBalance().add(request.getAmount());
-        validateTransactionRules(destinationAccount, destinationConfig, request.getAmount(), MutationType.CREDIT, finalDestinationBalance);
+        validateTransactionRules(destinationAccount, destinationConfig, request.getAmount(), MutationType.CREDIT, finalDestinationBalance, transactionDate);
 
-        String debitDescription = String.format("Transfer ke %s - %s",
-                destinationAccount.getAccountNumber(),
-                request.getDescription() != null ? request.getDescription() : "");
+        if (request.isJournal()) {
+            findActiveCoaByCode(sourceConfig.getCoaCode());
+            findActiveCoaByCode(destinationConfig.getCoaCode());
+        }
 
-        SavingAccountDetail debitDetail = createAndSaveSavingDetail(
-                sourceAccount,
-                SavingTransactionType.TRANSFER_INTERNAL_DEBIT,
-                MutationType.DEBIT,
-                request.getAmount(),
-                debitDescription,
-                internalTransferReference,
-                request.getChannel(),
-                now
-        );
+        String internalTransferReference = "TRF-" + UUID.randomUUID().toString();
+
+        String debitDescription = String.format("Transfer ke %s - %s", destinationAccount.getAccountNumber(), Optional.ofNullable(request.getDescription()).orElse(""));
+        SavingAccountDetail debitDetail = createAndSaveSavingDetail(sourceAccount, SavingTransactionType.TRANSFER_INTERNAL_DEBIT, MutationType.DEBIT, request.getAmount(), debitDescription, internalTransferReference, request.getChannel(), now);
         updateSavingAccountBalance(sourceAccount, debitDetail.getEndBalance(), now);
 
-        String creditDescription = String.format("Transfer dari %s - %s",
-                sourceAccount.getAccountNumber(),
-                request.getDescription() != null ? request.getDescription() : "");
+        String creditDescription = String.format("Transfer dari %s - %s", sourceAccount.getAccountNumber(), Optional.ofNullable(request.getDescription()).orElse(""));
+        createAndSaveSavingDetail(destinationAccount, SavingTransactionType.TRANSFER_INTERNAL_CREDIT, MutationType.CREDIT, request.getAmount(), creditDescription, internalTransferReference, request.getChannel(), now);
+        updateSavingAccountBalance(destinationAccount, finalDestinationBalance, now);
 
-        SavingAccountDetail creditDetail = createAndSaveSavingDetail(
-                destinationAccount,
-                SavingTransactionType.TRANSFER_INTERNAL_CREDIT,
-                MutationType.CREDIT,
-                request.getAmount(),
-                creditDescription,
-                internalTransferReference,
-                request.getChannel(),
-                now
-        );
-        updateSavingAccountBalance(destinationAccount, creditDetail.getEndBalance(), now);
+        if (request.isJournal()) {
+            MChartOfAccount coaSource = findActiveCoaByCode(sourceConfig.getCoaCode());
+            MChartOfAccount coaDestination = findActiveCoaByCode(destinationConfig.getCoaCode());
+            postJournalEntry(internalTransferReference, "SAVING_INTERNAL_TRANSFER", request.getDescription(), transactionDate, request.getAmount(), coaSource.getId(), coaDestination.getId(), userMetaData);
+        }
 
         return mapToTransactionResponseDTO(debitDetail);
+    }
+
+    private void postJournalEntry(String referenceNumber, String referenceType, String description, LocalDate transactionDate, BigDecimal amount, String debitCoaId, String creditCoaId, UserMetaData userMetaData) {
+        JournalDetailRequest debitDetail = new JournalDetailRequest();
+        debitDetail.setCoaId(debitCoaId);
+        debitDetail.setMutationType(MutationType.DEBIT.name());
+        debitDetail.setAmount(amount);
+        debitDetail.setDescription(description);
+
+        JournalDetailRequest creditDetail = new JournalDetailRequest();
+        creditDetail.setCoaId(creditCoaId);
+        creditDetail.setMutationType(MutationType.CREDIT.name());
+        creditDetail.setAmount(amount);
+        creditDetail.setDescription(description);
+
+        List<JournalDetailRequest> details = new ArrayList<>();
+        details.add(debitDetail);
+        details.add(creditDetail);
+
+        JournalRequest journalRequest = new JournalRequest();
+        journalRequest.setReferenceNumber(referenceNumber);
+        journalRequest.setReferenceType(referenceType);
+        journalRequest.setDescription(description);
+        journalRequest.setSystemDate(transactionDate);
+        journalRequest.setDetails(details);
+
+        try {
+            log.info("Attempting to create journal entry for reference: {}", referenceNumber);
+            journalLedgerService.createJournal(journalRequest, userMetaData);
+            log.info("Successfully created journal entry for reference: {}", referenceNumber);
+
+        } catch (Exception e) {
+            log.error("!!! FAILED TO CREATE JOURNAL ENTRY for reference: {} !!!", referenceNumber, e);
+            // Optional: Uncomment baris di bawah jika kegagalan jurnal harus menggagalkan seluruh transaksi.
+            // throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "Transaksi utama berhasil, namun gagal membuat jurnal. Cek log server. Error: " + e.getMessage());
+        }
     }
 
     @Override
@@ -192,52 +262,35 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         }
         SavingAccount savingAccount = savingAccountRepository.findByAccountNumber(savingAccountNumber)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
+
         Page<SavingTransactionResponseDTO> pageResult = savingAccountDetailRepository.findBySavingAccountAndDateRange(savingAccount.getSavingAccountId(), startTimestamp, endTimestamp, pageable)
-                .map(data -> {
-                    SavingTransactionResponseDTO dto = mapToTransactionResponseDTO(data);
-                    dto.setSavingAccountNumber(savingAccount.getAccountNumber());
-                    return dto;
-                });
+                .map(this::mapToTransactionResponseDTO);
+
+        pageResult.getContent().forEach(dto -> dto.setSavingAccountNumber(savingAccount.getAccountNumber()));
         return pageResult;
+    }
+
+    private void processOpeningFee(SavingAccount account, SavingTypeConfig config, String relatedReference, Timestamp now, LocalDate transactionDate, boolean isJournal, UserMetaData userMetaData) {
+        BigDecimal openingFee = Optional.ofNullable(config.getMonthlyMaintenanceFee()).orElse(BigDecimal.ZERO);
+        if (openingFee.compareTo(BigDecimal.ZERO) > 0) {
+            if (isJournal) {
+                findActiveCoaByCode(config.getCoaCode());
+            }
+
+            String feeTransactionReference = PREFIX_FEE + relatedReference;
+            SavingAccountDetail feeDetail = createAndSaveSavingDetail(account, SavingTransactionType.FEE_DEBIT, MutationType.DEBIT, openingFee, DESC_OPENING_FEE, feeTransactionReference, CHANNEL_SYSTEM, now);
+            updateSavingAccountBalance(account, feeDetail.getEndBalance(), now);
+
+            if (isJournal) {
+                MChartOfAccount coaProduct = findActiveCoaByCode(config.getCoaCode());
+                postJournalEntry(feeTransactionReference, "SAVING_OPENING_FEE", DESC_OPENING_FEE, transactionDate, openingFee, coaProduct.getId(), appCoaConfig.getFeeIncomeId(), userMetaData);
+            }
+        }
     }
 
     private SavingAccount findAndLockSavingAccount(String accountNumber) {
         return savingAccountRepository.findWithLockByAccountNumber(accountNumber)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
-    }
-
-    private String processOneStepEscrowCreationAndRelease(SavingAccount beneficiaryAccount, String payerCustomerId, BigDecimal amount, UserMetaData user) {
-        EscrowAccountRequest escrowRequest = EscrowAccountRequest.builder()
-                .payerCustomer(payerCustomerId)
-                .beneficiaryCustomer(String.valueOf(beneficiaryAccount.getCustomer().getId()))
-                .purpose("Deposit to Savings Account: " + beneficiaryAccount.getAccountNumber())
-                .transactionTypeStatus(TransactionTypeStatus.SAVING_PAYMENT)
-                .savingAccount(beneficiaryAccount.getSavingAccountId())
-                .build();
-
-        String description = "Auto-generated deposit to " + beneficiaryAccount.getAccountNumber();
-
-        return escrowAccountDetailService.createAndReleaseEscrowAccount(
-                escrowRequest,
-                amount,
-                beneficiaryAccount.getAccountNumber(),
-                description,
-                user
-        );
-    }
-
-    private String generateSavingTransactionReference(String prefix, SavingAccount account, SavingTransactionType type, String externalRef) {
-        String cleanExternalRef = externalRef;
-        if (externalRef != null && externalRef.contains("-")) {
-            String[] parts = externalRef.split("-");
-            cleanExternalRef = parts[parts.length - 2] + parts[parts.length - 1];
-        }
-
-        if (type == SavingTransactionType.INITIAL_DEPOSIT) {
-            return String.format("%s-1-%s", prefix, cleanExternalRef);
-        }
-        long count = savingAccountDetailRepository.countBySavingAccountAndTransactionType(account, type);
-        return String.format("%s-%d-%s", prefix, count + 1, cleanExternalRef);
     }
 
     private SavingAccountDetail createAndSaveSavingDetail(SavingAccount account, SavingTransactionType trxType, MutationType mutation, BigDecimal amount, String desc, String ref, String channel, Timestamp trxAt) {
@@ -254,7 +307,7 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
                 .transactionReference(ref)
                 .channel(channel != null ? channel : CHANNEL_SYSTEM)
                 .transactionAt(trxAt)
-                .createdAt(trxAt)
+                .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .build();
         return savingAccountDetailRepository.save(detail);
     }
@@ -262,7 +315,7 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
     private void updateSavingAccountBalance(SavingAccount account, BigDecimal newBalance, Timestamp now) {
         account.setCurrentBalance(newBalance);
         account.setLastTransactionAt(now);
-        account.setUpdatedAt(now);
+        account.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         savingAccountRepository.save(account);
     }
 
@@ -271,15 +324,6 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
             account.setAccountStatus(SavingAccountStatus.ACTIVE);
             account.setUpdatedAt(now);
             savingAccountRepository.save(account);
-        }
-    }
-
-    private void processOpeningFee(SavingAccount account, SavingTypeConfig config, String relatedReference, Timestamp now) {
-        BigDecimal openingFee = Optional.ofNullable(config.getMonthlyMaintenanceFee()).orElse(BigDecimal.ZERO);
-        if (openingFee.compareTo(BigDecimal.ZERO) > 0) {
-            String feeTransactionReference = PREFIX_FEE + relatedReference;
-            SavingAccountDetail feeDetail = createAndSaveSavingDetail(account, SavingTransactionType.FEE_DEBIT, MutationType.DEBIT, openingFee, DESC_OPENING_FEE, feeTransactionReference, CHANNEL_SYSTEM, now);
-            updateSavingAccountBalance(account, feeDetail.getEndBalance(), now);
         }
     }
 
@@ -300,7 +344,26 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
                 .build();
     }
 
-    // --- Validation Helper Methods ---
+    private MChartOfAccount findActiveCoaByCode(String coaCode) {
+        if (coaCode == null || coaCode.isBlank()) {
+            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "Konfigurasi COA Code pada produk tidak boleh kosong.");
+        }
+        MChartOfAccount coa = mChartOfAccountRepository.findByCode(coaCode)
+                .orElseThrow(() -> new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "Konfigurasi COA tidak valid. Kode tidak ditemukan: " + coaCode));
+        if (!coa.getIsActive()) {
+            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "Konfigurasi COA tidak valid. Akun tidak aktif: " + coaCode);
+        }
+        return coa;
+    }
+
+    private String generateSavingTransactionReference(String prefix, SavingAccount account, SavingTransactionType type, String transactionId) {
+        String uniqueSuffix = transactionId.substring(0, 8).toUpperCase();
+        if (type == SavingTransactionType.INITIAL_DEPOSIT) {
+            return String.format("%s-1-%s", prefix, uniqueSuffix);
+        }
+        long count = savingAccountDetailRepository.countBySavingAccountAndTransactionType(account, type);
+        return String.format("%s-%d-%s", prefix, count + 1, uniqueSuffix);
+    }
 
     private void validateAccountIsActive(SavingAccount account) {
         if (account.getAccountStatus() != SavingAccountStatus.ACTIVE) {
@@ -325,15 +388,15 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         }
     }
 
-    private void validateTransactionRules(SavingAccount account, SavingTypeConfig config, BigDecimal amount, MutationType mutationType, BigDecimal endBalance) {
+    private void validateTransactionRules(SavingAccount account, SavingTypeConfig config, BigDecimal amount, MutationType mutationType, BigDecimal endBalance, LocalDate transactionDate) {
         if (mutationType == MutationType.CREDIT && config.getMaxBalanceLimit() != null && endBalance.compareTo(config.getMaxBalanceLimit()) > 0) {
             throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.MAX_BALANCE_EXCEEDED);
         }
         if (mutationType == MutationType.DEBIT && config.getMinBalanceLimit() != null && endBalance.compareTo(config.getMinBalanceLimit()) < 0) {
             throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.MIN_BALANCE_VIOLATED);
         }
-        validateDailyTransactionLimit(account, amount, mutationType, config.getDailyTransactionLimit());
-        validateDailyTransactionCount(account, config.getDailyTransactionCountLimit());
+        validateDailyTransactionLimit(account, amount, mutationType, config.getDailyTransactionLimit(), transactionDate);
+        validateDailyTransactionCount(account, config.getDailyTransactionCountLimit(), transactionDate);
     }
 
     private void validateInitialDepositRules(BigDecimal amount, SavingTypeConfig config) {
@@ -343,30 +406,32 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         }
     }
 
-    private void validateDailyTransactionCount(SavingAccount account, Integer dailyCountLimit) {
+    private void validateDailyTransactionCount(SavingAccount account, Integer dailyCountLimit, LocalDate transactionDate) {
         if (dailyCountLimit == null || dailyCountLimit <= 0) return;
-        long todayTransactionCount = countTransactionsToday(account);
-        if (todayTransactionCount >= dailyCountLimit) {
+        long transactionCount = countTransactionsByDate(account, transactionDate);
+        if (transactionCount >= dailyCountLimit) {
             throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.DAILY_COUNT_LIMIT_EXCEEDED);
         }
     }
 
-    private void validateDailyTransactionLimit(SavingAccount account, BigDecimal amount, MutationType type, BigDecimal limit) {
+    private void validateDailyTransactionLimit(SavingAccount account, BigDecimal amount, MutationType type, BigDecimal limit, LocalDate transactionDate) {
         if (limit == null || limit.compareTo(BigDecimal.ZERO) <= 0) return;
-        BigDecimal sumToday = sumTransactionsToday(account, type);
+        BigDecimal sumToday = sumTransactionsByDate(account, type, transactionDate);
         if (sumToday.add(amount).compareTo(limit) > 0) {
             throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.DAILY_NOMINAL_LIMIT_EXCEEDED);
         }
     }
 
-    private long countTransactionsToday(SavingAccount account) {
-        LocalDate today = LocalDate.now();
-        return savingAccountDetailRepository.countBySavingAccountAndTransactionAtBetween(account, Timestamp.valueOf(today.atStartOfDay()), Timestamp.valueOf(today.atTime(LocalTime.MAX)));
+    private long countTransactionsByDate(SavingAccount account, LocalDate date) {
+        Timestamp start = Timestamp.valueOf(date.atStartOfDay());
+        Timestamp end = Timestamp.valueOf(date.atTime(LocalTime.MAX));
+        return savingAccountDetailRepository.countBySavingAccountAndTransactionAtBetween(account, start, end);
     }
 
-    private BigDecimal sumTransactionsToday(SavingAccount account, MutationType type) {
-        LocalDate today = LocalDate.now();
-        return Optional.ofNullable(savingAccountDetailRepository.sumTransactionsByAccountAndMutationTypeAndDate(account, type, Timestamp.valueOf(today.atStartOfDay()), Timestamp.valueOf(today.atTime(LocalTime.MAX)))).orElse(BigDecimal.ZERO);
+    private BigDecimal sumTransactionsByDate(SavingAccount account, MutationType type, LocalDate date) {
+        Timestamp start = Timestamp.valueOf(date.atStartOfDay());
+        Timestamp end = Timestamp.valueOf(date.atTime(LocalTime.MAX));
+        return Optional.ofNullable(savingAccountDetailRepository.sumTransactionsByAccountAndMutationTypeAndDate(account, type, start, end)).orElse(BigDecimal.ZERO);
     }
 
     private String formatErrorMessage(GlobalErrorMapping mapping, String... params) {
@@ -385,9 +450,6 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         }
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DEPOSIT_AMOUNT);
-        }
-        if (request.getPayerCustomerId() == null || request.getPayerCustomerId().isBlank()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.PAYER_CUSTOMER_NOT_FOUND);
         }
     }
 
@@ -426,4 +488,5 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_NOMINAL_INVALID);
         }
     }
+
 }

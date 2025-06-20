@@ -78,4 +78,8 @@ public class SavingTypeConfig {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
+    @Column(name = "coa_code", length = 20)
+    private String coaCode;
+
+
 }

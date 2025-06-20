@@ -31,7 +31,7 @@ public class MChartOfAccount {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private AccountType type;
+    private AccountType type;   
 
     @Column(name = "parent_code", length = 20)
     private String parentCode;

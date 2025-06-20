@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 @Builder
@@ -17,4 +18,6 @@ public class WithdrawalRequestDTO {
     private BigDecimal amount;
     private String description;
     private String channel;
+    private LocalDate systemDate;
+    private boolean isJournal;
 }

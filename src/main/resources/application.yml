@@ -20,3 +20,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+app:
+  config:
+    coa:
+
+      cash-teller-id: "1"
+      fee-income-id: "11"
