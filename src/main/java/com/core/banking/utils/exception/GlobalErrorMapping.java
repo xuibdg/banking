@@ -68,6 +68,8 @@ public enum GlobalErrorMapping {
     DEPOSIT_MATURITY_DATE_NOT_REACHED("DEP-008", "Akun deposito tersebut, tanggal jatuh temponya belum memenuhi. Hint: Cek teliti tanggal jatuh tempo vs tanggal saat ini"),
     INVALID_ROLLOVER_OPTION("DEP-009", "Opsi perpanjangan tidak valid. Hint: Cek teliti opsi perpanjangan yang tersedia."),
     MATURITY_DATE_NOT_REACHED("DEP-010", "Tanggal jatuh tempo belum tercapai. Hint: Periksa kembali tanggal pada opened at dan maturity date."),
+    CODE_ALREADY_EXISTS("IEG-0061", "Kode yang dimasukan sudah ada."),
+    PARENT_CODE_NOT_FOUND("IEG-0062", "Kode induk yang ditentukan tidak ada."),
     INVALID_DEPOSIT_AMOUNT("IEG-0102", "Jumlah deposit tidak valid. Harus lebih besar dari nol."),
     INVALID_WITHDRAWAL_AMOUNT("IEG-0103", "Jumlah penarikan tidak valid. Harus lebih besar dari nol."),
     INSUFFICIENT_BALANCE("IEG-0104", "Saldo tabungan tidak cukup untuk melakukan penarikan."),
@@ -87,8 +89,10 @@ public enum GlobalErrorMapping {
     TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan"),
     SAVING_ACCOUNT_HAS_TRANSACTION("IEG-0119","Account Sudah Ada Melakukan Transaksi"),
     SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120","Rekening Pengirim dan Penerima Tidak Boleh sama"),
-    SAVING_ACCOUNT_NOT_ENOUGH("IEG-070", "Saldo tabungan tidak mencukupi.");
-
+    SAVING_ACCOUNT_NOT_ENOUGH("IEG-070", "Saldo tabungan tidak mencukupi."),
+    ID_NOT_FOUND("IEG-0063", "ID yang dicantumkan tidak ditemukan."),
+    INVALID_COMBINATION_CATEGORY_TYPE("IEG-0064", "Kombinasi tidak valid: Kategori yang dipilih tidak cocok dengan Account Type."),
+    INVALID_CODE_FOR_CATEGORY("IEG-0065", "Awalan kode tidak valid untuk Kategori yang dipilih.");
 
 
 

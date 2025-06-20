@@ -2,10 +2,14 @@ package com.core.banking.service.impl;
 
 import com.core.banking.dto.MChartOfAccountRequest;
 import com.core.banking.dto.MChartOfAccountResponse;
+import com.core.banking.dto.UserMetaData;
 import com.core.banking.entity.MChartOfAccount;
 import com.core.banking.enums.AccountType;
+import com.core.banking.enums.Category;
 import com.core.banking.repository.MChartOfAccountRepository;
 import com.core.banking.service.MChartOfAccountService;
+import com.core.banking.utils.exception.BusinessException;
+import com.core.banking.utils.exception.GlobalErrorMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,37 +28,68 @@ public class MChartOfAccountServiceImpl implements MChartOfAccountService {
 
     @Override
     @Transactional
-    public MChartOfAccountResponse create(MChartOfAccountRequest request) {
-        // 1. Validasi Kode Unik
-        if (mChartOfAccountRepository.existsByCode(request.getCode())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "CoA code '" + request.getCode() + "' already exists");
-        }
+    public MChartOfAccountResponse create(MChartOfAccountRequest request, UserMetaData userMetaData) {
+        validateCoaRequest(request);
 
-        // 2. Validasi penomoran berdasarkan Tipe Akun (dengan aturan baru)
-        validateCodeByType(request.getCode(), request.getType());
-
-        // 3. Validasi parentCode jika ada
-        if (request.getParentCode() != null && !request.getParentCode().isEmpty()) {
-            mChartOfAccountRepository.findByCode(request.getParentCode())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Parent CoA with code '" + request.getParentCode() + "' not found"));
-        }
-
-        MChartOfAccount coa = MChartOfAccount.builder()
+        MChartOfAccount mChartOfAccount = MChartOfAccount.builder()
                 .code(request.getCode())
                 .name(request.getName())
                 .type(request.getType())
+                .category(request.getCategory())
                 .parentCode(request.getParentCode())
                 .isActive(true)
                 .build();
 
-        mChartOfAccountRepository.save(coa);
-        return toCoaResponse(coa);
+        mChartOfAccountRepository.save(mChartOfAccount);
+        return toCoaResponse(mChartOfAccount);
+    }
+
+    private void validateCoaRequest(MChartOfAccountRequest request) {
+        if (mChartOfAccountRepository.existsByCode(request.getCode())) {
+            throw new BusinessException(HttpStatus.CONFLICT, GlobalErrorMapping.CODE_ALREADY_EXISTS);
+        }
+
+        if (request.getParentCode() != null && !request.getParentCode().isEmpty()) {
+            mChartOfAccountRepository.findByCode(request.getParentCode())
+                    .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.PARENT_CODE_NOT_FOUND));
+        }
+
+        String code = request.getCode();
+        Category category = request.getCategory();
+        AccountType type = request.getType();
+        String firstChar = code.substring(0, 1);
+
+        switch (category) {
+            case ASET:
+                if (type != AccountType.AKTIVA) throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_COMBINATION_CATEGORY_TYPE);
+                if (!List.of("1", "3", "7").contains(firstChar)) throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_CODE_FOR_CATEGORY);
+                break;
+            case LIABILITY:
+                if (type != AccountType.PASIVA) throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_COMBINATION_CATEGORY_TYPE);
+                if (!List.of("2", "4").contains(firstChar)) throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_CODE_FOR_CATEGORY);
+                break;
+            case EQUITY:
+                if (type != AccountType.PASIVA) throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_COMBINATION_CATEGORY_TYPE);
+                if (!"5".equals(firstChar)) throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_CODE_FOR_CATEGORY);
+                break;
+            case REVENUE:
+                if (type != AccountType.LABA_RUGI) throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_COMBINATION_CATEGORY_TYPE);
+                if (!"6".equals(firstChar)) throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_CODE_FOR_CATEGORY);
+                break;
+            case EXPENSE:
+                if (type != AccountType.LABA_RUGI) throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_COMBINATION_CATEGORY_TYPE);
+                if (!"8".equals(firstChar)) throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_CODE_FOR_CATEGORY);
+                break;
+            default:
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RULE_NOT_FOUND);
+        }
+
     }
 
     @Override
-    public MChartOfAccountResponse getById(String id) {
+    public MChartOfAccountResponse getById(String id, UserMetaData userMetaData) {
         MChartOfAccount mChartOfAccount = mChartOfAccountRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "CoA with id '" + id + "' not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.ID_NOT_FOUND));
         return toCoaResponse(mChartOfAccount);
     }
 
@@ -65,31 +100,19 @@ public class MChartOfAccountServiceImpl implements MChartOfAccountService {
                 .collect(Collectors.toList());
     }
 
-    private void validateCodeByType(String code, AccountType type) {
-        if (code == null || code.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Code cannot be empty");
-        }
-
-        String firstChar = code.substring(0, 1);
-        List<String> aktivaPrefixes = List.of("1", "3", "7");
-        List<String> pasivaPrefixes = List.of("2", "4", "5", "6", "8");
-
-        switch (type) {
-            case AKTIVA:
-                if (!aktivaPrefixes.contains(firstChar)) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "Invalid code for AKTIVA. Code must start with one of " + aktivaPrefixes);
-                }
-                break;
-            case PASIVA:
-                if (!pasivaPrefixes.contains(firstChar)) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "Invalid code for PASIVA. Code must start with one of " + pasivaPrefixes);
-                }
-                break;
-            default:
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown AccountType");
-        }
+    @Override
+    public MChartOfAccountResponse update(MChartOfAccountRequest request, String id, UserMetaData userMetaData) {
+        MChartOfAccount mChartOfAccount = mChartOfAccountRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.ID_NOT_FOUND));
+        validateCoaRequest(request);
+                mChartOfAccount.setCode(request.getCode());
+                mChartOfAccount.setName(request.getName());
+                mChartOfAccount.setType(request.getType());
+                mChartOfAccount.setCategory(request.getCategory());
+                mChartOfAccount.setParentCode(request.getParentCode());
+                mChartOfAccount.setIsActive(true);
+        mChartOfAccountRepository.save(mChartOfAccount);
+        return toCoaResponse(mChartOfAccount);
     }
 
     private MChartOfAccountResponse toCoaResponse(MChartOfAccount mChartOfAccount) {
@@ -98,6 +121,7 @@ public class MChartOfAccountServiceImpl implements MChartOfAccountService {
                 .code(mChartOfAccount.getCode())
                 .name(mChartOfAccount.getName())
                 .type(mChartOfAccount.getType())
+                .category(mChartOfAccount.getCategory())
                 .parentCode(mChartOfAccount.getParentCode())
                 .isActive(mChartOfAccount.getIsActive())
                 .build();
