@@ -1,8 +1,13 @@
 package com.core.banking.repository;
 
-
+import com.core.banking.entity.DepositAccount;
 import com.core.banking.entity.DepositProfitSharing;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface DepositProfitSharingRepository extends JpaRepository<DepositProfitSharing, String> {
+import java.time.LocalDate;
+
+@Repository
+public interface DepositProfitSharingRepository extends JpaRepository<DepositProfitSharing, Long> {
+    boolean existsByDepositAccountAndProfitPeriodStartDateAndProfitPeriodEndDate(DepositAccount account, LocalDate start, LocalDate end);
 }

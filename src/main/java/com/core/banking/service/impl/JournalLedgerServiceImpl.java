@@ -9,6 +9,7 @@ import com.core.banking.enums.MutationType;
 import com.core.banking.repository.JournalLedgerDetailRepository;
 import com.core.banking.repository.JournalLedgerRepository;
 import com.core.banking.repository.MChartOfAccountRepository;
+import com.core.banking.repository.MSystemRepository;
 import com.core.banking.service.JournalLedgerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,8 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
     private JournalLedgerDetailRepository journalLedgerDetailRepository;
     @Autowired
     private MChartOfAccountRepository mChartOfAccountRepository;
+    @Autowired
+    private MSystemRepository mSystemRepository;
 
     @Override
     public String createJournalHeader(BigDecimal amount, String mutationType, String status,
@@ -142,5 +145,10 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
         String prefix = "JRN-" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String random = String.valueOf((int)(Math.random() * 10000));
         return prefix + "-" + String.format("%04d", Integer.parseInt(random));
+    }
+
+    public LocalDate getSystemAt() {
+        return mSystemRepository.findSystemAt();
+
     }
 }

@@ -1,6 +1,5 @@
 package com.core.banking.service.impl;
 
-// --- IMPORT ---
 import com.core.banking.config.AppCoaConfig;
 import com.core.banking.dto.JournalDetailRequest;
 import com.core.banking.dto.JournalRequest;
@@ -23,8 +22,6 @@ import com.core.banking.service.JournalLedgerService;
 import com.core.banking.service.SavingAccountDetailService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -45,8 +42,6 @@ import java.util.UUID;
 
 @Service
 public class SavingAccountDetailServiceImpl implements SavingAccountDetailService {
-
-    private static final Logger log = LoggerFactory.getLogger(SavingAccountDetailServiceImpl.class);
 
     @Autowired
     private SavingAccountRepository savingAccountRepository;
@@ -95,10 +90,8 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
             lastTransaction = createAndSaveSavingDetail(savingAccount, SavingTransactionType.INITIAL_DEPOSIT, MutationType.CREDIT, request.getAmount(), DESC_INITIAL_DEPOSIT_TELLER, savingRef, request.getChannel(), now);
             updateSavingAccountBalance(savingAccount, lastTransaction.getEndBalance(), now);
 
-            log.info("DIAGNOSTIC: Nilai isJournal yang diterima dari request adalah: {}", request.isJournal());
             if (request.isJournal()) {
-                log.info("DIAGNOSTIC: Blok 'if (isJournal)' untuk setoran awal dimasuki. Akan membuat jurnal.");
-                MChartOfAccount coaProduct = findActiveCoaByCode(config.getCoaCode());
+               MChartOfAccount coaProduct = findActiveCoaByCode(config.getCoaCode());
                 postJournalEntry(savingRef, "SAVING_INITIAL_DEPOSIT", DESC_INITIAL_DEPOSIT_TELLER, transactionDate, request.getAmount(), appCoaConfig.getCashTellerId(), coaProduct.getId(), userMetaData);
             }
 
@@ -120,10 +113,8 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
             lastTransaction = createAndSaveSavingDetail(savingAccount, SavingTransactionType.DEPOSIT, MutationType.CREDIT, request.getAmount(), description, savingRef, request.getChannel(), now);
             updateSavingAccountBalance(savingAccount, lastTransaction.getEndBalance(), now);
 
-            log.info("DIAGNOSTIC: Nilai isJournal yang diterima dari request adalah: {}", request.isJournal());
             if (request.isJournal()) {
-                log.info("DIAGNOSTIC: Blok 'if (isJournal)' untuk setoran normal dimasuki. Akan membuat jurnal.");
-                MChartOfAccount coaProduct = findActiveCoaByCode(config.getCoaCode());
+               MChartOfAccount coaProduct = findActiveCoaByCode(config.getCoaCode());
                 postJournalEntry(savingRef, "SAVING_DEPOSIT", description, transactionDate, request.getAmount(), appCoaConfig.getCashTellerId(), coaProduct.getId(), userMetaData);
             }
         }
@@ -240,14 +231,10 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         journalRequest.setDetails(details);
 
         try {
-            log.info("Attempting to create journal entry for reference: {}", referenceNumber);
-            journalLedgerService.createJournal(journalRequest, userMetaData);
-            log.info("Successfully created journal entry for reference: {}", referenceNumber);
+             journalLedgerService.createJournal(journalRequest, userMetaData);
 
         } catch (Exception e) {
-            log.error("!!! FAILED TO CREATE JOURNAL ENTRY for reference: {} !!!", referenceNumber, e);
-            // Optional: Uncomment baris di bawah jika kegagalan jurnal harus menggagalkan seluruh transaksi.
-            // throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "Transaksi utama berhasil, namun gagal membuat jurnal. Cek log server. Error: " + e.getMessage());
+           throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "Transaksi utama berhasil, namun gagal membuat jurnal. Cek log server. Error: " + e.getMessage());
         }
     }
 
@@ -289,7 +276,7 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
     }
 
     private SavingAccount findAndLockSavingAccount(String accountNumber) {
-        return savingAccountRepository.findWithLockByAccountNumber(accountNumber)
+        return savingAccountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
     }
 
@@ -324,6 +311,15 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
             account.setAccountStatus(SavingAccountStatus.ACTIVE);
             account.setUpdatedAt(now);
             savingAccountRepository.save(account);
+        }
+    }
+
+    private void processOpeningFee(SavingAccount account, SavingTypeConfig config, String relatedReference, Timestamp now) {
+        BigDecimal openingFee = Optional.ofNullable(config.getMonthlyMaintenanceFee()).orElse(BigDecimal.ZERO);
+        if (openingFee.compareTo(BigDecimal.ZERO) > 0) {
+            String feeTransactionReference = PREFIX_FEE + relatedReference;
+            SavingAccountDetail feeDetail = createAndSaveSavingDetail(account, SavingTransactionType.FEE_DEBIT, MutationType.DEBIT, openingFee, DESC_OPENING_FEE, feeTransactionReference, CHANNEL_SYSTEM, now);
+            updateSavingAccountBalance(account, feeDetail.getEndBalance(), now);
         }
     }
 
