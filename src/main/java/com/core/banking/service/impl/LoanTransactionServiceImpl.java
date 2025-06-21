@@ -31,6 +31,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.core.banking.dto.JournalDetailRequest;
+import com.core.banking.dto.JournalRequest;
+import com.core.banking.entity.MChartOfAccount;
+import com.core.banking.repository.MChartOfAccountRepository;
+import com.core.banking.service.JournalLedgerService;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -38,7 +43,9 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -68,6 +75,17 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
     @Autowired
     private EscrowAccountDetailServiceImpl escrowAccountDetailServiceImpl;
 
+    @Autowired
+    private JournalLedgerService journalLedgerService;
+
+    @Autowired
+    private MChartOfAccountRepository mChartOfAccountRepository;
+
+    private static final String COA_PIUTANG_PEMBIAYAAN = "1201";
+    private static final String COA_TABUNGAN_NASABAH = "2001";
+    private static final String COA_PENDAPATAN_BUNGA_LOAN = "4001";
+    private static final String COA_PENDAPATAN_BIAYA_ADMIN = "4101";
+
     @Override
     public String createLoanTransaction(LoanTransactionRequest request, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(request.getLoanAccountId())
@@ -93,8 +111,10 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         transaction.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
         loanTransactionRepository.save(transaction);
+        BigDecimal disbursementAmount = request.getAmount();
+        String journalId = createDisbursementJournal(loanAccount, disbursementAmount, userMetaData);
 
-        return "Succes membuat transaksi loan";
+        return "Succes membuat transaksi loan dengan Journal ID: " + journalId;
     }
 
     @Override
@@ -121,8 +141,16 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         SavingAccount savingAccount = savingAccounts.get(0);
 
 
-        EscrowAccount escrowAccount = escrowAccountRepository.findByPayerCustomer_Id(loanAccount.getCustomer().getId())
+//        EscrowAccount escrowAccount = escrowAccountRepository.findByPayerCustomer_Id(loanAccount.getCustomer().getId())
+//                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
+
+        EscrowAccount escrowAccount = escrowAccountRepository.findByLoanAccount_LoanAccountId(loanAccountId)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
+
+        // Validasi status harus PENDING_FUNDING
+        if (escrowAccount.getAccountStatus() != EscrowAccountStatus.PENDING_FUNDING) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Escrow account status must be PENDING_FUNDING");
+        }
 
         escrowAccount.setAccountStatus(EscrowAccountStatus.RELEASED);
 
@@ -237,13 +265,15 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         loanAccount.setFirstRepaymentDate(firstDueDate);
         loanAccount.setLastRepaymentDate(firstDueDate.plusMonths(loanAccount.getDurationMonths() - 1));
         loanAccountRepository.save(loanAccount);
+        String journalId = createDisbursementJournal(loanAccount, disbursementAmount, userMetaData);
+        System.out.println("Journal entry created with ID: " + journalId);
 
         return LoanTransactionResponse.builder()
                 .loanAccountId(loanAccount.getLoanAccountId())
                 .status(loanAccount.getAccountStatus())
                 .installmentAmount(loanAccount.getInstallmentAmount())
                 .firstRepaymentDate(loanAccount.getFirstRepaymentDate())
-                .message("loan sukses aprove dan pencairan ke saving account.")
+                .message("loan sukses aprove dan pencairan ke saving account. Journal ID: " + journalId)
                 .build();
     }
 
@@ -310,6 +340,35 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
 
         transaction.setIsDeleted(true);
         return "Sukses delete loan transaction";
+    }
+
+    private String createDisbursementJournal(LoanAccount loanAccount, BigDecimal amount, UserMetaData userMetaData) {
+        List<JournalDetailRequest> details = new ArrayList<>();
+
+        details.add(new JournalDetailRequest());
+        details.get(0).setCoaId(getCoaId(COA_PIUTANG_PEMBIAYAAN));
+        details.get(0).setMutationType("DEBIT");
+        details.get(0).setAmount(amount);
+        details.get(0).setDescription("Pencairan pinjaman - " + loanAccount.getAccountNumber());
+
+        details.add(new JournalDetailRequest());
+        details.get(1).setCoaId(getCoaId(COA_TABUNGAN_NASABAH));
+        details.get(1).setMutationType("CREDIT");
+        details.get(1).setAmount(amount);
+        details.get(1).setDescription("Pencairan pinjaman ke tabungan - " + loanAccount.getAccountNumber());
+
+        JournalRequest journalRequest = new JournalRequest();
+        journalRequest.setDescription("Pencairan Pinjaman - " + loanAccount.getAccountNumber());
+        journalRequest.setReferenceType("LOAN_DISBURSEMENT");
+        journalRequest.setDetails(details);
+
+        return journalLedgerService.createJournal(journalRequest, userMetaData).getJournalId();
+    }
+
+    private String getCoaId(String coaCode) {
+        return mChartOfAccountRepository.findByCode(coaCode)
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.COA_NOT_FOUND))
+                .getId();
     }
 
 }
