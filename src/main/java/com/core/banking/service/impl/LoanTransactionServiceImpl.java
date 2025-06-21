@@ -81,6 +81,9 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
     @Autowired
     private MChartOfAccountRepository mChartOfAccountRepository;
 
+    @Autowired
+    private JournalLedgerServiceImpl journalLedgerServiceImpl;
+
     private static final String COA_PIUTANG_PEMBIAYAAN = "1201";
     private static final String COA_TABUNGAN_NASABAH = "2001";
     private static final String COA_PENDAPATAN_BUNGA_LOAN = "4001";
@@ -109,7 +112,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         transaction.setDescription(request.getDescription());
         transaction.setReferenceNumber(request.getReferenceNumber());
         transaction.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
-
+        transaction.setSystemDate(journalLedgerServiceImpl.getSystemAt());
         loanTransactionRepository.save(transaction);
         BigDecimal disbursementAmount = request.getAmount();
         String journalId = createDisbursementJournal(loanAccount, disbursementAmount, userMetaData);
@@ -129,6 +132,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
 
         loanAccount.setAccountStatus(LoanAccountStatus.ACTIVE);
         loanAccount.setDisbursementDate(LocalDate.now());
+        loanAccount.setSystemDate(journalLedgerServiceImpl.getSystemAt());
         loanAccountRepository.save(loanAccount);
 
         BigDecimal disbursementAmount = loanAccount.getPrincipalAmount();
@@ -208,6 +212,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         transaction.setDescription("Loan disbursed");
         transaction.setTransactionDate(Timestamp.valueOf(LocalDateTime.now()));
         transaction.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
+        transaction.setSystemDate(journalLedgerServiceImpl.getSystemAt());
         loanTransactionRepository.save(transaction);
 
         BigDecimal savingBegin = savingAccount.getCurrentBalance();

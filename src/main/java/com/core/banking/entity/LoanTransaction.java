@@ -18,6 +18,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "loan_transactions")
@@ -75,4 +76,7 @@ public class LoanTransaction {
 
     @Column(name = "is_deleted")
     private Boolean isDeleted;
+
+    @Column(name = "system_date")
+    private LocalDate systemDate;
 }
