@@ -2,6 +2,7 @@ package com.core.banking.dto;
 
 
 import com.core.banking.enums.AccountType;
+import com.core.banking.enums.Category;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,9 @@ public class MChartOfAccountRequest {
 
     @NotNull(message = "type is required")
     private AccountType type;
+
+    @NotNull(message = "category is required")
+    private Category category;
 
     private String parentCode;
 
