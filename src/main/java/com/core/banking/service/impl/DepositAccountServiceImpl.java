@@ -10,6 +10,7 @@ import com.core.banking.enums.*;
 import com.core.banking.repository.*;
 import com.core.banking.service.DepositAccountService;
 import com.core.banking.service.EscrowAccountDetailService;
+import com.core.banking.utils.BilyetNumberGenerator;
 import com.core.banking.utils.DepositAccountNumberGenerator;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -20,9 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -51,11 +55,16 @@ public class DepositAccountServiceImpl implements DepositAccountService {
     @Autowired
     EscrowAccountDetailService escrowAccountDetailService;
 
+    @Autowired
+    DepositMaturityServiceImpl depositMaturityServiceImpl;
+
+    @Autowired
+    BilyetNumberGenerator bilyetNumberGenerator;
+
     @Override
     public List<DepositAccount> findAll() {
         return depositAccountRepository.findAll();
     }
-
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
@@ -132,7 +141,7 @@ public class DepositAccountServiceImpl implements DepositAccountService {
         escrowRequest.setDepositAccount(savedAccount.getDepositoAccountId());
         escrowRequest.setPurpose("Pembukaan Deposito");
 
-        String transactionReference = escrowAccountDetailService.createAndReleaseEscrowAccount( escrowRequest, DepositAccountRequest.getNominalDeposit(), savingAccountId, "Pembukaan Deposito " + savedAccount.getAccountNumber(), userMetaData);
+        String transactionReference = escrowAccountDetailService.createAndReleaseEscrowAccount(escrowRequest, DepositAccountRequest.getNominalDeposit(), savingAccountId, "Pembukaan Deposito " + savedAccount.getAccountNumber(), userMetaData);
 
         DepositAccountResponse depositAccountResponse = new DepositAccountResponse();
         depositAccountResponse.setCustomerName(customer.getFullName());
@@ -229,7 +238,53 @@ public class DepositAccountServiceImpl implements DepositAccountService {
                 })
                 .collect(Collectors.toList());
         return list;
-    }}
+    }
+
+    @Override
+    public Map<String, Object> generateBilyet(Long depositAccountId, UserMetaData userMetaData) {
+        DepositAccount depositAccount = depositAccountRepository.findById(depositAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
+
+        if (depositAccount.getAccountStatus() != DepositAccountStatus.ACTIVE) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_ACTIVE);
+        }
+
+        String bilyetNumber = bilyetNumberGenerator.generateBilyetNumber(depositAccount);
+
+        BigDecimal expectedProfit = calculateExpectedProfitForBilyet(depositAccount);
+
+        Map<String, Object> bilyetData = new HashMap<>();
+        bilyetData.put("bilyetNumber", bilyetNumber);
+        bilyetData.put("accountNumber", depositAccount.getAccountNumber());
+        bilyetData.put("customerName", depositAccount.getCustomer().getFullName());
+        bilyetData.put("customerNik", depositAccount.getCustomer().getNik());
+        bilyetData.put("principalAmount", depositAccount.getPrincipalAmount());
+        bilyetData.put("profitRate", depositAccount.getDepositTypeConfig().getProfitSharePercentagePa());
+        bilyetData.put("termInMonths", depositAccount.getDepositTypeConfig().getTermInMonths());
+        bilyetData.put("depositTypeName", depositAccount.getDepositTypeConfig().getDepositType().getTypeName());
+        bilyetData.put("openDate", depositAccount.getOpenedAt().toLocalDate());
+        bilyetData.put("maturityDate", depositAccount.getMaturityDate());
+        bilyetData.put("expectedProfit", expectedProfit);
+        bilyetData.put("totalMaturityAmount", depositAccount.getPrincipalAmount().add(expectedProfit));
+        bilyetData.put("rolloverOption", depositAccount.getRolloverOption().name());
+        bilyetData.put("printDate", LocalDateTime.now());
+        bilyetData.put("printedBy", userMetaData.getUserId());
+
+        return bilyetData;
+    }
+
+    private BigDecimal calculateExpectedProfitForBilyet(DepositAccount depositAccount) {
+        DepositTypeConfig config = depositAccount.getDepositTypeConfig();
+        BigDecimal principal = depositAccount.getPrincipalAmount();
+
+        BigDecimal annualRate = config.getProfitSharePercentagePa().divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP);
+        BigDecimal monthlyRate = annualRate.divide(new BigDecimal("12"), 10, RoundingMode.HALF_UP);
+        BigDecimal termInMonths = new BigDecimal(config.getTermInMonths());
+
+        BigDecimal expectedProfit = principal.multiply(monthlyRate).multiply(termInMonths).setScale(2, RoundingMode.HALF_UP);
+
+        return expectedProfit;
+    }
+}
 
 //    @Override
 //    public String deleteDepositAccount(Long depositoAccountId) {

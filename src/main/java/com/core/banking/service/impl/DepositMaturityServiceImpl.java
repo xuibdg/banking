@@ -169,7 +169,7 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
         return profit;
     }
 
-    private BigDecimal calculateExpectedProfit(BigDecimal principal, DepositAccount depositAccount) {
+    public BigDecimal calculateExpectedProfit(BigDecimal principal, DepositAccount depositAccount) {
         DepositTypeConfig depositTypeConfig = depositAccount.getDepositTypeConfig();
 
         BigDecimal expectedRate = depositTypeConfig.getProfitSharePercentagePa().divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP);

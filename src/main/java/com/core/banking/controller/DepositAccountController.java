@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 import java.util.List;
+import java.util.Map;
 
 import static com.core.banking.controller.BaseCRUDController.buildSuccessResponse;
 
@@ -33,7 +34,7 @@ public class DepositAccountController {
     }
 
     @PostMapping("/open/{savingAccountId}")
-    BaseResponse<DepositAccountResponse> openDepositAccount(@RequestBody DepositAccountRequest depositAccountRequest, @PathVariable("savingAccountId") String savingAccountId, UserMetaData userMetaData) {
+    BaseResponse<DepositAccountResponse> openDepositAccount(@RequestBody DepositAccountRequest depositAccountRequest, @PathVariable("savingAccountId") String savingAccountId, @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(depositAccountService.openDepositAccount(depositAccountRequest, savingAccountId,userMetaData));
     }
 
@@ -50,6 +51,12 @@ public class DepositAccountController {
     @GetMapping("/status/{status}")
     BaseResponse<List<DepositAccountResponse>> getDepositAccountsByStatus(@PathVariable("status") DepositAccountStatus status) {
         return buildSuccessResponse(depositAccountService.getDepositAccountsByStatus(status));
+    }
+
+    @PostMapping("/{depositAccountId}/bilyet")
+    public BaseResponse<Map<String, Object>> generateBilyet(@PathVariable("depositAccountId") Long depositAccountId, @CurrentUser UserMetaData userMetaData) {
+        Map<String, Object> bilyetData = depositAccountService.generateBilyet(depositAccountId, userMetaData);
+        return buildSuccessResponse(bilyetData);
     }
 
 //    @DeleteMapping("/{id}")
