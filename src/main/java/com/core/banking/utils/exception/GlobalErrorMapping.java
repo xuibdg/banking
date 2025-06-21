@@ -24,7 +24,7 @@ public enum GlobalErrorMapping {
     ESCROW_ACCOUNT_DETAIL_ID_NOT_FOUND("IEG-0030", "ID Escrow account detail tidak ditemukan"),
     PAYER_CUSTOMER_NOT_FOUND("IEG-0031", "Payer customer tidak ditemukan"),
     BENEFICIARY_CUSTOMER_NOT_FOUND("IEG-0032", "Beneficiary customer tidak ditemukan"),
-    TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033","Transaction type tidak valid atau tidak tersedia"),
+    TRANSACTION_TYPE_INVALID_OR_NULL("IEG-0033", "Transaction type tidak valid atau tidak tersedia"),
     SAVING_ACCOUNT_NOT_FOUND("IEG-0034", "Saving account tidak ditemukan"),
     LOAN_ACCOUNT_NOT_FOUND("IEG-0035", "Loan account tidak ditemukan"),
     DEPOSIT_ACCOUNT_NOT_FOUND("IEG-0036", "Deposit account not found"),
@@ -61,6 +61,7 @@ public enum GlobalErrorMapping {
     UNAUTHORIZED_ACCESS("IEG-0067", "Akses tidak diizinkan. Anda tidak memiliki hak untuk mengakses resource ini."),
     ACC_NUMBER_REQ("IEG-0068", "Account number diperlukan. Hint: Pastikan account number ada"),
     ACC_NUMBER_EXIST("IEG-0069", "Account number telah ada. Hint: Pastikan masukan account number yang berbeda."),
+    ID_NOT_FOUND("IEG-0052", "ID Tidak ditemukan. pastikan id yang dimasukkan sesuai!."),
     DEPOSIT_TYPE_CONFIG_NOT_FOUND("DEP-0003", "Konfigurasi jenis deposito tidak ditemukan. Hint: Cek teliti deposit type config id."),
     DEPOSIT_TYPE_CONFIG_NOT_ACTIVE("DEP-0004", "Konfigurasi jenis deposito tersebut tidak aktif. Hint: Pastikan konfigurasi jenis deposito tersebut berstatus aktif."),
     DEPOSIT_AMOUNT_BELOW_MINIMUM("DEP-0005", "Jumlah setoran/nominal deposit tidak memenuhi nominal dari minimum deposit, juga tidak boleh minus. Hint: Pastikan jumlah setoran/nominal deposit lebih dari minimum deposit."),
@@ -89,11 +90,19 @@ public enum GlobalErrorMapping {
     TRANSACTION_RECORD_NOT_FOUND ("IEG-118","code transaksi tidak ditemukan"),
     SAVING_ACCOUNT_HAS_TRANSACTION("IEG-0119","Account Sudah Ada Melakukan Transaksi"),
     SOURCE_AND_DESTINATION_CANT_BE_THE_SAME("IEG-120","Rekening Pengirim dan Penerima Tidak Boleh sama"),
+    SAVING_ACCOUNT_NOT_ENOUGH("IEG-072", "Saldo tabungan tidak mencukupi."),
+    ID_NOT_FOUND("IEG-0133", "ID yang dicantumkan tidak ditemukan."),
+    INVALID_COMBINATION_CATEGORY_TYPE("IEG-0134", "Kombinasi tidak valid: Kategori yang dipilih tidak cocok dengan Account Type."),
+    INVALID_CODE_FOR_CATEGORY("IEG-0065", "Awalan kode tidak valid untuk Kategori yang dipilih."),
+    DEBIT_CREDIT_PAIR_REQUIRED("IEG-0135","Jika ada DEBIT wajib ada CREDIT"),
+    INVALID_MUTATION_TYPE("IEG-0121","Mutasi hanya boleh DEBIT atau CREDIT"),
+    UNBALANCED_DEBIT_CREDIT("IEG-0122","Total DEBIT dan CREDIT tidak seimbang"),
+    COA_NOT_FOUND("IEG-0123","COA tidak ditemukan"),
     SAVING_ACCOUNT_NOT_ENOUGH("IEG-070", "Saldo tabungan tidak mencukupi."),
-    ID_NOT_FOUND("IEG-0063", "ID yang dicantumkan tidak ditemukan."),
-    INVALID_COMBINATION_CATEGORY_TYPE("IEG-0064", "Kombinasi tidak valid: Kategori yang dipilih tidak cocok dengan Account Type."),
-    INVALID_CODE_FOR_CATEGORY("IEG-0065", "Awalan kode tidak valid untuk Kategori yang dipilih.");
-
+    FAILED_TO_SEND_PG_TRANSACTION("IEG-071", "Gagal mengirim request kepada Payment Gateway"),
+    SYSTEM_RECORD_NOT_FOUND("IEG-130", "Data sistem belum diinisialisasi"),
+    COA_MISSING("IEG-131", "Chart of Account (COA) tidak ditemukan"),
+    ID_DEPOSIT_SHARING_NOT_FOUND("IEG-132", "ID Deposit Profit Sharing tidak ditemukan");
 
 
     public final String code;
