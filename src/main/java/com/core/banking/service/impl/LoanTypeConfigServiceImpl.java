@@ -32,7 +32,7 @@ public class LoanTypeConfigServiceImpl implements LoanTypeConfigService {
     @Override
     public String createLoanTypeConfig(LoanTypeConfigRequest request, UserMetaData userMetaData) {
         LoanType loanType = loanTypeRepository.findById(request.getLoanTypeId())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_TYPE_NOT_FOUND));
 
         if (request.getMinLoanAmount().compareTo(request.getMaxLoanAmount()) > 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.AMOUNT_NOT_ENOUGH);
@@ -82,10 +82,10 @@ public class LoanTypeConfigServiceImpl implements LoanTypeConfigService {
     @Override
     public String updateLoanTypeConfig(String loanTypeConfigId, LoanTypeConfigRequest request, UserMetaData userMetaData) {
         LoanTypeConfig typeConfig = loanTypeConfigRepository.findById(String.valueOf(loanTypeConfigId))
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_CONFIG_NOT_FOUND));
 
         LoanType loanType = loanTypeRepository.findById(String.valueOf(request.getLoanTypeId()))
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_TYPE_NOT_FOUND));
 
         typeConfig.setLoanType(loanType);
         typeConfig.setMinLoanAmount(request.getMinLoanAmount());
@@ -106,7 +106,7 @@ public class LoanTypeConfigServiceImpl implements LoanTypeConfigService {
     @Override
     public String deleteLoanTypeConfig(String loanTypeConfigId, UserMetaData userMetaData) {
         LoanTypeConfig typeConfig = loanTypeConfigRepository.findById(String.valueOf(loanTypeConfigId))
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_TYPE_NOT_FOUND));
 
         typeConfig.setIsDeleted(true);
         loanTypeConfigRepository.save(typeConfig);
