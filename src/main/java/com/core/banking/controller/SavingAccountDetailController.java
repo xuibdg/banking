@@ -3,7 +3,6 @@ package com.core.banking.controller;
 import com.core.banking.config.CurrentUser;
 import com.core.banking.dto.SavingAccountDetail.DepositRequestDTO;
 import com.core.banking.dto.SavingAccountDetail.InterBankTransferRequestDTO;
-import com.core.banking.dto.SavingAccountDetail.PaginatedResponseDTO;
 import com.core.banking.dto.SavingAccountDetail.SavingTransactionResponseDTO;
 import com.core.banking.dto.SavingAccountDetail.WithdrawalRequestDTO;
 import com.core.banking.dto.UserMetaData;
@@ -14,6 +13,9 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -26,6 +28,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+
+import static com.core.banking.controller.BaseCRUDController.buildSuccessResponse;
 
 @RestController
 @RequestMapping("/api/saving-account-details")
@@ -41,7 +45,7 @@ public class SavingAccountDetailController {
             @Valid @RequestBody DepositRequestDTO request,
             @CurrentUser UserMetaData userMetaData) {
         SavingTransactionResponseDTO responseData = savingAccountDetailService.recordDeposit(request, userMetaData);
-        return BaseCRUDController.buildSuccessResponse(responseData);
+        return buildSuccessResponse(responseData);
     }
 
     @PostMapping("/withdrawal")
@@ -50,7 +54,7 @@ public class SavingAccountDetailController {
             @Valid @RequestBody WithdrawalRequestDTO request,
             @CurrentUser UserMetaData userMetaData) {
         SavingTransactionResponseDTO responseData = savingAccountDetailService.recordWithdrawal(request, userMetaData);
-        return BaseCRUDController.buildSuccessResponse(responseData);
+        return buildSuccessResponse(responseData);
     }
 
     @PostMapping("/transfer-internal")
@@ -59,13 +63,13 @@ public class SavingAccountDetailController {
             @Valid @RequestBody InterBankTransferRequestDTO request,
             @CurrentUser UserMetaData userMetaData) {
         SavingTransactionResponseDTO responseData = savingAccountDetailService.performInternalTransfer(request, userMetaData);
-        return BaseCRUDController.buildSuccessResponse(responseData);
+        return buildSuccessResponse(responseData);
     }
 
 
     @GetMapping("/statement")
     @ResponseStatus(HttpStatus.OK)
-    public PaginatedResponseDTO<SavingTransactionResponseDTO> getAccountStatement(
+    public BaseResponse<Page<SavingTransactionResponseDTO>> getAccountStatement(
             @RequestParam(name = "savingAccountNumber")
             @NotBlank(message = "Saving account number is required.") String savingAccountNumber,
 
@@ -82,12 +86,12 @@ public class SavingAccountDetailController {
             @Min(value = 1, message = "Page size must be at least 1.")
             @Max(value = 100, message = "Page size must not exceed 100.") int size
     ) {
-        return savingAccountDetailService.getAccountStatement(
+        Pageable paging = PageRequest.of(page, size);
+        return buildSuccessResponse(savingAccountDetailService.getAccountStatement(
                 savingAccountNumber,
                 startDate,
                 endDate,
-                page,
-                size
-        );
+                paging
+        ));
     }
 }

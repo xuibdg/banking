@@ -55,6 +55,9 @@ public class LoanTransaction {
     @Column(name = "fee_component")
     private BigDecimal feeComponent;
 
+    @Column(name = "late_payment_fee_component")
+    private BigDecimal latePaymentFeeComponent;
+
     @Column(name = "transaction_date")
     private Timestamp transactionDate;
 

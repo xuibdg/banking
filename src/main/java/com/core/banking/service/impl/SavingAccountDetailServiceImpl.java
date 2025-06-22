@@ -3,7 +3,6 @@ package com.core.banking.service.impl;
 import com.core.banking.dto.EscrowAccountRequest;
 import com.core.banking.dto.SavingAccountDetail.DepositRequestDTO;
 import com.core.banking.dto.SavingAccountDetail.InterBankTransferRequestDTO;
-import com.core.banking.dto.SavingAccountDetail.PaginatedResponseDTO;
 import com.core.banking.dto.SavingAccountDetail.SavingTransactionResponseDTO;
 import com.core.banking.dto.SavingAccountDetail.WithdrawalRequestDTO;
 import com.core.banking.dto.UserMetaData;
@@ -22,9 +21,7 @@ import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -35,10 +32,8 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class SavingAccountDetailServiceImpl implements SavingAccountDetailService {
@@ -186,8 +181,8 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
 
     @Override
     @Transactional(readOnly = true)
-    public PaginatedResponseDTO<SavingTransactionResponseDTO> getAccountStatement(String savingAccountNumber, LocalDate startDate, LocalDate endDate, int page, int size) {
-        validateAccountStatementParams(savingAccountNumber, page, size);
+    public Page<SavingTransactionResponseDTO> getAccountStatement(String savingAccountNumber, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        validateAccountStatementParams(savingAccountNumber, pageable.getPageNumber(), pageable.getPageSize());
         Timestamp startTimestamp = (startDate != null) ? Timestamp.valueOf(startDate.atStartOfDay()) : null;
         Timestamp endTimestamp = (endDate != null) ? Timestamp.valueOf(endDate.atTime(LocalTime.MAX)) : null;
         if (startTimestamp != null && endTimestamp != null && endTimestamp.before(startTimestamp)) {
@@ -195,22 +190,17 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         }
         SavingAccount savingAccount = savingAccountRepository.findByAccountNumber(savingAccountNumber)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
-        Pageable pageable = PageRequest.of(page, size, Sort.by("transactionAt").descending());
-        Page<SavingAccountDetail> pageResult = savingAccountDetailRepository.findBySavingAccountAndDateRange(savingAccount.getSavingAccountId(), startTimestamp, endTimestamp, pageable);
-        List<SavingTransactionResponseDTO> transactionDTOs = pageResult.getContent().stream()
-                .map(this::mapToTransactionResponseDTO)
-                .collect(Collectors.toList());
-        return PaginatedResponseDTO.<SavingTransactionResponseDTO>builder()
-                .content(transactionDTOs)
-                .currentPage(pageResult.getNumber())
-                .pageSize(pageResult.getSize())
-                .totalElements(pageResult.getTotalElements())
-                .totalPages(pageResult.getTotalPages())
-                .build();
+        Page<SavingTransactionResponseDTO> pageResult = savingAccountDetailRepository.findBySavingAccountAndDateRange(savingAccount.getSavingAccountId(), startTimestamp, endTimestamp, pageable)
+                .map(data -> {
+                    SavingTransactionResponseDTO dto = mapToTransactionResponseDTO(data);
+                    dto.setSavingAccountNumber(savingAccount.getAccountNumber());
+                    return dto;
+                });
+        return pageResult;
     }
 
     private SavingAccount findAndLockSavingAccount(String accountNumber) {
-        return savingAccountRepository.findWithLockByAccountNumber(accountNumber)
+        return savingAccountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
     }
 

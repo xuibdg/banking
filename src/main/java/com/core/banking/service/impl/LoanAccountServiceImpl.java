@@ -4,14 +4,13 @@ import com.core.banking.dto.UserMetaData;
 import com.core.banking.dto.LoanAccountRequest;
 import com.core.banking.dto.LoanAccountResponse;
 import com.core.banking.entity.Customer;
+import com.core.banking.entity.EscrowAccount;
 import com.core.banking.entity.LoanAccount;
 import com.core.banking.entity.LoanTypeConfig;
+import com.core.banking.entity.SavingAccount;
 import com.core.banking.enums.LoanAccountStatus;
-import com.core.banking.repository.CustomerRepository;
-import com.core.banking.repository.LoanAccountRepository;
-import com.core.banking.repository.LoanRepaymentScheduleRepository;
-import com.core.banking.repository.LoanTransactionRepository;
-import com.core.banking.repository.LoanTypeConfigRepository;
+import com.core.banking.enums.TransactionTypeStatus;
+import com.core.banking.repository.*;
 import com.core.banking.service.LoanAccountService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -26,7 +25,6 @@ import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -44,10 +42,13 @@ public class LoanAccountServiceImpl implements LoanAccountService {
     private LoanTypeConfigRepository loanTypeConfigRepository;
 
     @Autowired
-    private LoanTransactionRepository loanTransactionRepository;
+    private SavingAccountRepository savingAccountRepository;
 
     @Autowired
-    private LoanRepaymentScheduleRepository loanRepaymentScheduleRepository;
+    private EscrowAccountRepository escrowAccountRepository;
+
+    @Autowired
+    private EscrowAccountServiceImpl escrowAccountServiceImpl;
 
     @Override
     public List<LoanAccountResponse> findAll() {
@@ -77,6 +78,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
     }
 
     @Override
+    @Transactional
     public String createLoanAccount(LoanAccountRequest request, UserMetaData userMetaData) {
         String customerId = request.getCustomerId();
         String loanTypeConfigId = request.getLoanTypeConfigId();
@@ -84,11 +86,22 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         Integer duration = request.getDurationMonths();
 
         Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_CUSTOMER_NOT_FOUND));
 
         if (!"ACTIVE".equalsIgnoreCase(customer.getCustomerStatus().toString())) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_ACTIVE);
         }
+
+        SavingAccount savingAccount = savingAccountRepository.findByCustomerId(customerId);
+        if (savingAccount == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND);
+        }
+
+        if (!"ACTIVE".equalsIgnoreCase(savingAccount.getAccountStatus().toString())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_ACTIVE);
+        }
+
+        SavingAccount managedSavingAccount = savingAccountRepository.getReferenceById(savingAccount.getSavingAccountId());
 
         List<LoanAccountStatus> activeStatuses = List.of(
                 LoanAccountStatus.PENDING_APPROVAL,
@@ -102,7 +115,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         }
 
         LoanTypeConfig config = loanTypeConfigRepository.findById(loanTypeConfigId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_CONFIG_NOT_FOUND));
 
         if (nominal == null || nominal.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.NOMINAL_NOT_ENOUGHT);
@@ -122,16 +135,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
 
         LoanAccount loanAccount = new LoanAccount();
 
-        String prefix = "1291";
-        int lengthRandomDigits = 6;
-        StringBuilder sb = new StringBuilder(prefix);
-        Random random = new Random();
-
-        for (int i = 0; i < lengthRandomDigits; i++) {
-            sb.append(random.nextInt(10));
-        }
-        String accountNumber = sb.toString();
-        loanAccount.setAccountNumber(accountNumber);
+        loanAccount.setAccountNumber(generateCode());
 
         loanAccount.setLoanAccountId(UUID.randomUUID().toString());
         loanAccount.setCustomer(customer);
@@ -159,21 +163,35 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         loanAccount.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
         loanAccountRepository.save(loanAccount);
+        loanAccountRepository.flush();
 
-        return "Succes membuat loan account dengan ID : " + loanAccount.getLoanAccountId();
+        EscrowAccount escrowAccount = new EscrowAccount();
+        escrowAccount.setPurpose("Escrow untuk Loan Account " + loanAccount.getAccountNumber());
+        escrowAccount.setPayerCustomer(customer);
+        escrowAccount.setBeneficiaryCustomer(customer);
+        escrowAccount.setSavingAccount(managedSavingAccount);
+        escrowAccount.setLoanAccount(loanAccount);
+        escrowAccount.setAccountNumber(escrowAccountServiceImpl.generateAccountNumber());
+        escrowAccount.setDepositAccount(null);
+        escrowAccount.setTransactionTypeStatus(TransactionTypeStatus.LOAN_PAYMENT);
+
+        escrowAccountRepository.save(escrowAccount);
+
+        return "Success membuat loan account dengan ID : " + loanAccount.getLoanAccountId()
+                + " dan escrow account dengan ID: " + escrowAccount.getId();
     }
 
     @Override
     @Transactional
     public String updateLoanAccount(String loanAccountId, LoanAccountRequest request, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(loanAccountId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
 
         Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_CUSTOMER_NOT_FOUND));
 
         LoanTypeConfig config = loanTypeConfigRepository.findById(request.getLoanTypeConfigId())
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_CONFIG_NOT_FOUND));
 
         loanAccount.setCustomer(customer);
         loanAccount.setLoanTypeConfig(config);
@@ -195,9 +213,19 @@ public class LoanAccountServiceImpl implements LoanAccountService {
     @Override
     public String deleteLoanAccount(String loanAccountId, UserMetaData userMetaData) {
         LoanAccount loanAccount = loanAccountRepository.findById(loanAccountId)
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_LOAN_ACCOUNT_NOT_FOUND));
 
         loanAccount.setIsDeleted(true);
         return "SUCCES DELETE ACCOUNT";
     }
+
+    private static int counter = 1;
+    private String generateCode() {
+        String prefix = "1291";
+        int lengthNumberPart = 6;
+
+        String numberPart = String.format("%0" + lengthNumberPart + "d", counter++);
+        return prefix + numberPart;
+    }
+
 }
