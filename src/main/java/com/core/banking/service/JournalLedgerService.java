@@ -10,4 +10,5 @@ public interface JournalLedgerService {
     JournalResponse createJournal(JournalRequest request, UserMetaData userMetaData);
     String createJournalHeader(BigDecimal amount, String mutationType, String status, String description, String referenceNumber);
     String createJournalDetail(String coaCode, BigDecimal amount, String mutationType, Long journalLedgerId);
+    String generateNewTransactionReference();
 }

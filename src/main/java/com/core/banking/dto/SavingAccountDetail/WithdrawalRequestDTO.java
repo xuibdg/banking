@@ -1,5 +1,6 @@
 package com.core.banking.dto.SavingAccountDetail;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,6 @@ public class WithdrawalRequestDTO {
     private BigDecimal amount;
     private String description;
     private String channel;
-    private LocalDate systemDate;
+    @JsonProperty("isJournal")
     private boolean isJournal;
 }

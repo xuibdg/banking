@@ -28,10 +28,3 @@ flip:
 pg:
   transaction:
     url: http://localhost:8083
-
-app:
-  config:
-    coa:
-
-      cash-teller-id: "1"
-      fee-income-id: "11"

@@ -23,6 +23,5 @@ public class InterBankTransferRequestDTO {
     private InterBankTransferMethod transferMethod;
     private String description;
     private String channel;
-    private LocalDate systemDate;
     private boolean isJournal;
 }

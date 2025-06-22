@@ -21,7 +21,8 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
+
 
 @Entity
 @Table(name = "saving_account_details")
@@ -71,4 +72,7 @@ public class SavingAccountDetail {
 
     @Column(name = "created_at")
     private Timestamp createdAt;
+
+    @Column(name = "system_date", nullable = false)
+    private LocalDate systemDate;
 }

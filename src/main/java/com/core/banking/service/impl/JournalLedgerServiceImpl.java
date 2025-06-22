@@ -17,13 +17,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.core.banking.dto.JournalRequest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,10 +47,15 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
     public String createJournalDetail(String coaCode, BigDecimal amount, String mutationType,
                                       Long journalLedgerId) { return "id"; }
 
+    @Override
     public JournalResponse createJournal(JournalRequest request, UserMetaData userMetaData) {
         BigDecimal totalDebit = BigDecimal.ZERO;
         BigDecimal totalCredit = BigDecimal.ZERO;
         List<JournalLedgerDetail> detailEntities = new ArrayList<>();
+
+        if (request.getReferenceNumber() == null || request.getReferenceNumber().isBlank()) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Reference number must be provided by the caller.");
+        }
 
         long debitCount = request.getDetails().stream()
                 .filter(d -> d.getMutationType().equalsIgnoreCase("DEBIT")).count();
@@ -94,11 +100,11 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
 
         JournalLedger header = JournalLedger.builder()
                 .journalCode(generateJournalCode())
-                .referenceNumber(generateReferenceNumber())
+                .referenceNumber(request.getReferenceNumber()) // MENGGANTI INI
                 .referenceType(request.getReferenceType())
                 .status(JournalStatus.POSTED)
                 .description(request.getDescription())
-                .systemDate(LocalDate.now())
+                .systemDate(Optional.ofNullable(request.getSystemDate()).orElse(LocalDate.now()))
                 .totalDebit(totalDebit)
                 .totalCredit(totalCredit)
                 .isPosted(true)
@@ -131,6 +137,15 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
                 .build();
     }
 
+    @Override
+    public synchronized String generateNewTransactionReference() { //MENGGANTI INI
+        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String prefix = "REF-" + datePart + "-TRX";
+        long countToday = journalLedgerRepository.countBySystemDate(LocalDate.now());
+        String sequence = String.format("%04d", countToday + 1);
+        return prefix + sequence;
+    }
+
     private List<JournalDetailResponse> convertDetails(List<JournalLedgerDetail> details) {
         return details.stream()
                 .map(detail -> JournalDetailResponse.builder()
@@ -148,16 +163,8 @@ public class JournalLedgerServiceImpl implements JournalLedgerService {
         String random = String.valueOf((int)(Math.random() * 10000));
         return prefix + "-" + String.format("%04d", Integer.parseInt(random));
     }
-    private String generateReferenceNumber() {
-        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String prefix = "REF-" + datePart + "-TRX";
-        long countToday = journalLedgerRepository.countBySystemDate(LocalDate.now());
-        String sequence = String.format("%04d", countToday + 1);
-        return prefix + sequence;
-    }
 
     public LocalDate getSystemAt() {
         return mSystemRepository.findSystemAt();
-
     }
 }

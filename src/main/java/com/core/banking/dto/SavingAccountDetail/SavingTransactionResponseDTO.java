@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 
 @Data
 @Builder
@@ -27,4 +28,5 @@ public class SavingTransactionResponseDTO {
     private String channel;
     private Timestamp transactionTimestamp;
     private Timestamp createdAt;
+    private LocalDate systemDate;
 }

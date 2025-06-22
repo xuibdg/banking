@@ -22,7 +22,6 @@ public class DepositRequestDTO {
     private String channel;
     @NotNull(message = "Payer customer ID cannot be null")
     private String payerCustomerId;
-    private LocalDate systemDate;
     @JsonProperty("isJournal")
     private boolean isJournal;
 }
