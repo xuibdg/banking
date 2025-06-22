@@ -1,6 +1,7 @@
 package com.core.banking.entity;
 
 import com.core.banking.enums.AccountType;
+import com.core.banking.enums.Category;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -33,6 +34,10 @@ public class MChartOfAccount {
     @Column(nullable = false, length = 10)
     private AccountType type;   
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 15)
+    private Category category;
+
     @Column(name = "parent_code", length = 20)
     private String parentCode;
 
@@ -46,9 +51,9 @@ public class MChartOfAccount {
     @Column(name = "created_by", length = 50)
     private String createdBy;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+//    @UpdateTimestamp
+//    @Column(name = "updated_at")
+//    private LocalDateTime updatedAt;
 
     @Column(name = "updated_by", length = 50)
     private String updatedBy;
