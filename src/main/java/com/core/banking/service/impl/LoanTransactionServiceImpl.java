@@ -35,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -230,7 +229,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         BigDecimal totalInterest = monthlyInterest.multiply(BigDecimal.valueOf(loanAccount.getDurationMonths()));
         BigDecimal totalOutstanding = disbursementAmount.add(totalInterest);
 
-        loanAccount.setOutstandingPrincipal(totalOutstanding);
+        loanAccount.setOutstandingAmount(totalOutstanding);
         loanAccount.setInstallmentAmount(monthlyPrincipal.add(monthlyInterest));
         loanAccount.setFirstRepaymentDate(firstDueDate);
         loanAccount.setLastRepaymentDate(firstDueDate.plusMonths(loanAccount.getDurationMonths() - 1));

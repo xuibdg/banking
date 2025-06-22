@@ -22,7 +22,6 @@ import com.core.banking.repository.EscrowAccountRepository;
 import com.core.banking.repository.LoanAccountRepository;
 import com.core.banking.repository.LoanRepaymentScheduleRepository;
 import com.core.banking.repository.LoanTransactionRepository;
-import com.core.banking.repository.LoanTypeConfigRepository;
 import com.core.banking.repository.SavingAccountDetailRepository;
 import com.core.banking.repository.SavingAccountRepository;
 import com.core.banking.service.LoanRepaymentScheduleService;
@@ -263,7 +262,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         SavingAccountDetail creditFee = SavingAccountDetail.builder()
                 .savingAccount(savingAccount)
                 .transactionType(SavingTransactionType.FEE_DEBIT)
-                .mutationType(MutationType.CREDIT)
+                .mutationType(MutationType.DEBIT)
                 .nominalTransaction(fixedFee)
                 .beginBalance(endBalance)
                 .endBalance(endBalance)
@@ -343,8 +342,8 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         repaymentSchedule.setInterestPaid(expectedInterest);
         loanRepaymentScheduleRepository.save(repaymentSchedule);
 
-        BigDecimal newOutstanding = loanAccount.getOutstandingPrincipal().subtract(expectedPrincipal);
-        loanAccount.setOutstandingPrincipal(newOutstanding.max(BigDecimal.ZERO));
+        BigDecimal newOutstanding = loanAccount.getOutstandingAmount().subtract(expectedPrincipal);
+        loanAccount.setOutstandingAmount(newOutstanding.max(BigDecimal.ZERO));
 
         if (newOutstanding.compareTo(BigDecimal.ZERO) <= 0) {
             loanAccount.setAccountStatus(LoanAccountStatus.PAID_OFF);

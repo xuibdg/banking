@@ -52,7 +52,7 @@ public class LoanAccount {
     private Integer durationMonths;
 
     @Column(name = "outstanding_principal", nullable = false)
-    private BigDecimal outstandingPrincipal;
+    private BigDecimal outstandingAmount;
 
     @Column(name = "installment_amount")
     private BigDecimal installmentAmount;

@@ -10,7 +10,11 @@ import com.core.banking.entity.LoanTypeConfig;
 import com.core.banking.entity.SavingAccount;
 import com.core.banking.enums.LoanAccountStatus;
 import com.core.banking.enums.TransactionTypeStatus;
-import com.core.banking.repository.*;
+import com.core.banking.repository.CustomerRepository;
+import com.core.banking.repository.EscrowAccountRepository;
+import com.core.banking.repository.LoanAccountRepository;
+import com.core.banking.repository.LoanTypeConfigRepository;
+import com.core.banking.repository.SavingAccountRepository;
 import com.core.banking.service.LoanAccountService;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
@@ -67,7 +71,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
                         account.getInstallmentAmount(),
                         account.getInterestRateApplied(),
                         account.getLastRepaymentDate(),
-                        account.getOutstandingPrincipal(),
+                        account.getOutstandingAmount(),
                         account.getPrincipalAmount(),
                         account.getUpdatedAt(),
                         account.getCustomer().getId(),
@@ -156,7 +160,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         BigDecimal totalOutstanding = monthlyInstallment.multiply(BigDecimal.valueOf(duration)).setScale(2, RoundingMode.HALF_UP);
 
         loanAccount.setInterestRateApplied(annualInterestRate);
-        loanAccount.setOutstandingPrincipal(totalOutstanding);
+        loanAccount.setOutstandingAmount(totalOutstanding);
         loanAccount.setInstallmentAmount(monthlyInstallment);
 
         loanAccount.setAccountStatus(LoanAccountStatus.PENDING_APPROVAL);
@@ -199,7 +203,7 @@ public class LoanAccountServiceImpl implements LoanAccountService {
         loanAccount.setPrincipalAmount(request.getPrincipalAmount());
         loanAccount.setInterestRateApplied(request.getInterestRateApplied());
         loanAccount.setDurationMonths(request.getDurationMonths());
-        loanAccount.setOutstandingPrincipal(request.getOutstandingPrincipal());
+        loanAccount.setOutstandingAmount(request.getOutstandingPrincipal());
         loanAccount.setInstallmentAmount(request.getInstallmentAmount());
         loanAccount.setDisbursementDate(request.getDisbursementDate());
         loanAccount.setFirstRepaymentDate(request.getFirstRepaymentDate());
