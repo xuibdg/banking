@@ -54,6 +54,9 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
     @Autowired
     private MChartOfAccountRepository mChartOfAccountRepository;
 
+    @Autowired
+    private JournalLedgerServiceImpl journalLedgerServiceImpl;
+
     private static final String DESC_INITIAL_DEPOSIT_TELLER = "Initial Deposit Melalui Teller";
     private static final String DESC_DEPOSIT_DEFAULT = "Deposit";
     private static final String DESC_OPENING_FEE = "Biaya Pembukaan Rekening";
@@ -70,7 +73,7 @@ public class SavingAccountDetailServiceImpl implements SavingAccountDetailServic
         validateUserMetaData(userMetaData);
         validateDepositRequest(request);
 
-        LocalDate systemDate = LocalDate.now();
+        LocalDate systemDate = journalLedgerServiceImpl.getSystemAt();
         SavingAccount savingAccount = findAndLockSavingAccount(request.getSavingAccountNumber());
         SavingTypeConfig config = getActiveSavingConfig(savingAccount);
         boolean isInitialDeposit = !savingAccountDetailRepository.existsBySavingAccount(savingAccount);
