@@ -87,6 +87,7 @@ public class EodReportingServiceImpl implements EodReportingService {
                             .amount(dto.getAmount())
                             .coaCode(coa)
                             .coaName(coa.getName())
+                            .category(coa.getCategory())
                             .build();
                 })
                 .toList();
@@ -101,6 +102,7 @@ public class EodReportingServiceImpl implements EodReportingService {
                             .amount(dto.getAmount())
                             .coaCode(coa)
                             .coaName(coa.getName())
+                            .category(coa.getCategory())
                             .build();
 
                 })

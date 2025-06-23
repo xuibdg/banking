@@ -1,5 +1,6 @@
 package com.core.banking.entity;
 
+import com.core.banking.enums.Category;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,9 +28,9 @@ public class ProfitLoss {
     @Column(name = "coa_name")
     private String coaName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category", nullable = false)
-    private MChartOfAccount category;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 15)
+    private Category category;
 
     @Column(name = "amount")
     private BigDecimal amount;
