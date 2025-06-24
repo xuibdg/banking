@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -30,8 +32,29 @@ public class DepositProfitSharingController extends BaseCRUDController {
         return buildSuccessResponse(depositProfitSharingService.findAll());
     }
 
+    @GetMapping("/findByAccountId/{depositAccountId}")
+    BaseResponse<List<DepositProfitSharingResponse>> findById(@PathVariable Long depositAccountId) {
+        return buildSuccessResponse(depositProfitSharingService.findById(depositAccountId));
+
+    }
+
     @PutMapping("/{id}")
-    BaseResponse update(@PathVariable Long id, @RequestBody DepositProfitSharingRequest request, @CurrentUser UserMetaData userMetaData) {
+    BaseResponse update(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long depositAccountId,
+            @RequestParam(required = false) String profitPeriodStartDate,
+            @RequestParam(required = false) String profitPeriodEndDate,
+            @RequestParam(required = false) BigDecimal nominalProfitShared,
+            @CurrentUser UserMetaData userMetaData) {
+
+        DepositProfitSharingRequest request = new DepositProfitSharingRequest();
+        request.setDepositAccountId(depositAccountId);
+        if (profitPeriodStartDate != null)
+            request.setProfitPeriodStartDate(LocalDate.parse(profitPeriodStartDate));
+        if (profitPeriodEndDate != null)
+            request.setProfitPeriodEndDate(LocalDate.parse(profitPeriodEndDate));
+        request.setNominalProfitShared(nominalProfitShared);
+
         return buildSuccessResponse(depositProfitSharingService.updateDepositProfitSharing(id, request, userMetaData));
     }
 
@@ -39,4 +62,5 @@ public class DepositProfitSharingController extends BaseCRUDController {
     BaseResponse<String> delete(@PathVariable Long id, @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(depositProfitSharingService.deleteDepositProfitSharing(id, userMetaData));
     }
+
 }

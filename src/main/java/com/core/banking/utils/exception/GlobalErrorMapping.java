@@ -93,7 +93,7 @@ public enum GlobalErrorMapping {
     SYSTEM_RECORD_NOT_FOUND("IEG-130", "Data sistem belum diinisialisasi"),
     COA_MISSING("IEG-131", "Chart of Account (COA) tidak ditemukan"),
     ID_DEPOSIT_SHARING_NOT_FOUND("IEG-132", "ID Deposit Profit Sharing tidak ditemukan"),
-    ;
+    PROFIT_SHRING_ALREADY_EXIST("IEG-133", "Data Profit Sudah Ada");
 
 
     public final String code;

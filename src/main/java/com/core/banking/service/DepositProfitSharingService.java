@@ -16,4 +16,6 @@ public interface DepositProfitSharingService {
     String deleteDepositProfitSharing(Long id, UserMetaData userMetaData);
 
     List<DepositProfitSharingResponse> findAll();
+
+    List<DepositProfitSharingResponse> findById(Long depositAcountId);
 }

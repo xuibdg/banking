@@ -85,7 +85,7 @@ public class DepositProfitSharingServiceImpl implements DepositProfitSharingServ
                         account, monthStart, monthEnd
                 );
                 if (alreadyExists) {
-                    continue;
+                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.PROFIT_SHRING_ALREADY_EXIST);
                 }
 
 
@@ -126,53 +126,38 @@ public class DepositProfitSharingServiceImpl implements DepositProfitSharingServ
 
     @Override
     public String updateDepositProfitSharing(Long id, DepositProfitSharingRequest request, UserMetaData userMetaData) {
-        DepositProfitSharing entity = depositProfitSharingRepository.findById(id).orElse(null);
 
-        if (entity == null) {
-            DepositAccount account = depositAccountRepository.findById(request.getDepositAccountId())
-                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
-
-            LocalDate openedAt = account.getOpenedAt().toLocalDate();
-            LocalDate maturityDate = account.getMaturityDate();
-            LocalDate start = request.getProfitPeriodStartDate();
-            LocalDate end = request.getProfitPeriodEndDate();
-            if (start.isBefore(openedAt) || end.isAfter(maturityDate)) {
+        if (request == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND);
+        }
+        if (request.getProfitPeriodStartDate() != null && request.getProfitPeriodEndDate() != null) {
+            if (request.getProfitPeriodStartDate().isAfter(request.getProfitPeriodEndDate())) {
                 throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.INVALID_DATE_RANGE);
             }
-
-            BigDecimal principal = account.getPrincipalAmount();
-            BigDecimal percenPa = account.getDepositTypeConfig().getProfitSharePercentagePa();
-            BigDecimal monthlyProfit = principal
-                    .multiply(percenPa)
-                    .divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP)
-                    .divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
-
-            entity = new DepositProfitSharing();
-            entity.setDepositAccount(account);
-            entity.setProfitPeriodStartDate(start);
-            entity.setProfitPeriodEndDate(end);
-            entity.setNominalProfitShared(monthlyProfit);
-            entity.setPayoutDate(LocalDateTime.now());
-            entity.setCreatedAt(LocalDateTime.now());
-            depositProfitSharingRepository.save(entity);
-            return "New Deposit Profit Sharing created successfully";
-        } else {
-            if (request.getDepositAccountId() != null) {
-                DepositAccount account = depositAccountRepository.findById(request.getDepositAccountId())
-                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
-                entity.setDepositAccount(account);
-            }
-            if (request.getProfitPeriodStartDate() != null) {
-                entity.setProfitPeriodStartDate(request.getProfitPeriodStartDate());
-            }
-            if (request.getProfitPeriodEndDate() != null) {
-                entity.setProfitPeriodEndDate(request.getProfitPeriodEndDate());
-            }
-            entity.setPayoutDate(LocalDateTime.now());
-            entity.setCreatedAt(LocalDateTime.now());
-            depositProfitSharingRepository.save(entity);
-            return "Deposit Profit Sharing updated successfully";
         }
+
+        DepositProfitSharing entity = depositProfitSharingRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_DEPOSIT_SHARING_NOT_FOUND));
+
+        if (request.getDepositAccountId() != null) {
+            DepositAccount account = depositAccountRepository.findById(request.getDepositAccountId())
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
+            entity.setDepositAccount(account);
+        }
+        if (request.getProfitPeriodStartDate() != null) {
+            entity.setProfitPeriodStartDate(request.getProfitPeriodStartDate());
+        }
+        if (request.getProfitPeriodEndDate() != null) {
+            entity.setProfitPeriodEndDate(request.getProfitPeriodEndDate());
+        }
+        if (request.getNominalProfitShared() != null) {
+            entity.setNominalProfitShared(request.getNominalProfitShared());
+        }
+        entity.setPayoutDate(LocalDateTime.now());
+        entity.setCreatedAt(LocalDateTime.now());
+
+        depositProfitSharingRepository.save(entity);
+        return "Deposit Profit Sharing updated successfully";
     }
 
     @Override
@@ -180,13 +165,25 @@ public class DepositProfitSharingServiceImpl implements DepositProfitSharingServ
         DepositProfitSharing entity = depositProfitSharingRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ID_DEPOSIT_SHARING_NOT_FOUND));
         depositProfitSharingRepository.delete(entity);
-        return "Deposit Profit Sharing deleted successfully coba ";
+        return "Deposit Profit Sharing deleted successfully";
     }
 
 
     @Override
     public List<DepositProfitSharingResponse> findAll() {
         List<DepositProfitSharing> entities = depositProfitSharingRepository.findAll();
+        List<DepositProfitSharingResponse> responses = new ArrayList<>();
+        for (DepositProfitSharing entity : entities) {
+            responses.add(mapToResponse(entity));
+        }
+        return responses;
+    }
+
+    @Override
+    public List<DepositProfitSharingResponse> findById(Long depositAcountId) {
+        List<DepositProfitSharing> entities = depositProfitSharingRepository
+                .findByDepositAccount_DepositoAccountId(depositAcountId);
+
         List<DepositProfitSharingResponse> responses = new ArrayList<>();
         for (DepositProfitSharing entity : entities) {
             responses.add(mapToResponse(entity));
