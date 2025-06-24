@@ -100,7 +100,8 @@ public enum GlobalErrorMapping {
     FAILED_TO_SEND_PG_TRANSACTION("IEG-071", "Gagal mengirim request kepada Payment Gateway"),
     SYSTEM_RECORD_NOT_FOUND("IEG-130", "Data sistem belum diinisialisasi"),
     COA_MISSING("IEG-131", "Chart of Account (COA) tidak ditemukan"),
-    ID_DEPOSIT_SHARING_NOT_FOUND("IEG-132", "ID Deposit Profit Sharing tidak ditemukan");
+    ID_DEPOSIT_SHARING_NOT_FOUND("IEG-132", "ID Deposit Profit Sharing tidak ditemukan"),
+    ACCOUNT_HAS_BEAN_CLOSED("IEG-133", "Rekening sudah ditutup. Silakan buka rekening baru");
 
 
     public final String code;

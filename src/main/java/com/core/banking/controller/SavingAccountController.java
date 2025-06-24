@@ -8,6 +8,7 @@ import com.core.banking.enums.SavingAccountStatus;
 import com.core.banking.service.MUserService;
 import com.core.banking.service.SavingAccountService;
 import com.core.banking.utils.exception.BaseResponse;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -49,6 +50,16 @@ public class SavingAccountController {
         return buildSuccessResponse(savingAccountService.getByAccountNumber(accountNumber));
     }
 
+    @GetMapping("/name/{fullName}")
+    BaseResponse <SavingAccountResponse> getByCustomerFullName(@PathVariable String fullName){
+        return buildSuccessResponse(savingAccountService.getByCustomerFullName(fullName));
+    }
+
+    @GetMapping("/nik/{nik}")
+    BaseResponse <SavingAccountResponse> getByCustomerNik(@PathVariable String nik) {
+        return buildSuccessResponse(savingAccountService.getByCustomerNik(nik));
+    }
+
     @PutMapping("/status/{id}")
     BaseResponse <SavingAccountResponse> updateStatus(
             @PathVariable @Validated String id,
@@ -56,7 +67,7 @@ public class SavingAccountController {
         return buildSuccessResponse(savingAccountService.updateStatus(id, status, userMetaData));
     }
 
-    @DeleteMapping("/{accountNumber}")
+    @DeleteMapping("/number/{accountNumber}")
     BaseResponse <String> deleteAccount(@PathVariable @Validated String accountNumber,
                                                         @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(savingAccountService.deleted(accountNumber, userMetaData));

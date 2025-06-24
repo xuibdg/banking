@@ -2,7 +2,6 @@ package com.core.banking.repository;
 
 import com.core.banking.entity.SavingAccount;
 import com.core.banking.enums.SavingAccountStatus;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,14 +15,39 @@ public interface SavingAccountRepository extends JpaRepository<SavingAccount, St
     boolean existsByCustomer_IdAndAccountStatus(String customerId, SavingAccountStatus accountStatus);
     boolean existsByAccountNumber(String number);
 
-    @EntityGraph(attributePaths = {"savingTypeConfig", "customer", "savingTypeConfig.savingType"})
-    Optional<SavingAccount> findByAccountNumber(String accountNumber);
+    @Query("SELECT sa FROM SavingAccount sa " +
+        "JOIN FETCH sa.savingTypeConfig stc " +
+        "JOIN FETCH stc.savingType " +
+        "JOIN FETCH sa.customer " +
+        "WHERE sa.accountNumber = :accountNumber")
+    Optional<SavingAccount> findByAccountNumber(@Param("accountNumber") String accountNumber);
 
-    @EntityGraph(attributePaths = {"savingTypeConfig", "customer", "savingTypeConfig.savingType"})
+    @Query("SELECT sa FROM SavingAccount sa " +
+            "JOIN FETCH sa.customer c " +
+            "JOIN FETCH sa.savingTypeConfig stc " +
+            "JOIN FETCH stc.savingType " +
+            "WHERE c.fullName = :fullName")
+    Optional<SavingAccount> findByfindByCustomerFullName(@Param("fullName") String fullName);
+
+    @Query("SELECT sa FROM SavingAccount sa " +
+            "JOIN FETCH sa.customer c " +
+            "JOIN FETCH sa.savingTypeConfig stc " +
+            "JOIN FETCH stc.savingType " +
+            "WHERE c.nik = :nik")
+    Optional<SavingAccount> findByCustomerNik(@Param("nik") String nik);
+
+    @Query("SELECT sa FROM SavingAccount sa " +
+            "JOIN FETCH sa.savingTypeConfig stc " +
+            "JOIN FETCH stc.savingType " +
+            "JOIN FETCH sa.customer")
     List<SavingAccount> findAll();
 
-    @EntityGraph(attributePaths = {"customer", "savingTypeConfig", "savingTypeConfig.savingType"})
-    Optional<SavingAccount> findById(String id);
+    @Query("SELECT sa FROM SavingAccount sa " +
+            "JOIN FETCH sa.savingTypeConfig stc " +
+            "JOIN FETCH stc.savingType " +
+            "JOIN FETCH sa.customer " +
+            "WHERE sa.id = :id")
+    Optional<SavingAccount> findById(@Param("id") String id);
 
     SavingAccount findByCustomerId (String customer_id);
 
