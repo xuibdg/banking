@@ -26,6 +26,7 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
     Long countAccountNumber();
 
     @EntityGraph(attributePaths = {"payerCustomer", "beneficiaryCustomer"})
+    @Query("SELECT e FROM EscrowAccount e ORDER BY e.createdAt DESC")
     List<EscrowAccount> findAll();
 
     @EntityGraph(attributePaths = {"payerCustomer", "beneficiaryCustomer"})
@@ -34,7 +35,7 @@ public interface EscrowAccountRepository extends JpaRepository<EscrowAccount, St
             "(:startDate is NULL OR e.createdAt >= :startDate) AND " +
             "(:endDate is NULL or e.createdAt <= :endDate) AND " +
             "(:accountStatus is NULL or e.accountStatus = :accountStatus) AND " +
-            "e.isDeleted = false")
+            "e.isDeleted = false ORDER BY e.createdAt DESC")
     List<EscrowAccount> findByNeedData(
             @Param("id") String id,
             @Param("startDate") Timestamp startDate,
