@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface EscrowAccountService {
     String createEscrowAccount (EscrowAccountRequest request, UserMetaData userMetaData);
+    String createEscrowAccountToPG (EscrowAccountRequest request, UserMetaData userMetaData);
     List<EscrowAccountResponse> getAll();
     List<EscrowAccountResponse> filterData(String id, LocalDate startDate, LocalDate endDate, EscrowAccountStatus accountStatus);
     String updateEscrowAccount (String id, EscrowAccountRequest request, UserMetaData userMetaData);

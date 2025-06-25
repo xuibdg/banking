@@ -30,10 +30,16 @@ public class EscrowAccountDetailController {
     @Autowired
     private EscrowAccountDetailService escrowAccountDetailService;
 
-    @PostMapping("/add")
+    @PostMapping("/create-funding-release")
     BaseResponse<String> createEscrowAccountDetail(@RequestBody EscrowAccountDetailRequest request,
                                            @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(escrowAccountDetailService.createEscrowAccountDetail(request, userMetaData));
+    }
+
+    @PostMapping("/create-release-pg")
+    BaseResponse<String> createEscrowAccountDetailReleaseToPG(@RequestBody EscrowAccountDetailRequest request,
+                                                              @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(escrowAccountDetailService.createEscrowAccountDetailReleaseToPG(request, userMetaData));
     }
 
     @PostMapping("/create-release-escrow-account")

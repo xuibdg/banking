@@ -39,6 +39,12 @@ public class EscrowAccountController {
         return buildSuccessResponse(escrowAccountService.createEscrowAccount(request, userMetaData));
     }
 
+    @PostMapping("/add-to-pg")
+    BaseResponse<String> createEscrowAccountToPG(@RequestBody EscrowAccountRequest request,
+                                             @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(escrowAccountService.createEscrowAccountToPG(request, userMetaData));
+    }
+
     @GetMapping("/get-all")
     public List<EscrowAccountResponse> getAll() {
         return escrowAccountService.getAll();

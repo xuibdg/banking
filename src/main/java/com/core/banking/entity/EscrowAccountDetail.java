@@ -62,6 +62,9 @@ public class EscrowAccountDetail {
     @Column(name = "transaction_reference", unique = true, length = 100)
     private String transactionReference;
 
+    @Column(name = "release_account_number")
+    private String releaseAccountNumber;
+
     @Column(name = "transaction_at")
     private Timestamp transactionAt = new Timestamp(System.currentTimeMillis());
 

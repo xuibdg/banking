@@ -72,6 +72,9 @@ public class EscrowAccount {
     @Column(name = "transaction_account_status", nullable = false)
     private TransactionTypeStatus transactionTypeStatus;
 
+    @Column(name = "nominal_transaction", precision = 15, scale = 2, nullable = false)
+    private BigDecimal nominalTransaction;
+
     @Column(name = "release_account_number")
     private String releaseAccountNumber;
 

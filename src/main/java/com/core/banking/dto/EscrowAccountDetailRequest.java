@@ -29,4 +29,7 @@ public class EscrowAccountDetailRequest {
     @NotEmpty
     private String senderBank;
 
+    @NotEmpty
+    private String releaseAccountNumber;
+
 }
