@@ -195,14 +195,26 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
     public String createEscrowAccountDetailReleaseToPG(EscrowAccountDetailRequest request, UserMetaData userMetaData) {
         EscrowAccount escrowAccount = escrowAccountRepository.findById(request.getEscrowAccount())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
-        if (request.getNominalTransaction() == null || request.getNominalTransaction().compareTo(BigDecimal.ZERO) <= 0) {
+
+        BigDecimal nominal = request.getNominalTransaction() != null
+                ? request.getNominalTransaction()
+                : escrowAccount.getNominalTransaction();
+
+        if (nominal == null || nominal.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_NOMINAL_INVALID);
+        }
+
+        String releaseAccountNumber = !StringUtils.isEmpty(request.getReleaseAccountNumber())
+                ? request.getReleaseAccountNumber()
+                : escrowAccount.getReleaseAccountNumber();
+
+        if (StringUtils.isEmpty(releaseAccountNumber)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RELEASE_ACCOUNT_NUMBER_REQUIRED);
         }
         BigDecimal beginBalance = escrowAccount.getCurrentBalance();
         BigDecimal endBalance = beginBalance;
         MutationType mutationType;
         String trxCode = generateTrxCode().substring(4);
-
         EscrowTransactionType transactionType = request.getTransactionType();
 
 
@@ -212,11 +224,11 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
             }
 
                 mutationType = MutationType.CREDIT;
-                endBalance = beginBalance.add(request.getNominalTransaction());
+                endBalance = beginBalance.add(nominal);
                 escrowAccount.setAccountStatus(EscrowAccountStatus.FUNDED);
 
                 //create EscrowAccountDetail
-                EscrowAccountDetail escrowAccountDetail = validateAndSaveEscrowAccountAndDetailToPG(request, userMetaData, escrowAccount, transactionType, mutationType, beginBalance, endBalance, request.getReleaseAccountNumber(), true, trxCode);
+                EscrowAccountDetail escrowAccountDetail = validateAndSaveEscrowAccountAndDetailToPG(request, userMetaData, escrowAccount, transactionType, mutationType, beginBalance, endBalance, releaseAccountNumber, true, trxCode, nominal);
                 return "SUCCESS | " + escrowAccountDetail.getTransactionReference();
 
 
@@ -232,12 +244,12 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 throw new BusinessException(HttpStatus.BAD_REQUEST, "Status escrow account harus FUNDED atau RELEASED untuk transaksi ini");
             }
 
-            if (beginBalance.compareTo(request.getNominalTransaction()) < 0) {
+            if (beginBalance.compareTo(nominal) < 0) {
                 throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_BALANCE_NOT_ENOUGH);
             }
 
             mutationType = MutationType.DEBIT;
-            endBalance = beginBalance.subtract(request.getNominalTransaction());
+            endBalance = beginBalance.subtract(nominal);
 
             if (transactionType == EscrowTransactionType.RELEASE_TO_BENEFICIARY
                     || transactionType == EscrowTransactionType.RETURN_TO_PAYER) {
@@ -245,7 +257,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
             }
 
             //create EscrowAccountDetail
-            EscrowAccountDetail escrowAccountDetail = validateAndSaveEscrowAccountAndDetailToPG(request, userMetaData, escrowAccount, transactionType, mutationType, beginBalance, endBalance, request.getReleaseAccountNumber(),false, trxCode);
+            EscrowAccountDetail escrowAccountDetail = validateAndSaveEscrowAccountAndDetailToPG(request, userMetaData, escrowAccount, transactionType, mutationType, beginBalance, endBalance, releaseAccountNumber,false, trxCode, nominal);
             return "SUCCESS | " + escrowAccountDetail.getTransactionReference();
 
         } else {
@@ -255,12 +267,12 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
     }
 
     private EscrowAccountDetail validateAndSaveEscrowAccountAndDetailToPG(EscrowAccountDetailRequest request, UserMetaData userMetaData, EscrowAccount escrowAccount, EscrowTransactionType transactionType, MutationType mutationType,
-                                                                      BigDecimal beginBalance, BigDecimal endBalance, String releaseAccountNumber, Boolean isFunding, String trxCode) {
+                                                                      BigDecimal beginBalance, BigDecimal endBalance, String releaseAccountNumber, Boolean isFunding, String trxCode, BigDecimal nominalTransaction) {
         EscrowAccountDetail escrowAccountDetail = EscrowAccountDetail.builder()
                 .escrowAccount(escrowAccount)
                 .transactionType(transactionType)
                 .mutationType(mutationType)
-                .nominalTransaction(request.getNominalTransaction())
+                .nominalTransaction(nominalTransaction)
                 .beginBalance(beginBalance)
                 .endBalance(endBalance)
                 .description(request.getDescription())
@@ -272,16 +284,6 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 .isDeleted(false)
                 .build();
 
-        if (isFunding.equals(true)) {
-            escrowAccount.setReleaseAccountNumber(releaseAccountNumber);
-        } else {
-            if (StringUtils.isEmpty(escrowAccount.getReleaseAccountNumber())) {
-                if (StringUtils.isEmpty(releaseAccountNumber)) {
-                    throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RELEASE_ACCOUNT_NUMBER_REQUIRED);
-                }
-            }
-            escrowAccount.setReleaseAccountNumber(releaseAccountNumber);
-        }
         escrowAccountDetailRepository.save(escrowAccountDetail);
         escrowAccount.setCurrentBalance(endBalance);
         escrowAccountRepository.save(escrowAccount);

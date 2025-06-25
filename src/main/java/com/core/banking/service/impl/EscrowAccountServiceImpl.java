@@ -188,6 +188,7 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                 .transactionTypeStatus(transactionType)
                 .releaseAccountNumber(request.getReleaseAccountNumber())
                 .accountStatus(EscrowAccountStatus.PENDING_FUNDING)
+                .nominalTransaction(request.getNominalTransaction())
                 .currentBalance(BigDecimal.ZERO)
                 .isDeleted(false)
                 .createdAt(Timestamp.from(Instant.now()))
