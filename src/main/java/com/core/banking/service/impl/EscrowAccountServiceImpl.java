@@ -223,6 +223,8 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                             .map(Object::toString)
                             .orElse("NOT USED"))
                     .transactionType(data.getTransactionTypeStatus())
+                    .releaseAccountNumber(data.getReleaseAccountNumber())
+                    .nominalTransaction(data.getNominalTransaction())
                     .build();
         }).collect(Collectors.toList());
         return list;
@@ -257,6 +259,8 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                         .map(Object::toString)
                         .orElse("NOT USED"))
                 .transactionType(data.getTransactionTypeStatus())
+                .releaseAccountNumber(data.getReleaseAccountNumber())
+                .nominalTransaction(data.getNominalTransaction())
                 .build()
         ).collect(Collectors.toList());
     }
