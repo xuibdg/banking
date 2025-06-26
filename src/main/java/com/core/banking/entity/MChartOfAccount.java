@@ -32,7 +32,7 @@ public class MChartOfAccount {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private AccountType type;
+    private AccountType type;   
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 15)

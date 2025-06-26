@@ -2,7 +2,7 @@ package com.core.banking.dto;
 
 import lombok.Data;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -13,4 +13,5 @@ public class JournalRequest {
     private String referenceNumber;
     private String referenceType;
     private List<JournalDetailRequest> details;
+    private LocalDate systemDate;
 }
