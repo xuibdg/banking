@@ -13,5 +13,9 @@ import java.util.Optional;
 @Repository
 public interface JournalLedgerRepository extends JpaRepository<JournalLedger, Long> {
     Optional<Object> findById(String journalLedgerId);
+
     long countBySystemDate(LocalDate now);
+
+    List<JournalLedger> findAllByReferenceNumber(String referenceNumber);
+
 }

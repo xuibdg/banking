@@ -35,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -112,7 +111,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         loanAccountRepository.save(loanAccount);
 
         BigDecimal disbursementAmount = loanAccount.getPrincipalAmount();
-        BigDecimal fixedFee = new BigDecimal("10000");
+        BigDecimal fixedFee = new BigDecimal("2000");
 
         List<SavingAccount> savingAccounts = savingAccountRepository.findByCustomer_Id(loanAccount.getCustomer().getId());
         if (savingAccounts.isEmpty()) {
@@ -138,7 +137,6 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
                 .endBalance(escrowEnd)
                 .description("Loan disbursed ke saving account")
                 .transactionReference(escrowAccountDetailServiceImpl.generateTrxCode())
-//                .releaseAccountNumber(savingAccount.getAccountNumber())
                 .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createBy(userMetaData.getUsername())
@@ -158,7 +156,6 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
                 .endBalance(BigDecimal.ZERO)
                 .description(escrowDetail.getDescription())
                 .transactionReference(escrowDetail.getTransactionReference())
-//                .releaseAccountNumber(savingAccount.getAccountNumber())
                 .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createdAt(Timestamp.valueOf(LocalDateTime.now()))
                 .createBy(userMetaData.getUserId())
@@ -173,7 +170,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         transaction.setAmount(disbursementAmount);
         transaction.setPrincipalComponent(disbursementAmount);
         transaction.setInterestComponent(BigDecimal.ZERO);
-        transaction.setFeeComponent(fixedFee);
+        transaction.setFeeComponent(BigDecimal.ZERO);
 
         transaction.setReferenceNumber(escrowDetail.getTransactionReference());
 
@@ -232,7 +229,7 @@ public class LoanTransactionServiceImpl implements LoanTransactionService {
         BigDecimal totalInterest = monthlyInterest.multiply(BigDecimal.valueOf(loanAccount.getDurationMonths()));
         BigDecimal totalOutstanding = disbursementAmount.add(totalInterest);
 
-        loanAccount.setOutstandingPrincipal(totalOutstanding);
+        loanAccount.setOutstandingAmount(totalOutstanding);
         loanAccount.setInstallmentAmount(monthlyPrincipal.add(monthlyInterest));
         loanAccount.setFirstRepaymentDate(firstDueDate);
         loanAccount.setLastRepaymentDate(firstDueDate.plusMonths(loanAccount.getDurationMonths() - 1));

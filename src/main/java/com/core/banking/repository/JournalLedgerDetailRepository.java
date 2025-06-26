@@ -32,4 +32,7 @@ public interface JournalLedgerDetailRepository extends JpaRepository<JournalLedg
     List<EodReporting> findEodReport(@Param("startDate")LocalDateTime start,
                                      @Param("endDate") LocalDateTime end,
                                      @Param ("categories") List<String> categories);
+
+    List<JournalLedgerDetail> findByJournalLedgerId(String journalLedgerId);
+
 }
