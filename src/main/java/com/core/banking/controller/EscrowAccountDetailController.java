@@ -36,7 +36,7 @@ public class EscrowAccountDetailController {
         return buildSuccessResponse(escrowAccountDetailService.createEscrowAccountDetail(request, userMetaData));
     }
 
-    @PostMapping("/create-release-pg")
+    @PostMapping("/create-funding-pg")
     BaseResponse<String> createEscrowAccountDetailFundingReleaseToPG(@RequestBody EscrowAccountDetailRequest request,
                                                               @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(escrowAccountDetailService.createEscrowAccountDetailFundingReleaseToPG(request, userMetaData));
