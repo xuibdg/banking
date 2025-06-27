@@ -27,4 +27,5 @@ public class EscrowAccountDetailResponse {
     private BigDecimal endBalance;
     private String description;
     private String transactionReference;
+    private String releaseAccountNumber;
 }

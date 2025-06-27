@@ -11,6 +11,8 @@ import java.util.List;
 public interface SavingAccountService {
     String create(SavingAccountRequest request, UserMetaData userMetaData);
     SavingAccountResponse getByAccountNumber(String accountNumber);
+    SavingAccountResponse getByCustomerFullName(String fullName);
+    SavingAccountResponse getByCustomerNik(String nik);
     List<SavingAccount> findAll();
     List<SavingAccountResponse> getAll();
     SavingAccountResponse updateStatus(String id, SavingAccountStatus status, UserMetaData userMetaData);

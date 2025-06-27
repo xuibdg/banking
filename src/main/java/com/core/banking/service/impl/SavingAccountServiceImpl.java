@@ -46,6 +46,7 @@ public class SavingAccountServiceImpl implements SavingAccountService {
     }
 
     @Override
+    @Transactional
     public String create(SavingAccountRequest request, UserMetaData userMetaData) {
         Customer customer = customerRepository.findByIdEligible(request.getCustomerId(), CustomerStatus.ACTIVE.name())
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
@@ -100,24 +101,37 @@ public class SavingAccountServiceImpl implements SavingAccountService {
     public SavingAccountResponse getByAccountNumber(String accountNumber) {
         SavingAccount savingAccount = savingAccountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ACCOUNT_NUMBER_NOT_FOUND));
-
         return toResponse(savingAccount);
     }
+
+    @Override
+    public SavingAccountResponse getByCustomerFullName(String fullName) {
+        SavingAccount savingAccount = savingAccountRepository.findByfindByCustomerFullName(fullName)
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
+        return toResponse(savingAccount);
+    }
+
+    @Override
+    public SavingAccountResponse getByCustomerNik(String nik){
+        SavingAccount savingAccount = savingAccountRepository.findByCustomerNik(nik)
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND));
+        return toResponse(savingAccount);
+    }
+
     @Override
     public SavingAccountResponse updateStatus(String id, SavingAccountStatus status, UserMetaData userMetaData) {
 
         SavingAccount savingAccount = savingAccountRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DATA_NOT_FOUND));
 
-        if (status == SavingAccountStatus.CLOSED && savingAccount.getCurrentBalance().compareTo(BigDecimal.ZERO) > 0) {
+        if (SavingAccountStatus.CLOSED.equals(status) && savingAccount.getCurrentBalance().compareTo(BigDecimal.ZERO) > 0) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CLOSED_ACCOUNT_FAILED);
         }
-        if (status == SavingAccountStatus.DORMANT && savingAccount.getAccountStatus() == SavingAccountStatus.CLOSED) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DORMANT_ACCOUNT_FAILED);
+
+        if (savingAccount.getAccountStatus() == SavingAccountStatus.CLOSED) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ACCOUNT_HAS_BEAN_CLOSED);
         }
-        if (status == SavingAccountStatus.BLOCKED && savingAccount.getAccountStatus() == SavingAccountStatus.CLOSED) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.BLOCK_ACCOUNT_FAILED);
-        }
+
         savingAccount.setAccountStatus(status);
         savingAccount.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
         savingAccount.setUpdateBy(userMetaData.getUserId());

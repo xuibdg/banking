@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface EscrowAccountDetailService {
     String createEscrowAccountDetail (EscrowAccountDetailRequest request, UserMetaData userMetaData);
+    String createEscrowAccountDetailFundingToPG(EscrowAccountDetailRequest request, UserMetaData userMetaData);
+    String createEscrowAccountDetailFundingReleaseToPG(EscrowAccountDetailRequest request, UserMetaData userMetaData);
     String createAndReleaseEscrowAccount (EscrowAccountRequest escrowRequest, BigDecimal nominalTransaction, String releaseAccountNumber, String description, UserMetaData userMetaData);
     List<EscrowAccountDetailResponse> getAll();
     List<EscrowAccountDetailResponse> filterData(String id, LocalDate startDate, LocalDate endDate, EscrowTransactionType transactionType);

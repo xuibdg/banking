@@ -1,13 +1,11 @@
 package com.core.banking.service.impl;
 
+import com.core.banking.client.PaymentGatewayClient;
 import com.core.banking.dto.EscrowAccountRequest;
 import com.core.banking.dto.EscrowAccountResponse;
+import com.core.banking.dto.EscrowRequestToPGRequest;
 import com.core.banking.dto.UserMetaData;
-import com.core.banking.entity.Customer;
-import com.core.banking.entity.DepositAccount;
-import com.core.banking.entity.EscrowAccount;
-import com.core.banking.entity.LoanAccount;
-import com.core.banking.entity.SavingAccount;
+import com.core.banking.entity.*;
 import com.core.banking.enums.EscrowAccountStatus;
 import com.core.banking.enums.TransactionTypeStatus;
 import com.core.banking.repository.CustomerRepository;
@@ -16,11 +14,13 @@ import com.core.banking.repository.EscrowAccountRepository;
 import com.core.banking.repository.LoanAccountRepository;
 import com.core.banking.repository.SavingAccountRepository;
 import com.core.banking.service.EscrowAccountService;
+import com.core.banking.utils.exception.BaseResponse;
 import com.core.banking.utils.exception.BusinessException;
 import com.core.banking.utils.exception.GlobalErrorMapping;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -55,6 +55,15 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
 
     @Autowired
     private DepositAccountRepository depositAccountRepository;
+
+    @Value("${flip.payment-gateway-id}")
+    private String paymentGatewayId;
+
+    @Autowired
+    private PaymentGatewayClient paymentGatewayClient;
+
+    @Autowired
+    private EscrowAccountDetailServiceImpl escrowAccountDetailServiceImpl;
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
@@ -93,6 +102,81 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
         } else {
             throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_TYPE_INVALID_OR_NULL);
         }
+        EscrowAccount escrowAccount = validateAndSaveEscrowAccount(request, userMetaData, payerId, beneficiaryId, savingAccount, loanAccount, depositAccount, transactionType);
+        escrowAccountRepository.save(escrowAccount);
+        return "SUCCESS CREATE NEW ESCROW ACCOUNT " +
+                "| ID : "  + escrowAccount.getId() + " |";
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
+    public String createEscrowAccountToPG(EscrowAccountRequest request, UserMetaData userMetaData) {
+        Customer payerId = customerRepository.findById(request.getPayerCustomer())
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.PAYER_CUSTOMER_NOT_FOUND));
+        Customer beneficiaryId = customerRepository.findById(request.getBeneficiaryCustomer())
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.BENEFICIARY_CUSTOMER_NOT_FOUND));
+
+        SavingAccount savingAccount = null;
+        LoanAccount loanAccount = null;
+        DepositAccount depositAccount = null;
+
+        TransactionTypeStatus transactionType = request.getTransactionTypeStatus();
+        if (transactionType == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_TYPE_INVALID_OR_NULL);
+        }
+        if (transactionType == TransactionTypeStatus.SAVING_PAYMENT) {
+            if (request.getSavingAccount() == null) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND);
+            }
+            savingAccount = savingAccountRepository.findById(request.getSavingAccount())
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
+        } else if (transactionType == TransactionTypeStatus.LOAN_PAYMENT) {
+            if (request.getLoanAccount() == null) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.LOAN_ACCOUNT_NOT_FOUND);
+            }
+            loanAccount = loanAccountRepository.findById(request.getLoanAccount())
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.LOAN_ACCOUNT_NOT_FOUND));
+        } else if (transactionType == TransactionTypeStatus.DEPOSIT_PAYMENT) {
+            if (request.getDepositAccount() == null) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND);
+            }
+            depositAccount = depositAccountRepository.findById(request.getDepositAccount())
+                    .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
+        } else {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_TYPE_INVALID_OR_NULL);
+        }
+        EscrowAccount escrowAccount = validateAndSaveEscrowAccount(request, userMetaData, payerId, beneficiaryId, savingAccount, loanAccount, depositAccount, transactionType);
+
+        String trxCode = escrowAccountDetailServiceImpl.generateTrxCode().substring(4);
+
+        EscrowRequestToPGRequest pgRequest = EscrowRequestToPGRequest.builder()
+                .title(request.getDescription())
+                .type("SINGLE") //"SINGLE" , "MULTIPLY" kebutuhan 1 transaksi atau banyak
+                .step(3)
+                .senderBank(request.getSenderBank().toLowerCase())
+                .senderBankType("virtual_account")
+                .senderName(escrowAccount.getBeneficiaryCustomer().getFullName())
+                .senderEmail(escrowAccount.getBeneficiaryCustomer().getEmail())
+                .customerPhone(escrowAccount.getBeneficiaryCustomer().getPhoneNumber())
+                .customerAddress(escrowAccount.getBeneficiaryCustomer().getAddress())
+                .escrowAccountId(escrowAccount.getId())
+                .paymentGatewayId(paymentGatewayId)
+                .amount(request.getNominalTransaction())
+                .internalReferenceId(trxCode)
+                .build();
+        BaseResponse<String> responsePg = paymentGatewayClient.pgBillPayement(pgRequest);
+        if (responsePg.getHttpStatus().equals(HttpStatus.OK)) {
+            escrowAccount.setAccountStatus(EscrowAccountStatus.PENDING_FUNDING);
+        } else {
+            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, GlobalErrorMapping.FAILED_TO_SEND_PG_TRANSACTION);
+        }
+
+        escrowAccountRepository.save(escrowAccount);
+        return "SUCCESS CREATE NEW ESCROW ACCOUNT " +
+                "| ID : "  + escrowAccount.getId() + " |";
+    }
+
+    private EscrowAccount validateAndSaveEscrowAccount(EscrowAccountRequest request, UserMetaData userMetaData, Customer payerId, Customer beneficiaryId, SavingAccount savingAccount, LoanAccount loanAccount, DepositAccount depositAccount, TransactionTypeStatus transactionType) {
         EscrowAccount escrowAccount = EscrowAccount.builder()
                 .accountNumber(generateAccountNumber())
                 .purpose(request.getPurpose())
@@ -102,15 +186,15 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                 .loanAccount(loanAccount)
                 .depositAccount(depositAccount)
                 .transactionTypeStatus(transactionType)
+                .releaseAccountNumber(request.getReleaseAccountNumber())
                 .accountStatus(EscrowAccountStatus.PENDING_FUNDING)
+                .nominalTransaction(request.getNominalTransaction())
                 .currentBalance(BigDecimal.ZERO)
                 .isDeleted(false)
                 .createdAt(Timestamp.from(Instant.now()))
                 .createdBy(userMetaData.getUserId())
                 .build();
-        escrowAccountRepository.save(escrowAccount);
-        return "SUCCESS CREATE NEW ESCROW ACCOUNT " +
-                "| ID : "  + escrowAccount.getId() + " |";
+        return escrowAccount;
     }
 
     @Override
@@ -139,6 +223,8 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                             .map(Object::toString)
                             .orElse("NOT USED"))
                     .transactionType(data.getTransactionTypeStatus())
+                    .releaseAccountNumber(data.getReleaseAccountNumber())
+                    .nominalTransaction(data.getNominalTransaction())
                     .build();
         }).collect(Collectors.toList());
         return list;
@@ -173,6 +259,8 @@ public class EscrowAccountServiceImpl implements EscrowAccountService {
                         .map(Object::toString)
                         .orElse("NOT USED"))
                 .transactionType(data.getTransactionTypeStatus())
+                .releaseAccountNumber(data.getReleaseAccountNumber())
+                .nominalTransaction(data.getNominalTransaction())
                 .build()
         ).collect(Collectors.toList());
     }

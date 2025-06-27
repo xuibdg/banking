@@ -1,11 +1,14 @@
 package com.core.banking.dto;
 
 import com.core.banking.enums.TransactionTypeStatus;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.math.BigDecimal;
 
 @Getter
 @Setter
@@ -20,6 +23,12 @@ public class EscrowAccountRequest {
     private String loanAccount;
     private Long depositAccount;
     private TransactionTypeStatus transactionTypeStatus;
+
+    @NotEmpty
+    private BigDecimal nominalTransaction;
+
+    @NotEmpty
+    private String releaseAccountNumber;
 
     // Tambahan untuk keperluan Payment Gateway
     private String senderBank;

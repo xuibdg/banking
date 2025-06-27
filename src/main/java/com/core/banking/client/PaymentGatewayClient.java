@@ -18,4 +18,9 @@ public interface PaymentGatewayClient {
     @PostMapping(value = "/transbackV2", consumes = "application/json", produces = "application/json")
     BaseResponse<String> pgTransback(@RequestBody EscrowRequestToPGRequest request);
 
+    @PostMapping(value = "/process-bill-payment", consumes = "application/json", produces = "application/json")
+    BaseResponse<String> pgBillPayement(@RequestBody EscrowRequestToPGRequest request);
+
+
+
 }

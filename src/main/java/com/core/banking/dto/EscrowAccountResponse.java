@@ -29,6 +29,8 @@ public class EscrowAccountResponse {
     private String loanAccount;
     private String depositAccount;
     private TransactionTypeStatus transactionType;
+    private String releaseAccountNumber;
+    private BigDecimal nominalTransaction;
 
 
 

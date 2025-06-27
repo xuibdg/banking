@@ -1,5 +1,6 @@
 package com.core.banking.entity;
 
+import com.core.banking.enums.Category;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,8 +28,9 @@ public class BalanceSheet {
     @Column(name = "coa_name")
     private String coaName;
 
-    @Column(name = "category")
-    private String category;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 15)
+    private Category category;
 
     @Column(name = "amount")
     private BigDecimal amount;

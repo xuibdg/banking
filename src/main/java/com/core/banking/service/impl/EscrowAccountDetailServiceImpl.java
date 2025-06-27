@@ -16,6 +16,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @NoArgsConstructor
 @Service
+@Slf4j
 public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailService {
 
     @Autowired
@@ -60,7 +62,6 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
     @Autowired
     private DepositAccountRepository depositAccountRepository;
 
-    @Autowired
     private EscrowAccountServiceImpl escrowAccountServiceImpl;
 
     @Autowired
@@ -185,6 +186,180 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
         escrowAccountDetailRepository.save(escrowAccountDetail);
         escrowAccount.setCurrentBalance(endBalance);
         escrowAccountRepository.save(escrowAccount);
+        return escrowAccountDetail;
+    }
+
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
+    public String createEscrowAccountDetailFundingToPG(EscrowAccountDetailRequest request, UserMetaData userMetaData) {
+        EscrowAccount escrowAccount = escrowAccountRepository.findById(request.getEscrowAccount())
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
+
+        BigDecimal nominal = request.getNominalTransaction() != null
+                ? request.getNominalTransaction()
+                : escrowAccount.getNominalTransaction();
+
+        if (nominal == null || nominal.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_NOMINAL_INVALID);
+        }
+
+        String releaseAccountNumber = !StringUtils.isEmpty(request.getReleaseAccountNumber())
+                ? request.getReleaseAccountNumber()
+                : escrowAccount.getReleaseAccountNumber();
+
+        if (StringUtils.isEmpty(releaseAccountNumber)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RELEASE_ACCOUNT_NUMBER_REQUIRED);
+        }
+        BigDecimal beginBalance = escrowAccount.getCurrentBalance();
+        BigDecimal endBalance = beginBalance;
+        MutationType mutationType;
+        String trxCode = generateTrxCode().substring(4);
+        EscrowTransactionType transactionType = request.getTransactionType();
+
+
+        if (transactionType == EscrowTransactionType.FUNDING) {
+            if (!escrowAccount.getAccountStatus().equals(EscrowAccountStatus.PENDING_FUNDING)) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_STATUS_NOT_PENDING_FUNDING);
+            }
+
+                mutationType = MutationType.CREDIT;
+                endBalance = beginBalance.add(nominal);
+                escrowAccount.setAccountStatus(EscrowAccountStatus.FUNDED);
+
+                //create EscrowAccountDetail
+                EscrowAccountDetail escrowAccountDetail = validateAndSaveEscrowAccountAndDetailToPG(request, userMetaData, escrowAccount, transactionType, mutationType, beginBalance, endBalance, releaseAccountNumber, true, trxCode, nominal);
+                return "SUCCESS | " + escrowAccountDetail.getTransactionReference();
+
+
+        } else if (transactionType == EscrowTransactionType.RELEASE_TO_BENEFICIARY
+                || transactionType == EscrowTransactionType.RETURN_TO_PAYER
+                || transactionType == EscrowTransactionType.FEE_DEBIT) {
+
+
+            boolean isAllowedStatus = escrowAccount.getAccountStatus().equals(EscrowAccountStatus.FUNDED)
+                    || escrowAccount.getAccountStatus().equals(EscrowAccountStatus.RELEASED);
+
+            if (!isAllowedStatus) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, "Status escrow account harus FUNDED atau RELEASED untuk transaksi ini");
+            }
+
+            if (beginBalance.compareTo(nominal) < 0) {
+                throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_BALANCE_NOT_ENOUGH);
+            }
+
+            mutationType = MutationType.DEBIT;
+            endBalance = beginBalance.subtract(nominal);
+
+            if (transactionType == EscrowTransactionType.RELEASE_TO_BENEFICIARY
+                    || transactionType == EscrowTransactionType.RETURN_TO_PAYER) {
+                escrowAccount.setAccountStatus(EscrowAccountStatus.RELEASED);
+            }
+
+            //create EscrowAccountDetail
+            EscrowAccountDetail escrowAccountDetail = validateAndSaveEscrowAccountAndDetailToPG(request, userMetaData, escrowAccount, transactionType, mutationType, beginBalance, endBalance, releaseAccountNumber,false, trxCode, nominal);
+            return "SUCCESS | " + escrowAccountDetail.getTransactionReference();
+
+        } else {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_TRANSACTION_TYPE_INVALID);
+        }
+
+    }
+
+    private EscrowAccountDetail validateAndSaveEscrowAccountAndDetailToPG(EscrowAccountDetailRequest request, UserMetaData userMetaData, EscrowAccount escrowAccount, EscrowTransactionType transactionType, MutationType mutationType,
+                                                                      BigDecimal beginBalance, BigDecimal endBalance, String releaseAccountNumber, Boolean isFunding, String trxCode, BigDecimal nominalTransaction) {
+        EscrowAccountDetail escrowAccountDetail = EscrowAccountDetail.builder()
+                .escrowAccount(escrowAccount)
+                .transactionType(transactionType)
+                .mutationType(mutationType)
+                .nominalTransaction(nominalTransaction)
+                .beginBalance(beginBalance)
+                .endBalance(endBalance)
+                .description(request.getDescription())
+                .transactionReference(trxCode)
+                .releaseAccountNumber(releaseAccountNumber)
+                .createdAt(Timestamp.from(Instant.now()))
+                .createBy(userMetaData.getUserId())
+                .transactionAt(Timestamp.from(Instant.now()))
+                .isDeleted(false)
+                .build();
+
+        escrowAccountDetailRepository.save(escrowAccountDetail);
+        escrowAccount.setCurrentBalance(endBalance);
+        escrowAccountRepository.save(escrowAccount);
+        return escrowAccountDetail;
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED, isolation = Isolation.REPEATABLE_READ)
+    public String createEscrowAccountDetailFundingReleaseToPG(EscrowAccountDetailRequest request, UserMetaData userMetaData) {
+        EscrowAccount escrowAccount = escrowAccountRepository.findById(request.getEscrowAccount())
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ESCROW_ACCOUNT_NOT_FOUND));
+
+        BigDecimal nominal = request.getNominalTransaction() != null
+                ? request.getNominalTransaction()
+                : escrowAccount.getNominalTransaction();
+
+        if (nominal == null || nominal.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.TRANSACTION_NOMINAL_INVALID);
+        }
+
+        String releaseAccountNumber = !StringUtils.isEmpty(request.getReleaseAccountNumber())
+                ? request.getReleaseAccountNumber()
+                : escrowAccount.getReleaseAccountNumber();
+
+        if (StringUtils.isEmpty(releaseAccountNumber)) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.RELEASE_ACCOUNT_NUMBER_REQUIRED);
+        }
+        BigDecimal beginBalance = escrowAccount.getCurrentBalance();
+        BigDecimal endBalance = beginBalance;
+        MutationType mutationType;
+        String trxCode = generateTrxCode().substring(4);
+
+        EscrowTransactionType transactionType = request.getTransactionType();
+
+        if (escrowAccount.getAccountStatus().equals(EscrowAccountStatus.PENDING_FUNDING)) {
+            // step 1 : Funding - Tambah saldo ke escrow account
+            mutationType = MutationType.CREDIT;
+            BigDecimal fundedBalance = beginBalance.add(nominal);
+            escrowAccount.setAccountStatus(EscrowAccountStatus.FUNDED);
+            validateAndSaveEscrowAccountAndDetailToPGRelease(request, userMetaData, escrowAccount, EscrowTransactionType.FUNDING, mutationType, beginBalance, fundedBalance, releaseAccountNumber, true, trxCode, nominal);
+
+            // step 2: Release - Keluarkan dana dari escrow
+            mutationType = MutationType.DEBIT;
+            endBalance = fundedBalance.subtract(nominal);
+            escrowAccount.setAccountStatus(EscrowAccountStatus.RELEASED);
+            EscrowAccountDetail escrowAccountDetail = validateAndSaveEscrowAccountAndDetailToPGRelease(request, userMetaData, escrowAccount, EscrowTransactionType.RELEASE_TO_BENEFICIARY, mutationType, fundedBalance, endBalance, releaseAccountNumber, false, trxCode, nominal);
+            return "SUCCESS | " + escrowAccountDetail.getTransactionReference();
+        }
+
+        throw new BusinessException(HttpStatus.BAD_REQUEST, "Status escrow account harus PENDING_FUNDING untuk proses ini");
+
+    }
+
+    private EscrowAccountDetail validateAndSaveEscrowAccountAndDetailToPGRelease(EscrowAccountDetailRequest request, UserMetaData userMetaData, EscrowAccount escrowAccount, EscrowTransactionType transactionType, MutationType mutationType,
+                                                                          BigDecimal beginBalance, BigDecimal endBalance, String releaseAccountNumber, Boolean isFunding, String trxCode, BigDecimal nominalTransaction) {
+        EscrowAccountDetail escrowAccountDetail = EscrowAccountDetail.builder()
+                .escrowAccount(escrowAccount)
+                .transactionType(transactionType)
+                .mutationType(mutationType)
+                .nominalTransaction(nominalTransaction)
+                .beginBalance(beginBalance)
+                .endBalance(endBalance)
+                .description(request.getDescription())
+                .transactionReference(trxCode)
+                .releaseAccountNumber(releaseAccountNumber)
+                .createdAt(Timestamp.from(Instant.now()))
+                .createBy(userMetaData.getUserId())
+                .transactionAt(Timestamp.from(Instant.now()))
+                .isDeleted(false)
+                .build();
+
+        escrowAccountDetailRepository.save(escrowAccountDetail);
+        escrowAccount.setCurrentBalance(endBalance);
+        escrowAccount.setReleaseAccountNumber(releaseAccountNumber);
+        escrowAccountRepository.save(escrowAccount);
+
         return escrowAccountDetail;
     }
 
@@ -344,6 +519,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                     .endBalance(data.getEndBalance())
                     .description(data.getDescription())
                     .transactionReference(data.getTransactionReference())
+                    .releaseAccountNumber(data.getReleaseAccountNumber())
                     .build();
         }).collect(Collectors.toList());
         return list;
@@ -367,6 +543,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 .endBalance(data.getEndBalance())
                 .description(data.getDescription())
                 .transactionReference(data.getTransactionReference())
+                .releaseAccountNumber(data.getReleaseAccountNumber())
                 .build()
         ).collect(Collectors.toList());
     }

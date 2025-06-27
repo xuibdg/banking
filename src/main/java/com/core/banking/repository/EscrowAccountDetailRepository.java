@@ -15,6 +15,7 @@ import java.util.Optional;
 public interface EscrowAccountDetailRepository extends JpaRepository<EscrowAccountDetail, String> {
 
     @EntityGraph(attributePaths = {"escrowAccount"})
+    @Query("SELECT ed FROM EscrowAccountDetail ed ORDER BY ed.createdAt DESC")
     List<EscrowAccountDetail> findAll();
 
     @EntityGraph(attributePaths = {"escrowAccount"})
@@ -23,7 +24,7 @@ public interface EscrowAccountDetailRepository extends JpaRepository<EscrowAccou
             "(:startDate is NULL OR ed.createdAt >= :startDate) AND " +
             "(:endDate is NULL or ed.createdAt <= :endDate) AND " +
             "(:transactionType is NULL or ed.transactionType = :transactionType) AND " +
-            "ed.isDeleted = false")
+            "ed.isDeleted = false ORDER BY ed.createdAt DESC")
     List<EscrowAccountDetail> findByNeedData(
             @Param("id") String id,
             @Param("startDate") Timestamp startDate,
