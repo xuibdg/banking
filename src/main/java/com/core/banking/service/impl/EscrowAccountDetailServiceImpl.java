@@ -62,6 +62,7 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
     @Autowired
     private DepositAccountRepository depositAccountRepository;
 
+    @Autowired
     private EscrowAccountServiceImpl escrowAccountServiceImpl;
 
     @Autowired
@@ -457,11 +458,17 @@ public class EscrowAccountDetailServiceImpl implements EscrowAccountDetailServic
                 .internalReferenceId(internalReferenceId)
                 .build();
 
-        BaseResponse<String> responsePg = paymentGatewayClient.pgTransback(pgRequest);
+        BaseResponse<String> responsePg = new BaseResponse<>();
+        responsePg.setHttpStatus(HttpStatus.OK);
+        responsePg.setData("MOCK_PG_SUCCESS_" + System.currentTimeMillis());
 
-        if (!responsePg.getHttpStatus().equals(HttpStatus.OK)) {
-            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, GlobalErrorMapping.FAILED_TO_SEND_PG_TRANSACTION);
-        }
+        log.info("MOCK: Payment Gateway call bypassed for testing - Account: {}", escrowAccount.getAccountNumber());
+
+//        BaseResponse<String> responsePg = paymentGatewayClient.pgTransback(pgRequest);
+//
+//        if (!responsePg.getHttpStatus().equals(HttpStatus.OK)) {
+//            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, GlobalErrorMapping.FAILED_TO_SEND_PG_TRANSACTION);
+//        }
 
         // Buat detail funding
         EscrowAccountDetail escrowDetail = EscrowAccountDetail.builder()

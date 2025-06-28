@@ -6,6 +6,7 @@ spring:
     name: banking
   main:
     web-application-type: reactive
+    allow-circular-references: true
 
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=UTC

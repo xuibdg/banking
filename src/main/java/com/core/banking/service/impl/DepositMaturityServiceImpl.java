@@ -55,11 +55,11 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
         //TODO: TAMBAH VALIDASI SAVING ACCOUNT ID
 
         if (!depositAccount.getCustomer().getId().equals(savingAccount.getCustomer().getId())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_CUSTOMER_INEQUAL); //TODO: MAXIMIZE GLOBALERRORMAPPING
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "id saving account dan deposit account, tidak sama."); //TODO: MAXIMIZE GLOBALERRORMAPPING GlobalErrorMapping.SAVING_CUSTOMER_INEQUAL
         }
 
         if (savingAccount.getAccountStatus() != SavingAccountStatus.ACTIVE) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_ACTIVE);
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "saving account tersebut berstatus non-active."); // GlobalErrorMapping.SAVING_ACCOUNT_NOT_ACTIVE
         }
 
         if (depositAccount.getAccountStatus() != DepositAccountStatus.ACTIVE) {
@@ -217,8 +217,15 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
         escrowRequest.setTransactionTypeStatus(TransactionTypeStatus.DEPOSIT_PAYMENT);
         escrowRequest.setDepositAccount(depositAccount.getDepositoAccountId());
         escrowRequest.setPurpose("Pencairan Jatuh Tempo Deposito");
+        escrowRequest.setSenderBank("BNI");
 
         String transactionReference = escrowAccountDetailService.createAndReleaseEscrowAccount(escrowRequest, totalPayout, savingAccount.getAccountNumber(), "Pencairan Jatuh Tempo Deposito " + depositAccount.getAccountNumber(), userMetaData);
+
+        BigDecimal newBalance = savingAccount.getCurrentBalance().add(totalPayout);
+        savingAccount.setCurrentBalance(newBalance);
+        savingAccount.setUpdatedAt(java.sql.Timestamp.from(java.time.Instant.now()));
+        savingAccount.setUpdateBy(userMetaData.getUserId());
+        savingAccountRepository.save(savingAccount);
 
         principalDetail.setTransactionReference(transactionReference);
         depositAccountDetailRepository.save(principalDetail);

@@ -61,11 +61,11 @@ public class EarlyWithdrawalServiceImpl implements EarlyWithdrawalService {
         }
 
         if (savingAccount.getAccountStatus() != SavingAccountStatus.ACTIVE) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_ACTIVE);
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "The Saving account is not active" ); // GlobalErrorMapping.SAVING_ACCOUNT_NOT_ACTIVE
         }
 
         if (!depositAccount.getCustomer().getId().equals(savingAccount.getCustomer().getId())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_CUSTOMER_INEQUAL); //TODO: MAXIMIZE GLOBALERRORMAPPING
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "id saving account dan id deposit account, tidak sama."); //TODO: MAXIMIZE GLOBALERRORMAPPING GlobalErrorMapping.SAVING_CUSTOMER_INEQUAL
         }
 
         if (depositAccount.getAccountStatus() != DepositAccountStatus.ACTIVE) {
@@ -109,7 +109,15 @@ public class EarlyWithdrawalServiceImpl implements EarlyWithdrawalService {
         escrowRequest.setDepositAccount(depositAccountId);
         escrowRequest.setPurpose("Pencairan Dini Deposito");
 
+        escrowRequest.setSenderBank("BNI");
+
         String transactionReference = escrowAccountDetailService.createAndReleaseEscrowAccount(escrowRequest, amountToReturn, savingAccountId, "Pencairan Dini Deposito " + depositAccount.getAccountNumber(), userMetaData);
+
+        BigDecimal newBalance = savingAccount.getCurrentBalance().add(amountToReturn);
+        savingAccount.setCurrentBalance(newBalance);
+        savingAccount.setUpdatedAt(java.sql.Timestamp.from(java.time.Instant.now()));
+        savingAccount.setUpdateBy(userMetaData.getUserId());
+        savingAccountRepository.save(savingAccount);
 
         withdrawalTransaction.setTransactionReference(transactionReference);
         depositAccountDetailRepository.save(withdrawalTransaction);
