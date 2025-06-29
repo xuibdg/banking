@@ -231,6 +231,7 @@
                     .channel("SYSTEM")
                     .transactionAt(Timestamp.valueOf(LocalDateTime.now()))
                     .createdAt(Timestamp.valueOf(LocalDateTime.now()))
+                    .systemDate(journalLedgerServiceImpl.getSystemAt())
                     .build();
     
             savingAccount.setCurrentBalance(savingEnd);
