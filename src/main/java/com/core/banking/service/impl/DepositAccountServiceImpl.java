@@ -10,6 +10,7 @@
         import com.core.banking.repository.*;
         import com.core.banking.service.DepositAccountService;
         import com.core.banking.service.EscrowAccountDetailService;
+        import com.core.banking.service.JournalLedgerService;
         import com.core.banking.utils.BilyetNumberGenerator;
         import com.core.banking.utils.DepositAccountNumberGenerator;
         import com.core.banking.utils.exception.BusinessException;
@@ -18,6 +19,9 @@
         import org.springframework.http.HttpStatus;
         import org.springframework.stereotype.Service;
         import org.springframework.transaction.annotation.Transactional;
+        import com.core.banking.dto.JournalRequest;
+        import com.core.banking.dto.JournalDetailRequest;
+        import java.util.ArrayList;
         import org.springframework.transaction.annotation.Propagation;
         
         import java.math.BigDecimal;
@@ -57,6 +61,12 @@
         
             @Autowired
             DepositMaturityServiceImpl depositMaturityServiceImpl;
+
+            @Autowired
+            JournalLedgerService journalLedgerService;
+
+            @Autowired
+            MChartOfAccountRepository mChartOfAccountRepository;
         
             @Autowired
             BilyetNumberGenerator bilyetNumberGenerator;
@@ -117,6 +127,9 @@
                         .build();
 
                 DepositAccount savedAccount = depositAccountRepository.save(depositAccount);
+
+                // Create journal entry for deposit opening
+                createDepositJournalEntry(savedAccount, depositAccountRequest.getNominalDeposit(), userMetaData);
 
                 DepositAccountDetail depositAccountDetail = DepositAccountDetail.builder()
                         .depositAccount(savedAccount)
@@ -284,6 +297,45 @@
         
                 return expectedProfit;
             }
+
+            private void createDepositJournalEntry(DepositAccount depositAccount, BigDecimal amount, UserMetaData userMetaData) {
+                // Debit Tabungan Nasabah, Credit Hutang Deposito
+                MChartOfAccount debitCoa = mChartOfAccountRepository.findById("2") // Tabungan Nasabah
+                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, "Debit COA (Tabungan Nasabah) not found"));
+
+                MChartOfAccount creditCoa = mChartOfAccountRepository.findById("5") // Hutang Deposito
+                        .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, "Credit COA (Hutang Deposito) not found"));
+
+                // Create journal request
+                JournalRequest journalRequest = new JournalRequest();
+                journalRequest.setDescription("Pembukaan Deposito " + depositAccount.getAccountNumber());
+                journalRequest.setReferenceType("DEPOSIT_OPENING");
+
+                // Create details
+                List<JournalDetailRequest> details = new ArrayList<>();
+
+                // Debit: Tabungan Nasabah (dana keluar dari tabungan)
+                JournalDetailRequest debitDetail = new JournalDetailRequest();
+                debitDetail.setCoaId(debitCoa.getId());
+                debitDetail.setMutationType("DEBIT");
+                debitDetail.setAmount(amount);
+                debitDetail.setDescription("Debit tabungan nasabah untuk pembukaan deposito");
+                details.add(debitDetail);
+
+                // Credit: Hutang Deposito (bank berhutang ke nasabah)
+                JournalDetailRequest creditDetail = new JournalDetailRequest();
+                creditDetail.setCoaId(creditCoa.getId());
+                creditDetail.setMutationType("CREDIT");
+                creditDetail.setAmount(amount);
+                creditDetail.setDescription("Credit hutang deposito");
+                details.add(creditDetail);
+
+                journalRequest.setDetails(details);
+
+                // Create journal entry
+                journalLedgerService.createJournal(journalRequest, userMetaData);
+            }
+
         }
         
         //    @Override

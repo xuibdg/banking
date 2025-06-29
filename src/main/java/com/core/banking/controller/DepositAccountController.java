@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 
-
 import java.util.List;
 import java.util.Map;
 
@@ -28,8 +27,8 @@ public class DepositAccountController {
     @Autowired
     private DepositAccountService depositAccountService;
 
-    @GetMapping("/get-all")
-    public BaseResponse <List<DepositAccount>> getAll() {
+    @GetMapping
+    public BaseResponse<List<DepositAccount>> getAllDepositAccounts() {
         return buildSuccessResponse(depositAccountService.findAll());
     }
 
@@ -43,9 +42,9 @@ public class DepositAccountController {
         return buildSuccessResponse(depositAccountService.getDepositAccountById(id));
     }
 
-    @GetMapping("/customer/{customerId}")
+    @GetMapping("/customers/{customerId}")
     BaseResponse<List<DepositAccountResponse>> getDepositAccountByCustomerId(@PathVariable("customerId") String customerId) {
-    return buildSuccessResponse(depositAccountService.getDepositAccountsByCustomerId(customerId));
+        return buildSuccessResponse(depositAccountService.getDepositAccountsByCustomerId(customerId));
     }
 
     @GetMapping("/status/{status}")
@@ -61,6 +60,6 @@ public class DepositAccountController {
 
 //    @DeleteMapping("/{id}")
 //    BaseResponse<String> deleteDepositAccount(@PathVariable("id") Long id){
-//    return buildSuccessResponse(depositAccountService.deleteDepositAccount(id));
+//        return buildSuccessResponse(depositAccountService.deleteDepositAccount(id));
 //    }
 }

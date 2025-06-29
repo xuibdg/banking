@@ -25,7 +25,7 @@ public class DepositMaturityController {
         return buildSuccessResponse(depositMaturityService.processMaturity(depositAccountId, userMetaData));
     }
 
-    @GetMapping("/get-list")
+    @GetMapping("/matured-accounts")
     BaseResponse<List<DepositMaturityResponse>> getAllMaturedDeposits(@RequestParam(required = false) LocalDate maturityDate, @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(depositMaturityService.getAllMaturedDeposits(maturityDate));
     }
