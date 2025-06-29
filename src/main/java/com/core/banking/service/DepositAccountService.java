@@ -13,7 +13,7 @@ import java.util.Map;
 public interface DepositAccountService {
     List<DepositAccount> findAll();
 
-    DepositAccountResponse openDepositAccount(DepositAccountRequest depositAccountRequest, String savingAccountId, @CurrentUser UserMetaData userMetaData);
+    DepositAccountResponse createDepositAccount(DepositAccountRequest depositAccountRequest, @CurrentUser UserMetaData userMetaData);
 
     DepositAccountResponse getDepositAccountById(Long depositAccountId);
 

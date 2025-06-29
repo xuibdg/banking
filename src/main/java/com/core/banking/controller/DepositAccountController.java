@@ -33,9 +33,9 @@ public class DepositAccountController {
         return buildSuccessResponse(depositAccountService.findAll());
     }
 
-    @PostMapping("/open/{savingAccountId}")
-    BaseResponse<DepositAccountResponse> openDepositAccount(@RequestBody DepositAccountRequest depositAccountRequest, @PathVariable("savingAccountId") String savingAccountId, @CurrentUser UserMetaData userMetaData) {
-        return buildSuccessResponse(depositAccountService.openDepositAccount(depositAccountRequest, savingAccountId,userMetaData));
+    @PostMapping
+    BaseResponse<DepositAccountResponse> createDepositAccount(@RequestBody DepositAccountRequest depositAccountRequest, @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(depositAccountService.createDepositAccount(depositAccountRequest, userMetaData));
     }
 
     @GetMapping("/{id}")

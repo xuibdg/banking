@@ -76,6 +76,13 @@ public class DepositTypeConfig {
     @Column(name = "chart_of_account_id")
     private Long chartOfAccountId;
 
+    // Field-field untuk COA mapping
+    @Column(name = "debit_coa_id")
+    private Long debitCoaId = 2L; // Default ke "tabungan nasabah" (ID 2)
+
+    @Column(name = "credit_coa_id")
+    private Long creditCoaId = 5L; // Default ke "hutang deposito" (ID 5)
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

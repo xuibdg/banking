@@ -49,10 +49,15 @@ public class DepositMaturityServiceImpl implements DepositMaturityService {
 
     @Override
     @Transactional
-    public DepositMaturityResponse processMaturity(Long depositoAccountId, String savingAccountId, UserMetaData userMetaData) {
+    public DepositMaturityResponse processMaturity(Long depositoAccountId, UserMetaData userMetaData) {
+//        DepositAccount depositAccount = depositAccountRepository.findById(depositoAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
+//        SavingAccount savingAccount = savingAccountRepository.findById(savingAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
+//        //TODO: TAMBAH VALIDASI SAVING ACCOUNT ID
+
         DepositAccount depositAccount = depositAccountRepository.findById(depositoAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_ACCOUNT_NOT_FOUND));
-        SavingAccount savingAccount = savingAccountRepository.findById(savingAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
-        //TODO: TAMBAH VALIDASI SAVING ACCOUNT ID
+
+        // Ambil saving account dari customer yang sama dengan deposit account
+        SavingAccount savingAccount = savingAccountRepository.findByCustomer_IdAndAccountStatus(depositAccount.getCustomer().getId(), SavingAccountStatus.ACTIVE).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, "Customer tidak memiliki saving account yang aktif"));
 
         if (!depositAccount.getCustomer().getId().equals(savingAccount.getCustomer().getId())) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "id saving account dan deposit account, tidak sama."); //TODO: MAXIMIZE GLOBALERRORMAPPING GlobalErrorMapping.SAVING_CUSTOMER_INEQUAL

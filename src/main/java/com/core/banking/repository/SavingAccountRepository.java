@@ -55,4 +55,6 @@ public interface SavingAccountRepository extends JpaRepository<SavingAccount, St
     Optional<SavingAccount> findWithLockByAccountNumber(@Param("accountNumber") String accountNumber);
 
     List<SavingAccount> findByCustomer_Id(String customerId);
+
+    Optional<SavingAccount> findByCustomer_IdAndAccountStatus(String customerId, SavingAccountStatus accountStatus);
 }

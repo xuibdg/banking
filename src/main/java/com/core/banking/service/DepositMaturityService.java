@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface DepositMaturityService {
-    DepositMaturityResponse processMaturity(Long depositoAccountId, String savingAccountId, UserMetaData userMetaData);
+    DepositMaturityResponse processMaturity(Long depositoAccountId, UserMetaData userMetaData);
 
     List<DepositMaturityResponse> getAllMaturedDeposits(LocalDate maturityDate);
 }

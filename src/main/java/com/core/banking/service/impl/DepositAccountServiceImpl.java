@@ -68,89 +68,84 @@
             public List<DepositAccount> findAll() {
                 return depositAccountRepository.findAll();
             }
-        
+
             @Override
             @Transactional(propagation = Propagation.REQUIRED)
-            public DepositAccountResponse openDepositAccount(DepositAccountRequest DepositAccountRequest, String savingAccountId, @CurrentUser UserMetaData userMetaData) {
-                Customer customer = customerRepository.findById(DepositAccountRequest.getCustomerId())
+            public DepositAccountResponse createDepositAccount(DepositAccountRequest depositAccountRequest, UserMetaData userMetaData) {
+                // Ambil savingAccountId dari request body
+                String savingAccountId = depositAccountRequest.getSavingAccountId();
+
+                Customer customer = customerRepository.findById(depositAccountRequest.getCustomerId())
                         .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_FOUND));
-        
+
                 if (customer.getCustomerStatus() != CustomerStatus.ACTIVE) {
                     throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.CUSTOMER_NOT_ACTIVE);
                 }
-        
+
                 SavingAccount savingAccount = savingAccountRepository.findById(savingAccountId).orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
-        
+
                 if (savingAccount.getAccountStatus() != SavingAccountStatus.ACTIVE) {
                     throw new BusinessException(HttpStatus.BAD_REQUEST, "Status saving account non-active."); //GlobalErrorMapping.SAVING_ACCOUNT_NOT_ACTIVE
                 }
-        
-                DepositTypeConfig depositTypeConfig = depositTypeConfigRepository.findById(DepositAccountRequest.getDepositTypeConfigId())
+
+                DepositTypeConfig depositTypeConfig = depositTypeConfigRepository.findById(depositAccountRequest.getDepositTypeConfigId())
                         .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_TYPE_CONFIG_NOT_FOUND));
-        
+
                 if (!depositTypeConfig.getIsActive()) {
                     throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_TYPE_CONFIG_NOT_ACTIVE);
                 }
-        
-                if (DepositAccountRequest.getNominalDeposit().compareTo(depositTypeConfig.getMinDepositAmount()) < 0) {
+
+                if (depositAccountRequest.getNominalDeposit().compareTo(depositTypeConfig.getMinDepositAmount()) < 0) {
                     throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.DEPOSIT_AMOUNT_BELOW_MINIMUM);
                 }
-        
-        //        SavingAccount savingAccount = savingAccountRepository.findById(savingAccountId)
-        //                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.SAVING_ACCOUNT_NOT_FOUND));
-        //
-        //        if (savingAccount.getCurrentBalance().compareTo(DepositAccountRequest.getNominalDeposit()) < 0) {
-        //            throw new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.ERROR);
-        //        }
-        
+
                 LocalDate maturityDate = LocalDate.now().plusMonths(depositTypeConfig.getTermInMonths());
-        
+
                 String accountNumber = depositAccountNumberGenerator.generateDepositAccountNumber();
-        
+
                 DepositAccount depositAccount = DepositAccount.builder()
                         .accountNumber(accountNumber)
                         .customer(customer)
                         .depositTypeConfig(depositTypeConfig)
-                        .principalAmount(DepositAccountRequest.getNominalDeposit())
+                        .principalAmount(depositAccountRequest.getNominalDeposit())
                         .maturityDate(maturityDate)
                         .createdBy(userMetaData.getUserId())
                         .accountStatus(DepositAccountStatus.ACTIVE)
-                        .rolloverOption(RolloverOption.valueOf(DepositAccountRequest.getRolloverOption()))
+                        .rolloverOption(RolloverOption.valueOf(depositAccountRequest.getRolloverOption()))
                         .openedAt(LocalDateTime.now())
                         .createdBy(userMetaData.getUserId())
                         .build();
-        
+
                 DepositAccount savedAccount = depositAccountRepository.save(depositAccount);
-        
+
                 DepositAccountDetail depositAccountDetail = DepositAccountDetail.builder()
                         .depositAccount(savedAccount)
                         .transactionType(DepositoTransactionType.INITIAL_DEPOSIT)
                         .mutationType(MutationType.CREDIT)
-                        .nominalTransaction(DepositAccountRequest.getNominalDeposit())
+                        .nominalTransaction(depositAccountRequest.getNominalDeposit())
                         .beginBalance(BigDecimal.ZERO)
-                        .endBalance(DepositAccountRequest.getNominalDeposit())
+                        .endBalance(depositAccountRequest.getNominalDeposit())
                         .createdBy(userMetaData.getUserId())
                         .description("Setoran awal deposito")
                         .transactionAt(LocalDateTime.now())
                         .createdBy(userMetaData.getUserId())
                         .build();
-        
+
                 depositAccountDetailRepository.save(depositAccountDetail);
-        
+
                 EscrowAccountRequest escrowRequest = new EscrowAccountRequest();
                 escrowRequest.setPayerCustomer(savingAccount.getCustomer().getId());
                 escrowRequest.setBeneficiaryCustomer(customer.getId());
                 escrowRequest.setTransactionTypeStatus(TransactionTypeStatus.DEPOSIT_PAYMENT);
                 escrowRequest.setDepositAccount(savedAccount.getDepositoAccountId());
                 escrowRequest.setPurpose("Pembukaan Deposito");
-
                 escrowRequest.setSenderBank("BNI");
-        
-                String transactionReference = escrowAccountDetailService.createAndReleaseEscrowAccount(escrowRequest, DepositAccountRequest.getNominalDeposit(), savingAccountId, "Pembukaan Deposito " + savedAccount.getAccountNumber(), userMetaData);
-        
+
+                String transactionReference = escrowAccountDetailService.createAndReleaseEscrowAccount(escrowRequest, depositAccountRequest.getNominalDeposit(), savingAccountId, "Pembukaan Deposito " + savedAccount.getAccountNumber(), userMetaData);
+
                 DepositAccountResponse depositAccountResponse = new DepositAccountResponse();
                 depositAccountResponse.setCustomerName(customer.getFullName());
-        
+
                 if (depositTypeConfig.getDepositType() != null) {
                     depositAccountResponse.setDepositTypeName(depositTypeConfig.getDepositType().getTypeName());
                 }
@@ -165,10 +160,10 @@
                 depositAccountResponse.setRolloverOption(savedAccount.getRolloverOption().name());
                 depositAccountResponse.setOpenedAt(savedAccount.getOpenedAt());
                 depositAccountResponse.setCreatedAt(savedAccount.getCreatedAt());
-        
+
                 depositAccountDetail.setTransactionReference(transactionReference);
                 depositAccountDetailRepository.save(depositAccountDetail);
-        
+
                 return depositAccountResponse;
             }
         
