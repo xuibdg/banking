@@ -32,6 +32,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.core.banking.dto.JournalDetailRequest;
+import com.core.banking.dto.JournalRequest;
+import com.core.banking.entity.MChartOfAccount;
+import com.core.banking.repository.MChartOfAccountRepository;
+import com.core.banking.service.JournalLedgerService;
+import java.util.ArrayList;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -69,6 +75,17 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
 
     @Autowired
     private EscrowAccountDetailServiceImpl escrowAccountDetailServiceImpl;
+
+    @Autowired
+    private JournalLedgerService journalLedgerService;
+
+    @Autowired
+    private MChartOfAccountRepository mChartOfAccountRepository;
+
+    private static final String COA_PIUTANG_PEMBIAYAAN = "1201";
+    private static final String COA_TABUNGAN_NASABAH = "2001";
+    private static final String COA_PENDAPATAN_BUNGA_LOAN = "4001";
+    private static final String COA_PENDAPATAN_BIAYA_ADMIN = "4101";
 
     @Override
     public List<LoanRepaymentScheduleResponse> findAll() {
@@ -274,6 +291,7 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         payment.setLoanRepaymentSchedule(repaymentSchedule);
         payment.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
         loanTransactionRepository.save(payment);
+        String journalId = createRepaymentJournal(loanAccount, expectedPrincipal, expectedInterest, fixedFee.add(lateFee), userMetaData);
 
         repaymentSchedule.setPaymentStatus(LoanRepaymentStatus.PAID);
         repaymentSchedule.setPaymentDate(Timestamp.valueOf(LocalDateTime.now()));
@@ -343,5 +361,52 @@ public class LoanRepaymentScheduleServiceImpl implements LoanRepaymentScheduleSe
         schedule.setIsDeleted(true);
         loanRepaymentScheduleRepository.save(schedule);
         return "Deleted loan repayment schedule with id: " + loanRepaymentScheduleId;
+    }
+
+    private String createRepaymentJournal(LoanAccount loanAccount, BigDecimal principalAmount,
+                                          BigDecimal interestAmount, BigDecimal feeAmount, UserMetaData userMetaData) {
+        List<JournalDetailRequest> details = new ArrayList<>();
+        BigDecimal totalAmount = principalAmount.add(interestAmount).add(feeAmount);
+
+        details.add(new JournalDetailRequest());
+        details.get(0).setCoaId(getCoaId(COA_TABUNGAN_NASABAH));
+        details.get(0).setMutationType("DEBIT");
+        details.get(0).setAmount(totalAmount);
+        details.get(0).setDescription("Pembayaran pinjaman - " + loanAccount.getAccountNumber());
+
+        details.add(new JournalDetailRequest());
+        details.get(1).setCoaId(getCoaId(COA_PIUTANG_PEMBIAYAAN));
+        details.get(1).setMutationType("CREDIT");
+        details.get(1).setAmount(principalAmount);
+        details.get(1).setDescription("Pembayaran pokok pinjaman - " + loanAccount.getAccountNumber());
+
+        if (interestAmount.compareTo(BigDecimal.ZERO) > 0) {
+            details.add(new JournalDetailRequest());
+            details.get(details.size()-1).setCoaId(getCoaId(COA_PENDAPATAN_BUNGA_LOAN));
+            details.get(details.size()-1).setMutationType("CREDIT");
+            details.get(details.size()-1).setAmount(interestAmount);
+            details.get(details.size()-1).setDescription("Pendapatan bunga pinjaman - " + loanAccount.getAccountNumber());
+        }
+
+        if (feeAmount.compareTo(BigDecimal.ZERO) > 0) {
+            details.add(new JournalDetailRequest());
+            details.get(details.size()-1).setCoaId(getCoaId(COA_PENDAPATAN_BIAYA_ADMIN));
+            details.get(details.size()-1).setMutationType("CREDIT");
+            details.get(details.size()-1).setAmount(feeAmount);
+            details.get(details.size()-1).setDescription("Pendapatan biaya administrasi - " + loanAccount.getAccountNumber());
+        }
+
+        JournalRequest journalRequest = new JournalRequest();
+        journalRequest.setDescription("Pembayaran Pinjaman - " + loanAccount.getAccountNumber());
+        journalRequest.setReferenceType("LOAN_REPAYMENT");
+        journalRequest.setDetails(details);
+
+        return journalLedgerService.createJournal(journalRequest, userMetaData).getJournalId();
+    }
+
+    private String getCoaId(String coaCode) {
+        return mChartOfAccountRepository.findByCode(coaCode)
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, GlobalErrorMapping.COA_NOT_FOUND))
+                .getId();
     }
 }

@@ -20,12 +20,12 @@ public class DepositMaturityController {
     @Autowired
     DepositMaturityService depositMaturityService;
 
-    @PostMapping("/{id}/process-deposit")
-    BaseResponse<DepositMaturityResponse> processMaturity(@PathVariable ("id") Long depositoAccountId, @CurrentUser UserMetaData userMetaData) {
-        return buildSuccessResponse(depositMaturityService.processMaturity(depositoAccountId));
+    @PostMapping("/{depositAccountId}/process")
+    BaseResponse<DepositMaturityResponse> processMaturity(@PathVariable ("depositAccountId") Long depositAccountId, @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(depositMaturityService.processMaturity(depositAccountId, userMetaData));
     }
 
-    @GetMapping("/get-list")
+    @GetMapping("/matured-accounts")
     BaseResponse<List<DepositMaturityResponse>> getAllMaturedDeposits(@RequestParam(required = false) LocalDate maturityDate, @CurrentUser UserMetaData userMetaData) {
         return buildSuccessResponse(depositMaturityService.getAllMaturedDeposits(maturityDate));
     }

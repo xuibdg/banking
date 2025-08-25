@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 @NoArgsConstructor
-
 public class DepositAccountRequest {
     @NotNull(message = "Customer ID cannot be empty")
     private String customerId;
@@ -29,4 +28,7 @@ public class DepositAccountRequest {
     // Possible values: PRINCIPAL_ONLY, PRINCIPAL_AND_PROFIT, NO_ROLLOVER
     @NotNull(message = "Rollover option is required")
     private String rolloverOption;
+
+    @NotNull(message = "Saving Account ID cannot be empty")
+    private String savingAccountId;
 }

@@ -53,6 +53,9 @@ public class DepositAccountDetail {
     @Column(name = "nominal_transaction", nullable = false, precision = 15, scale = 2)
     private BigDecimal nominalTransaction;
 
+    @Column(name = "transaction_reference", unique = true, length = 100)
+    private String transactionReference;
+
     @Column(name = "begin_balance", nullable = false, precision = 15, scale = 2)
     private BigDecimal beginBalance;
 

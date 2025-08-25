@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 
-
 import java.util.List;
+import java.util.Map;
 
 import static com.core.banking.controller.BaseCRUDController.buildSuccessResponse;
 
@@ -27,14 +27,14 @@ public class DepositAccountController {
     @Autowired
     private DepositAccountService depositAccountService;
 
-    @GetMapping("/get-all")
-    public BaseResponse <List<DepositAccount>> getAll() {
+    @GetMapping
+    public BaseResponse<List<DepositAccount>> getAllDepositAccounts() {
         return buildSuccessResponse(depositAccountService.findAll());
     }
 
     @PostMapping
-    BaseResponse<DepositAccountResponse> openDepositAccount(@RequestBody DepositAccountRequest depositAccountRequest, UserMetaData userMetaData) {
-        return buildSuccessResponse(depositAccountService.openDepositAccount(depositAccountRequest, userMetaData));
+    BaseResponse<DepositAccountResponse> createDepositAccount(@RequestBody DepositAccountRequest depositAccountRequest, @CurrentUser UserMetaData userMetaData) {
+        return buildSuccessResponse(depositAccountService.createDepositAccount(depositAccountRequest, userMetaData));
     }
 
     @GetMapping("/{id}")
@@ -42,9 +42,9 @@ public class DepositAccountController {
         return buildSuccessResponse(depositAccountService.getDepositAccountById(id));
     }
 
-    @GetMapping("/customer/{customerId}")
+    @GetMapping("/customers/{customerId}")
     BaseResponse<List<DepositAccountResponse>> getDepositAccountByCustomerId(@PathVariable("customerId") String customerId) {
-    return buildSuccessResponse(depositAccountService.getDepositAccountsByCustomerId(customerId));
+        return buildSuccessResponse(depositAccountService.getDepositAccountsByCustomerId(customerId));
     }
 
     @GetMapping("/status/{status}")
@@ -52,8 +52,14 @@ public class DepositAccountController {
         return buildSuccessResponse(depositAccountService.getDepositAccountsByStatus(status));
     }
 
+    @PostMapping("/{depositAccountId}/bilyet")
+    public BaseResponse<Map<String, Object>> generateBilyet(@PathVariable("depositAccountId") Long depositAccountId, @CurrentUser UserMetaData userMetaData) {
+        Map<String, Object> bilyetData = depositAccountService.generateBilyet(depositAccountId, userMetaData);
+        return buildSuccessResponse(bilyetData);
+    }
+
 //    @DeleteMapping("/{id}")
 //    BaseResponse<String> deleteDepositAccount(@PathVariable("id") Long id){
-//    return buildSuccessResponse(depositAccountService.deleteDepositAccount(id));
+//        return buildSuccessResponse(depositAccountService.deleteDepositAccount(id));
 //    }
 }
